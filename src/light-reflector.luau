@@ -1,0 +1,282 @@
+--!native
+
+--Project Roadwork 2025
+
+--[[-[LIGHT-REFLECTOR]---------------------------------------------------------------
+  FILE:             Light-Reflector.luau
+  DESCRIPTION:      A light reflector that reflects decals for now at long distances.
+  functionality. 
+  USAGE:            A-Chassis Tune/Plugins/Light-Reflector.luau
+  DEPENDENCIES:     POOLERPLUS
+  LANGUAGE:         Luau
+  
+  GROUP:            Project Roadwork
+  VERSION:          0.1.0-alpha.1
+  CREATED:          2025-10-26 2:03 PM CDT  
+  LAST UPDATED:     2025-10-26 6:07 PM CDT   
+  LICENSE:          Apache-2.0
+
+  CODEBERG REPO:    https://codeberg.org/project-roadwork/light-reflector
+  GITHUB REPO:      N/A
+  
+  NOTES: Use the accompanying repository links for documentation, help, or
+  to propose a suggestion or comment. The NOTICE file can be found in the respository
+  links.
+  
+  AUTHORS:
+   Illinois_Roadbuff (2653606809) - October 26th, 2025 - Created the file
+-----------------------------------------------------------------------------------]]  
+
+task.wait(1)
+
+local version = "0.1.0"
+
+local car = script.Parent.Car.Value
+local DriveSeat: VehicleSeat = car.DriveSeat
+local LightValues = DriveSeat.LightValues
+local Lighting = game:GetService("Lighting")
+
+local DebugBoundary = true
+local FadeDistance = 4000
+local MinFadeDistance = 60 -- studs
+local MphScale = 2.23694 * 0.28 -- (stud/sec) → mph
+
+local BoxOffset = CFrame.new(0, 3, -700)
+local BoxSizeNear = Vector3.new(800, 150, 1500)
+local BoxSizeFar = Vector3.new(1600, 150, 1500)
+local BoxOffsetNear = BoxOffset
+local BoxOffsetFar = BoxOffset * CFrame.new(0, 0, -BoxSizeNear.Z / 2)
+
+local print, warn = print, warn
+
+local function dprint(m)
+	print(`:: Light-Reflector {version} :: {m}`)
+end
+
+local function dwarn(m)
+	warn(`:: Light-Reflector {version} :: {m}`)
+end
+
+
+local index, PoolerPlus = game:GetService("ReplicatedStorage"):FindFirstChild("PoolerPlus"), nil
+if index then
+	PoolerPlus = require(index)
+else
+	dwarn("Dependency PoolerPlus does not exist! This script strictly needs this dependency! Halting execution...")
+	return
+end
+
+if not script:FindFirstChild("SurfaceGui") then -- safety net
+	dwarn("SurfaceGui template does not exist! Using safety net and creating SurfaceGui template...")
+	local SurfaceGui = Instance.new("SurfaceGui")
+	local ImageLabel = Instance.new("ImageLabel")
+	
+	SurfaceGui.Parent = script
+	ImageLabel.Parent = SurfaceGui
+	SurfaceGui.ZOffset = 1
+	ImageLabel.Size = UDim2.fromScale(1,1)
+	ImageLabel.BackgroundTransparency = 1
+end
+
+local SurfaceGuiPool = PoolerPlus:CreatePool("SurfaceGuis", function()
+	return script.SurfaceGui:Clone()
+end, nil, nil, {
+	preloadCount = 10,
+	enableAnalytics = true,
+	instanceConfig = { template = script.SurfaceGui:Clone() },
+})
+
+
+local SurfaceGuisInBox = {}
+local SurfaceGuiStates = {}
+local currentParts = {}
+
+local debugBox
+if DebugBoundary then
+	debugBox = Instance.new("Part")
+	debugBox.Anchored = true
+	debugBox.CanCollide = false
+	debugBox.CastShadow = false
+	debugBox.Transparency = 0.8
+	debugBox.Color = Color3.fromRGB(0, 255, 0)
+	debugBox.Material = Enum.Material.Plastic
+	debugBox.Name = "SensorDebugBox"
+	debugBox.Size = BoxSizeNear
+	debugBox.Parent = car.Body
+end
+
+
+local function getSpeedMph()
+	return DriveSeat.AssemblyLinearVelocity.Magnitude * MphScale
+end
+
+local function AdaptiveWait(minFPS, maxFPS)
+	local speedMph = getSpeedMph()
+	local targetFPS = math.clamp((speedMph / 80) * maxFPS, minFPS, maxFPS)
+	return 1 / targetFPS
+end
+
+local function isNight()
+	local clockTime = Lighting.ClockTime
+	return (clockTime >= 17.2 or clockTime < 6.3)
+end
+
+local function computeFadeData(part, decal, rangeType)
+	local seatPos = DriveSeat.Position
+	local dist = (seatPos - decal.Parent.Position).Magnitude
+
+	local isReflective = part:GetAttribute("VeryReflective")
+		or (part.Size.X > 2.5 or part.Size.Y > 2.5 or part.Size.Z > 2.5)
+
+	local fadeRange = (rangeType == "near")
+		and (isReflective and FadeDistance or FadeDistance / 2)
+		or (isReflective and FadeDistance * 2 or FadeDistance)
+
+	local distFade = math.clamp(dist / fadeRange, 0, 1)
+	local toDecal = ((decal.Parent.Position - seatPos) * Vector3.new(1, 0, 1)).Unit
+	local carLook = DriveSeat.CFrame.LookVector * Vector3.new(1, 0, 1)
+	local dot = math.clamp(carLook:Dot(toDecal), 0, 1)
+
+	local distanceFactor = math.clamp(1 - (dist / fadeRange), 0, 1)
+	local angleFade = math.clamp(((1 - dot) ^ 2) * (distanceFactor * 2 + 0.7), 0, 1)
+	local baseTransparency = (dot <= 0.1) and 1 or (distFade * 0.2 + angleFade * 0.8)
+
+	local proximityFactor = (dist < MinFadeDistance) and (dist / MinFadeDistance) or 1
+	local fadeOutFactor = 3
+
+	local HeadlightHalfAngle = math.rad(10)
+	local maxDot = math.cos(HeadlightHalfAngle)
+	local dotClamped = math.clamp((dot - maxDot) / (1 - maxDot), 0, 1)
+
+	local angleContribution = 1 - dotClamped
+	local distContribution = baseTransparency
+
+	return {
+		transparency = baseTransparency + (1 - proximityFactor) * fadeOutFactor * (1 - baseTransparency),
+		brightness = (1 + (1 - distContribution) * 0.25 + angleContribution * 0.25)
+			* proximityFactor + (1 - proximityFactor),
+		light = (distContribution * 0.5 + angleContribution * 0.5)
+			* proximityFactor + (1 - proximityFactor),
+	}
+end
+
+
+local function DetectBoundaries(Frequency)
+	local s,r = pcall(function()
+		while true do
+			task.wait(AdaptiveWait(2, 15))
+
+			-- Early skip conditions
+			if not (LightValues.LB.Value or LightValues.HB.Value) or not isNight() then
+				if debugBox then debugBox.Transparency = 0.95 end
+				continue
+			end
+
+			local seatCF = DriveSeat.CFrame
+			local boxCF = seatCF * BoxOffset
+
+			if DebugBoundary then
+				debugBox.CFrame = boxCF
+				debugBox.Transparency = 0.7
+			end
+
+			local partsDict = {}
+			for _, p in workspace:GetPartBoundsInBox(seatCF * BoxOffsetNear, BoxSizeNear) do
+				partsDict[p] = "near"
+			end
+			for _, p in workspace:GetPartBoundsInBox(seatCF * BoxOffsetFar, BoxSizeFar) do
+				if not partsDict[p] then partsDict[p] = "far" end
+			end
+
+			for part, rangeType in partsDict do
+				local decal = part:FindFirstChildOfClass("Decal")
+				if not decal or part:IsDescendantOf(workspace.Cars) or part:IsDescendantOf(workspace.Signals) then
+					continue
+				end
+
+				currentParts[part] = true
+				local gui: SurfaceGui = SurfaceGuisInBox[part]
+
+				if not gui then
+					gui = SurfaceGuiPool:Get()
+					gui.Face = decal.Face
+					gui.Parent = decal.Parent
+					gui.Enabled = true
+					gui.ImageLabel.Image = decal.Texture
+					gui.ImageLabel.ImageTransparency = decal.Transparency
+					SurfaceGuisInBox[part] = gui
+				end
+
+				local fadeData = computeFadeData(part, decal, rangeType)
+
+				local state = SurfaceGuiStates[part]
+				if not state then
+					state = {
+						gui = gui,
+						currentTransparency = gui.ImageLabel.ImageTransparency,
+						currentBrightness = gui.Brightness,
+						currentLight = gui.LightInfluence,
+					}
+					SurfaceGuiStates[part] = state
+				end
+
+				state.targetTransparency = fadeData.transparency
+				state.targetBrightness = fadeData.brightness
+				state.targetLight = fadeData.light
+			end
+		end
+	end)
+	if not s then
+		dwarn(r)
+	end
+
+end
+
+local function Render(Frequency)
+	local s,r = pcall(function()
+		while true do
+			task.wait(AdaptiveWait(45, 55))
+			local dt = 1 / 50
+			local LerpSpeed = 5
+
+			for part, state in SurfaceGuiStates do
+				state.currentTransparency += (state.targetTransparency - state.currentTransparency)
+					* math.clamp(LerpSpeed * dt, 0, 1)
+				state.currentBrightness += (state.targetBrightness - state.currentBrightness)
+					* math.clamp(LerpSpeed * dt, 0, 1)
+				state.currentLight += (state.targetLight - state.currentLight)
+					* math.clamp(LerpSpeed * dt, 0, 1)
+
+				local gui = state.gui
+				if gui and gui.Parent then
+					local img = gui:FindFirstChild("ImageLabel")
+					if img then
+						img.ImageTransparency = state.currentTransparency
+						gui.Brightness = state.currentBrightness
+						gui.LightInfluence = state.currentLight
+					end
+				end
+
+				if state.currentTransparency >= 0.999 and not currentParts[part] then
+					state.gui.Enabled = false
+					state.gui.Parent = nil
+					SurfaceGuiPool:Return(state.gui)
+					SurfaceGuiStates[part] = nil
+					SurfaceGuisInBox[part] = nil
+				end
+			end
+		end
+	end)
+	if not s then
+		dwarn(r)
+	end
+end
+
+local function Start() -- for future use
+	task.defer(DetectBoundaries)
+	task.defer(Render)
+
+	dprint("Successfully loaded!")
+end
+
+Start()
