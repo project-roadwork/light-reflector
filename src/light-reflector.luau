@@ -11,9 +11,9 @@
   LANGUAGE:         Luau
   
   GROUP:            Project Roadwork
-  VERSION:          0.1.0-alpha.1
+  VERSION:          0.1.1-alpha.1
   CREATED:          2025-10-26 2:03 PM CDT  
-  LAST UPDATED:     2025-10-26 6:07 PM CDT   
+  LAST UPDATED:     2025-10-26 6:32 PM CDT   
   LICENSE:          Apache-2.0
 
   CODEBERG REPO:    https://codeberg.org/project-roadwork/light-reflector
@@ -29,7 +29,7 @@
 
 task.wait(1)
 
-local version = "0.1.0"
+local version = "0.1.1"
 
 local car = script.Parent.Car.Value
 local DriveSeat: VehicleSeat = car.DriveSeat
@@ -48,6 +48,12 @@ local BoxOffsetNear = BoxOffset
 local BoxOffsetFar = BoxOffset * CFrame.new(0, 0, -BoxSizeNear.Z / 2)
 
 local print, warn = print, warn
+
+local OverlapParams = OverlapParams.new()
+OverlapParams.FilterType = Enum.RaycastFilterType.Exclude
+-- exclude the car and the Signals and Cars folders to avoid self-detection
+OverlapParams.FilterDescendantsInstances = { car, workspace.Signals, workspace.Cars }
+
 
 local function dprint(m)
 	print(`:: Light-Reflector {version} :: {m}`)
@@ -181,16 +187,16 @@ local function DetectBoundaries(Frequency)
 			end
 
 			local partsDict = {}
-			for _, p in workspace:GetPartBoundsInBox(seatCF * BoxOffsetNear, BoxSizeNear) do
+			for _, p in workspace:GetPartBoundsInBox(seatCF * BoxOffsetNear, BoxSizeNear, OverlapParams) do
 				partsDict[p] = "near"
 			end
-			for _, p in workspace:GetPartBoundsInBox(seatCF * BoxOffsetFar, BoxSizeFar) do
+			for _, p in workspace:GetPartBoundsInBox(seatCF * BoxOffsetFar, BoxSizeFar, OverlapParams) do
 				if not partsDict[p] then partsDict[p] = "far" end
 			end
 
 			for part, rangeType in partsDict do
 				local decal = part:FindFirstChildOfClass("Decal")
-				if not decal or part:IsDescendantOf(workspace.Cars) or part:IsDescendantOf(workspace.Signals) then
+				if not decal then
 					continue
 				end
 
