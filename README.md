@@ -14,6 +14,7 @@ Link: https://devforum.roblox.com/t/v14-poolerplus-advanced-object-pooling/38173
 4. Utilizes `SurfaceGuis` for reflectivity
 5. Non-tweened linear intoperlation for gradual brightness
 6. Uses ImageTransparency, Brightness, and LightInfluence
+7. SurfaceGui pooling
 
 ---
 
