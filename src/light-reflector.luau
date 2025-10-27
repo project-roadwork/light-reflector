@@ -11,9 +11,9 @@
   LANGUAGE:         Luau
   
   GROUP:            Project Roadwork
-  VERSION:          0.1.2-alpha.1
+  VERSION:          0.1.3-alpha.1
   CREATED:          2025-10-26 2:03 PM CDT  
-  LAST UPDATED:     2025-10-26 8:06 PM CDT   
+  LAST UPDATED:     2025-10-27 6:40 AM CDT   
   LICENSE:          Apache-2.0
 
   CODEBERG REPO:    https://codeberg.org/project-roadwork/light-reflector
@@ -36,7 +36,7 @@ local DriveSeat: VehicleSeat = car.DriveSeat
 local LightValues = DriveSeat.LightValues
 local Lighting = game:GetService("Lighting")
 
-local DebugBoundary = true
+local DebugBoundary = false
 local FadeDistance = 4000
 local MinFadeDistance = 60 -- studs
 local MphScale = 2.23694 * 0.28 -- (stud/sec) → mph
@@ -49,10 +49,7 @@ local BoxOffsetFar = BoxOffset * CFrame.new(0, 0, -BoxSizeNear.Z / 2)
 
 local print, warn = print, warn
 
-local OverlapParams = OverlapParams.new()
-OverlapParams.FilterType = Enum.RaycastFilterType.Exclude
 
-OverlapParams.FilterDescendantsInstances = { car, workspace.Signals, workspace.Cars, workspace.Wedges }
 
 
 local function dprint(m)
@@ -72,27 +69,39 @@ else
 	return
 end
 
-if not script:FindFirstChild("SurfaceGui") then -- safety net
-	dwarn("SurfaceGui template does not exist! Using safety net and creating SurfaceGui template...")
-	local SurfaceGui = Instance.new("SurfaceGui")
-	local ImageLabel = Instance.new("ImageLabel")
+local SurfaceGuiTemplate = game:GetService("ReplicatedStorage"):FindFirstChild("ReflectorTemplate")
+
+if not SurfaceGuiTemplate then
+	if not script:FindFirstChild("SurfaceGui") then -- safety net
+		dwarn("SurfaceGui template does not exist! Using safety net and creating SurfaceGui template...")
+		local SurfaceGui = Instance.new("SurfaceGui")
+		local ImageLabel = Instance.new("ImageLabel")
+
+		SurfaceGui.Parent = script
+		ImageLabel.Parent = SurfaceGui
+		SurfaceGui.ZOffset = 3
+		ImageLabel.Size = UDim2.fromScale(1,1)
+		ImageLabel.BackgroundTransparency = 1
+	end
 	
-	SurfaceGui.Parent = script
-	ImageLabel.Parent = SurfaceGui
-	SurfaceGui.ZOffset = 3
-	ImageLabel.Size = UDim2.fromScale(1,1)
-	ImageLabel.BackgroundTransparency = 1
+	SurfaceGuiTemplate = Instance.new("Folder")
+	SurfaceGuiTemplate.Name = "ReflectorTemplate"
+	SurfaceGuiTemplate.Parent = game:GetService("ReplicatedStorage")
+	script.SurfaceGui.Parent = SurfaceGuiTemplate
 end
 
-local SurfaceGuiPool = PoolerPlus:CreatePool("SurfaceGuis", function()
-	return script.SurfaceGui:Clone()
-end, nil, nil, {
-	preloadCount = 10,
-	enableAnalytics = true,
-	instanceConfig = { template = script.SurfaceGui:Clone() },
-})
+local SurfaceGuiPool = PoolerPlus:GetPool("SurfaceGuis")
 
-
+if not SurfaceGuiPool then
+	SurfaceGuiPool= PoolerPlus:CreatePool("SurfaceGuis", function()
+		return SurfaceGuiTemplate.SurfaceGui:Clone()
+	end, nil, nil, {
+		preloadCount = 10,
+		enableAnalytics = true,
+		instanceConfig = { template = SurfaceGuiTemplate.SurfaceGui:Clone() },
+	})
+end
+	
 local SurfaceGuisInBox = {}
 local SurfaceGuiStates = {}
 local currentParts = {}
@@ -170,17 +179,17 @@ local function FixPartOrientation(part: BasePart, decal)
 	if part:GetAttribute("IsFixed") == true then return end
 	if decal.Face == Enum.NormalId.Top then
 
-	
+
 
 		part.CFrame = part.CFrame * CFrame.Angles(0, math.rad(-90), math.rad(-90))
 
-	
+
 		local size = part.Size
 		part.Size = Vector3.new(size.Y, size.Z, size.X)
 
-	
+
 		decal.Face = Enum.NormalId.Left
-		
+
 		for i,decal in part:GetChildren() do
 			if decal:IsA("Decal") and decal.Face == Enum.NormalId.Bottom then
 				decal.Face = Enum.NormalId.Right
@@ -195,11 +204,30 @@ end
 local function DetectBoundaries(Frequency)
 	local s,r = pcall(function()
 		while true do
-			task.wait(AdaptiveWait(2, 15))
+			task.wait(AdaptiveWait(1, 8))
+			local activeParts = {}
 
-			-- Early skip conditions
+			local OverlapParams = OverlapParams.new()
+			OverlapParams.FilterType = Enum.RaycastFilterType.Include
+
+			OverlapParams.FilterDescendantsInstances = { workspace.Signs, workspace.Signer, workspace.StreetSigner, workspace["Street Name Signs"], workspace.SignsV1, workspace.NewJRGantries, workspace.Gantries,
+				workspace.Other.UOSigns, workspace.Other.UORoadSIgns, workspace.Decoration.NewGantriesV2
+			}
+		
 			if not (LightValues.LB.Value or LightValues.HB.Value) or not isNight() then
 				if debugBox then debugBox.Transparency = 0.95 end
+				dprint("Cleaning up!")
+				for part, state in SurfaceGuiStates do
+						if state.gui then
+							state.gui.Enabled = false
+							state.gui.Adornee = nil
+							state.gui.Parent = nil
+							SurfaceGuiPool:Return(state.gui)
+						end
+						SurfaceGuiStates[part] = nil
+						SurfaceGuisInBox[part] = nil
+					
+				end
 				continue
 			end
 
@@ -222,10 +250,16 @@ local function DetectBoundaries(Frequency)
 			for part, rangeType in partsDict do
 				local mainDecal = nil
 				for _, decal in part:GetChildren() do
-					if decal:IsA("Decal") and decal.Name ~= "Back" then
-						mainDecal = decal
-						break
+					if decal:IsA("Decal") then
+						local name = decal.Name
+						local isExcludedBottom = (name == "Decal" and decal.Face == Enum.NormalId.Bottom)
+						if name == "F" or (name ~= "Back" and name ~= "B" and name ~= "Images/Metal Lined" and not isExcludedBottom) then
+							mainDecal = decal
+							break
+						end
 					end
+
+
 				end
 
 				if not mainDecal then continue end
@@ -234,7 +268,8 @@ local function DetectBoundaries(Frequency)
 					FixPartOrientation(part, mainDecal)
 				end
 
-				currentParts[part] = true
+			--	activeParts[part] = true
+
 
 				local gui = SurfaceGuisInBox[part]
 				if not gui then
@@ -259,13 +294,16 @@ local function DetectBoundaries(Frequency)
 						currentLight = gui.LightInfluence,
 					}
 					SurfaceGuiStates[part] = state
+
 				end
 
 				state.targetTransparency = fadeData.transparency
 				state.targetBrightness = fadeData.brightness
 				state.targetLight = fadeData.light
+				
+				activeParts[part] = true 
 			end
-
+			currentParts = activeParts
 		end
 	end)
 	if not s then
@@ -317,10 +355,24 @@ local function Render(Frequency)
 end
 
 local function Start() -- for future use
-	task.defer(DetectBoundaries)
-	task.defer(Render)
+	local a=task.defer(DetectBoundaries)
+	local b=task.defer(Render)
 
 	dprint("Successfully loaded!")
+
+	car.Destroying:Once(function()
+		dprint("Car is being destroyed; cleaning up!")
+		task.cancel(a)
+		task.cancel(b)
+		--SurfaceGuiPool:Clear()
+		table.clear(SurfaceGuiStates)
+		table.clear(currentParts)
+		table.clear(SurfaceGuisInBox)
+	end)
 end
 
+
+
 Start()
+
+
