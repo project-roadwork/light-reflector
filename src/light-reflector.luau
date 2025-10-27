@@ -11,9 +11,9 @@
   LANGUAGE:         Luau
   
   GROUP:            Project Roadwork
-  VERSION:          0.1.1-alpha.1
+  VERSION:          0.1.2-alpha.1
   CREATED:          2025-10-26 2:03 PM CDT  
-  LAST UPDATED:     2025-10-26 6:32 PM CDT   
+  LAST UPDATED:     2025-10-26 8:06 PM CDT   
   LICENSE:          Apache-2.0
 
   CODEBERG REPO:    https://codeberg.org/project-roadwork/light-reflector
@@ -29,7 +29,7 @@
 
 task.wait(1)
 
-local version = "0.1.1"
+local version = "0.1.2"
 
 local car = script.Parent.Car.Value
 local DriveSeat: VehicleSeat = car.DriveSeat
@@ -51,8 +51,8 @@ local print, warn = print, warn
 
 local OverlapParams = OverlapParams.new()
 OverlapParams.FilterType = Enum.RaycastFilterType.Exclude
--- exclude the car and the Signals and Cars folders to avoid self-detection
-OverlapParams.FilterDescendantsInstances = { car, workspace.Signals, workspace.Cars }
+
+OverlapParams.FilterDescendantsInstances = { car, workspace.Signals, workspace.Cars, workspace.Wedges }
 
 
 local function dprint(m)
@@ -79,7 +79,7 @@ if not script:FindFirstChild("SurfaceGui") then -- safety net
 	
 	SurfaceGui.Parent = script
 	ImageLabel.Parent = SurfaceGui
-	SurfaceGui.ZOffset = 1
+	SurfaceGui.ZOffset = 3
 	ImageLabel.Size = UDim2.fromScale(1,1)
 	ImageLabel.BackgroundTransparency = 1
 end
@@ -166,6 +166,31 @@ local function computeFadeData(part, decal, rangeType)
 	}
 end
 
+local function FixPartOrientation(part: BasePart, decal)
+	if part:GetAttribute("IsFixed") == true then return end
+	if decal.Face == Enum.NormalId.Top then
+
+	
+
+		part.CFrame = part.CFrame * CFrame.Angles(0, math.rad(-90), math.rad(-90))
+
+	
+		local size = part.Size
+		part.Size = Vector3.new(size.Y, size.Z, size.X)
+
+	
+		decal.Face = Enum.NormalId.Left
+		
+		for i,decal in part:GetChildren() do
+			if decal:IsA("Decal") and decal.Face == Enum.NormalId.Bottom then
+				decal.Face = Enum.NormalId.Right
+			end
+		end
+		part:SetAttribute("IsFixed", true)
+	end
+end
+
+
 
 local function DetectBoundaries(Frequency)
 	local s,r = pcall(function()
@@ -195,25 +220,35 @@ local function DetectBoundaries(Frequency)
 			end
 
 			for part, rangeType in partsDict do
-				local decal = part:FindFirstChildOfClass("Decal")
-				if not decal then
-					continue
+				local mainDecal = nil
+				for _, decal in part:GetChildren() do
+					if decal:IsA("Decal") and decal.Name ~= "Back" then
+						mainDecal = decal
+						break
+					end
+				end
+
+				if not mainDecal then continue end
+
+				if part:GetAttribute("IsFixed") ~= true then
+					FixPartOrientation(part, mainDecal)
 				end
 
 				currentParts[part] = true
-				local gui: SurfaceGui = SurfaceGuisInBox[part]
 
+				local gui = SurfaceGuisInBox[part]
 				if not gui then
 					gui = SurfaceGuiPool:Get()
-					gui.Face = decal.Face
-					gui.Parent = decal.Parent
+					gui.Face = mainDecal.Face
+					gui.Adornee = part
+					gui.Parent = part
 					gui.Enabled = true
-					gui.ImageLabel.Image = decal.Texture
-					gui.ImageLabel.ImageTransparency = decal.Transparency
+					gui.ImageLabel.Image = mainDecal.Texture
+					gui.ImageLabel.ImageTransparency = mainDecal.Transparency
 					SurfaceGuisInBox[part] = gui
 				end
 
-				local fadeData = computeFadeData(part, decal, rangeType)
+				local fadeData = computeFadeData(part, mainDecal, rangeType)
 
 				local state = SurfaceGuiStates[part]
 				if not state then
@@ -230,6 +265,7 @@ local function DetectBoundaries(Frequency)
 				state.targetBrightness = fadeData.brightness
 				state.targetLight = fadeData.light
 			end
+
 		end
 	end)
 	if not s then
@@ -246,31 +282,33 @@ local function Render(Frequency)
 			local LerpSpeed = 5
 
 			for part, state in SurfaceGuiStates do
-				state.currentTransparency += (state.targetTransparency - state.currentTransparency)
-					* math.clamp(LerpSpeed * dt, 0, 1)
-				state.currentBrightness += (state.targetBrightness - state.currentBrightness)
-					* math.clamp(LerpSpeed * dt, 0, 1)
-				state.currentLight += (state.targetLight - state.currentLight)
-					* math.clamp(LerpSpeed * dt, 0, 1)
+				if not currentParts[part] then
+					if state.gui then
+						state.gui.Enabled = false
+						state.gui.Adornee = nil
+						state.gui.Parent = nil
+						SurfaceGuiPool:Return(state.gui)
+					end
+					SurfaceGuiStates[part] = nil
+					SurfaceGuisInBox[part] = nil
+					continue
+				end
 
 				local gui = state.gui
 				if gui and gui.Parent then
-					local img = gui:FindFirstChild("ImageLabel")
-					if img then
-						img.ImageTransparency = state.currentTransparency
-						gui.Brightness = state.currentBrightness
-						gui.LightInfluence = state.currentLight
-					end
-				end
+					local dt = 1 / 50
+					local LerpSpeed = 5
 
-				if state.currentTransparency >= 0.999 and not currentParts[part] then
-					state.gui.Enabled = false
-					state.gui.Parent = nil
-					SurfaceGuiPool:Return(state.gui)
-					SurfaceGuiStates[part] = nil
-					SurfaceGuisInBox[part] = nil
+					state.currentTransparency += (state.targetTransparency - state.currentTransparency) * math.clamp(LerpSpeed * dt, 0, 1)
+					state.currentBrightness += (state.targetBrightness - state.currentBrightness) * math.clamp(LerpSpeed * dt, 0, 1)
+					state.currentLight += (state.targetLight - state.currentLight) * math.clamp(LerpSpeed * dt, 0, 1)
+
+					gui.ImageLabel.ImageTransparency = state.currentTransparency
+					gui.Brightness = state.currentBrightness
+					gui.LightInfluence = state.currentLight
 				end
 			end
+
 		end
 	end)
 	if not s then
