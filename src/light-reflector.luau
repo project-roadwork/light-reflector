@@ -11,9 +11,9 @@
   LANGUAGE:         Luau
   
   GROUP:            Project Roadwork
-  VERSION:          0.1.3-alpha.1
+  VERSION:          0.1.4-alpha.1
   CREATED:          2025-10-26 2:03 PM CDT  
-  LAST UPDATED:     2025-10-27 6:40 AM CDT   
+  LAST UPDATED:     2025-10-29 8:41 PM CDT   
   LICENSE:          Apache-2.0
 
   CODEBERG REPO:    https://codeberg.org/project-roadwork/light-reflector
@@ -29,21 +29,21 @@
 
 task.wait(1)
 
-local version = "0.1.2"
+local version = "0.1.4"
 
 local car = script.Parent.Car.Value
 local DriveSeat: VehicleSeat = car.DriveSeat
-local LightValues = DriveSeat.LightValues
+local LightValues = DriveSeat.Values.Lights.LightStage
 local Lighting = game:GetService("Lighting")
 
 local DebugBoundary = false
-local FadeDistance = 4000
+local FadeDistance = 3500
 local MinFadeDistance = 60 -- studs
 local MphScale = 2.23694 * 0.28 -- (stud/sec) → mph
 
-local BoxOffset = CFrame.new(0, 3, -700)
-local BoxSizeNear = Vector3.new(800, 150, 1500)
-local BoxSizeFar = Vector3.new(1600, 150, 1500)
+local BoxOffset = CFrame.new(0, 3, -510)
+local BoxSizeNear = Vector3.new(600, 150, 1000)
+local BoxSizeFar = Vector3.new(1100, 150, 1000)
 local BoxOffsetNear = BoxOffset
 local BoxOffsetFar = BoxOffset * CFrame.new(0, 0, -BoxSizeNear.Z / 2)
 
@@ -69,26 +69,34 @@ else
 	return
 end
 
-local SurfaceGuiTemplate = game:GetService("ReplicatedStorage"):FindFirstChild("ReflectorTemplate")
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SurfaceGuiTemplate = ReplicatedStorage:FindFirstChild("ReflectorTemplate")
 
 if not SurfaceGuiTemplate then
-	if not script:FindFirstChild("SurfaceGui") then -- safety net
-		dwarn("SurfaceGui template does not exist! Using safety net and creating SurfaceGui template...")
-		local SurfaceGui = Instance.new("SurfaceGui")
-		local ImageLabel = Instance.new("ImageLabel")
-
-		SurfaceGui.Parent = script
-		ImageLabel.Parent = SurfaceGui
-		SurfaceGui.ZOffset = 3
-		ImageLabel.Size = UDim2.fromScale(1,1)
-		ImageLabel.BackgroundTransparency = 1
-	end
-	
+	dwarn("SurfaceGui template does not exist! Using safety net and creating SurfaceGui template...")
 	SurfaceGuiTemplate = Instance.new("Folder")
 	SurfaceGuiTemplate.Name = "ReflectorTemplate"
-	SurfaceGuiTemplate.Parent = game:GetService("ReplicatedStorage")
-	script.SurfaceGui.Parent = SurfaceGuiTemplate
+	SurfaceGuiTemplate.Parent = ReplicatedStorage
 end
+
+local TemplateGui = SurfaceGuiTemplate:FindFirstChildOfClass("SurfaceGui")
+if not TemplateGui then
+	dwarn("SurfaceGui does not exist in the template! Using safety net and creating SurfaceGui...")
+
+	local SurfaceGui = Instance.new("SurfaceGui")
+	SurfaceGui.Name = "SurfaceGui"
+	SurfaceGui.ZOffset = 3
+
+	local ImageLabel = Instance.new("ImageLabel")
+	ImageLabel.Size = UDim2.fromScale(1,1)
+	ImageLabel.BackgroundTransparency = 1
+	ImageLabel.Parent = SurfaceGui
+
+	SurfaceGui.Parent = SurfaceGuiTemplate
+	TemplateGui = SurfaceGui
+end
+
 
 local SurfaceGuiPool = PoolerPlus:GetPool("SurfaceGuis")
 
@@ -180,14 +188,10 @@ local function FixPartOrientation(part: BasePart, decal)
 	if decal.Face == Enum.NormalId.Top then
 
 
-
-		part.CFrame = part.CFrame * CFrame.Angles(0, math.rad(-90), math.rad(-90))
-
+		part.CFrame *= CFrame.Angles(0, math.rad(-90), math.rad(-90))
 
 		local size = part.Size
 		part.Size = Vector3.new(size.Y, size.Z, size.X)
-
-
 		decal.Face = Enum.NormalId.Left
 
 		for i,decal in part:GetChildren() do
@@ -199,22 +203,22 @@ local function FixPartOrientation(part: BasePart, decal)
 	end
 end
 
+local OverlapParams = OverlapParams.new()
+OverlapParams.FilterType = Enum.RaycastFilterType.Include
 
+OverlapParams.FilterDescendantsInstances = { workspace.Signs, workspace.Signer, workspace.StreetSigner, workspace["Street Name Signs"], workspace.SignsV1, workspace.NewJRGantries, workspace.Gantries,
+	workspace.Other.UOSigns, workspace.Other.UORoadSIgns, workspace.Decoration.NewGantriesV2
+}
 
 local function DetectBoundaries(Frequency)
 	local s,r = pcall(function()
 		while true do
-			task.wait(AdaptiveWait(1, 8))
+			task.wait(AdaptiveWait(1,3))
 			local activeParts = {}
 
-			local OverlapParams = OverlapParams.new()
-			OverlapParams.FilterType = Enum.RaycastFilterType.Include
-
-			OverlapParams.FilterDescendantsInstances = { workspace.Signs, workspace.Signer, workspace.StreetSigner, workspace["Street Name Signs"], workspace.SignsV1, workspace.NewJRGantries, workspace.Gantries,
-				workspace.Other.UOSigns, workspace.Other.UORoadSIgns, workspace.Decoration.NewGantriesV2
-			}
+	
 		
-			if not (LightValues.LB.Value or LightValues.HB.Value) or not isNight() then
+			if not (LightValues.Value > 0) or not isNight() then
 				if debugBox then debugBox.Transparency = 0.95 end
 				dprint("Cleaning up!")
 				for part, state in SurfaceGuiStates do
@@ -365,6 +369,26 @@ local function Start() -- for future use
 		task.cancel(a)
 		task.cancel(b)
 		--SurfaceGuiPool:Clear()
+
+		for part, state in SurfaceGuiStates do
+			local gui = state.gui
+			if gui then
+				gui.Enabled = false
+				gui.Adornee = nil
+				gui.Parent = nil
+				SurfaceGuiPool:Return(gui)
+			end
+		end
+
+		for part, gui in SurfaceGuisInBox do
+			if gui and gui.Parent then
+				gui.Enabled = false
+				gui.Adornee = nil
+				gui.Parent = nil
+				SurfaceGuiPool:Return(gui)
+			end
+		end
+
 		table.clear(SurfaceGuiStates)
 		table.clear(currentParts)
 		table.clear(SurfaceGuisInBox)
