@@ -7,6 +7,8 @@
 
 **(❌ MIRRORED/BACKUP) GITHUB REPO:** https://github.com/project-roadwork/light-reflector
 
+***Please use the main repository especially with contributions!*** *Additionally, please **DO NOT** make any changes in the mirrored repository as it cannot be pulled into the main repo.*
+
 ## Prerequisites
 Requires **PoolerPlus** parented under ReplicatedStorage, but you may try to replace it with your own object pool should it be neccesary.
 Link: https://devforum.roblox.com/t/v14-poolerplus-advanced-object-pooling/3817379/
