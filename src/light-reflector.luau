@@ -1,8 +1,8 @@
 --!native
 
---Project Roadwork 2025
+-- apologies for the large header and changelog, it would be moved to a seperate README & LICENSE ile soon
 
---[[-[LIGHT-REFLECTOR]---------------------------------------------------------------
+local ProjectRoadworkHeader = [[--[LIGHT-REFLECTOR]-------------------------------------
   FILE:             Light-Reflector.luau
   DESCRIPTION:      A light reflector that reflects decals for now at long distances.
   functionality. 
@@ -11,46 +11,115 @@
   LANGUAGE:         Luau
   
   GROUP:            Project Roadwork
-  VERSION:          0.1.4-alpha.1
+  VERSION:          0.1.5-alpha.1
   CREATED:          2025-10-26 2:03 PM CDT  
-  LAST UPDATED:     2025-10-29 8:41 PM CDT   
+  LAST UPDATED:     2025-12-19 9:27 PM CST   
   LICENSE:          Apache-2.0
 
-  CODEBERG REPO:    https://codeberg.org/project-roadwork/light-reflector
-  GITHUB REPO:      N/A
+  CODEBERG REPO:    https://codeberg.org/project-roadwork/light-reflector (MAIN)
+  GITHUB REPO:      https://github.com/project-roadwork/light-reflector (BACKUP)
   
   NOTES: Use the accompanying repository links for documentation, help, or
   to propose a suggestion or comment. The NOTICE file can be found in the respository
   links.
   
+  LICENSE HEADER:
+	Copyright 2025 Illinois_Roadbuff (Rogue Jr) and the Project Roadwork Contributors
+
+	Licensed under the Apache License, Version 2.0 (the "License");
+ 	 http://www.apache.org/licenses/LICENSE-2.0
+  
   AUTHORS:
    Illinois_Roadbuff (2653606809) - October 26th, 2025 - Created the file
------------------------------------------------------------------------------------]]  
+-----------------------------------------------------------------------------------]]
 
+--[[
+-- Changelog [MM/DD/YYYY]
+-- This will be moved to a seperate script soon
+
+[12/19/2025 : Light-Reflector, Version 0.1.5.alpha.1]
+	Author: Illinois_Roadbuff "Rogue Jr"
+	
+	[Fixes]
+		- now works without a weather system	
+	
+	[Features]
+		- add option to disable raycasting or not
+		- another way to process signs via :GetDescendants() albeit it may lag when used frequently
+		- add streaming variable
+
+[10/29/2025 : Light-Reflector, Version 0.1.4.alpha]
+	Author: Illinois_Roadbuff "Rogue Jr"
+	
+	[Fixes]
+		- move overlap params outside the loop
+		- fix surfacegui safety net
+		- adjust cleanup function although it does not work atm
+		- adjust box radius and offset to be shorter (reflectivity is not that long on normal low beams)
+
+	Raycast still lags badly on high part areas DESPITE overlap params
+	
+[10/27/2025 : Light-Reflector, Version 0.1.3.alpha]
+	Author: Illinois_Roadbuff "Rogue Jr"
+	
+	[Fixes]
+		- remove car from include overlap param
+
+	[Features]
+		- add cleanup functionality
+		- make sure that surfacegui pool is reused
+		- automatically clean up when headlights are not enabled or when it is not night
+
+[10/27/2025 : Light-Reflector, Version 0.1.2.alpha]
+	Author: Illinois_Roadbuff "Rogue Jr"
+	WIP
+
+[10/27/2025 : Light-Reflector, Version 0.1.1.alpha]
+	Author: Illinois_Roadbuff "Rogue Jr"
+	WIP
+	
+[10/27/2025 : Light-Reflector, Version 0.1.0.alpha]
+	Author: Illinois_Roadbuff "Rogue Jr"
+	WIP
+]]
 task.wait(1)
 
-local version = "0.1.4"
+local version = "0.1.5"
 
-local car = script.Parent.Car.Value
+-- CONFIG --
+
+local car = script.Parent.Car.Value -- do not change unless you do not use an A-Chassis like system
 local DriveSeat: VehicleSeat = car.DriveSeat
-local LightValues = DriveSeat.Values.Lights.LightStage
-local Lighting = game:GetService("Lighting")
+local LightValues = car.Body.Headlight.on -- set this to whatever value shows the headlights (MUST BE A BOOLEAN)
+local Lighting = game:GetService("Lighting") -- Do not change
 
-local DebugBoundary = false
-local FadeDistance = 3500
+local FadeDistance = 2500 -- max fade distane of signs in studs
 local MinFadeDistance = 60 -- studs
 local MphScale = 2.23694 * 0.28 -- (stud/sec) → mph
+local SignsFolders = { workspace.Signs, workspace.Other } -- SET THIS TO YOUR OWN SIGNS FOLDERS SEPERATED BY A COMMA
 
-local BoxOffset = CFrame.new(0, 3, -510)
-local BoxSizeNear = Vector3.new(600, 150, 1000)
-local BoxSizeFar = Vector3.new(1100, 150, 1000)
+local STREAMING = true -- Set this to true if you have a custom streaming system or have instance streaming enabled.
+
+-- RAYCAST CONFIG --
+
+local UseRaycast = false -- only set this to true if you actually need raycasting which is unneccesary (lots of lag). 
+-- Otherwise, leaving this as false processes all of the signs
+
+local DebugBoundary = false -- Shows the debug box
+local BoxOffset = CFrame.new(0, 3, -625) -- offset to car
+local BoxSizeNear = Vector3.new(250, 150, 1250) -- smaller box close to headlights
+local BoxSizeFar = Vector3.new(500, 150, 1250) -- larger box far from headlights
 local BoxOffsetNear = BoxOffset
 local BoxOffsetFar = BoxOffset * CFrame.new(0, 0, -BoxSizeNear.Z / 2)
 
-local print, warn = print, warn
+local OverlapParams = OverlapParams.new()
+OverlapParams.FilterType = Enum.RaycastFilterType.Include
 
+OverlapParams.FilterDescendantsInstances = SignsFolders
 
+-- DEBUGGER --
 
+local print, warn = print, warn -- change if you have your own debugger
 
 local function dprint(m)
 	print(`:: Light-Reflector {version} :: {m}`)
@@ -105,7 +174,7 @@ if not SurfaceGuiPool then
 		return SurfaceGuiTemplate.SurfaceGui:Clone()
 	end, nil, nil, {
 		preloadCount = 10,
-		enableAnalytics = true,
+		enableAnalytics = false,
 		instanceConfig = { template = SurfaceGuiTemplate.SurfaceGui:Clone() },
 	})
 end
@@ -141,7 +210,62 @@ end
 
 local function isNight()
 	local clockTime = Lighting.ClockTime
-	return (clockTime >= 17.2 or clockTime < 6.3)
+	local Weather = game.ReplicatedStorage:WaitForChild("WeatherResources", 5)
+	local cancount = false
+	
+	if Weather then -- TTP or Redon Tech weather compatibility
+		local WeatherFolder = Weather.Weather
+		local Current = WeatherFolder.Current
+
+		-- will be moved to table soon { [weather] == true } 
+		if Current.Weather.Value == "Drizzle" then
+
+		elseif Current.Weather.Value == "Showers" then
+
+		elseif Current.Weather.Value == "Rain" then
+
+		elseif Current.Weather.Value == "Heavy Rain" or Current.Weather.Value == "Thunderstorms" then
+			cancount = true
+		elseif Current.Weather.Value == "Strong Thunderstorms" then
+			cancount = true
+		elseif Current.Weather.Value == "Flurries" then
+
+
+		elseif Current.Weather.Value == "Snow Showers" then
+
+
+		elseif Current.Weather.Value == "Snow" then
+
+
+		elseif Current.Weather.Value == "Heavy Snow" then
+
+
+		elseif Current.Weather.Value == "Freezing Drizzle" then
+
+
+		elseif Current.Weather.Value == "Rain / Snow Showers" then
+
+		elseif Current.Weather.Value == "Rain / Snow" then
+
+		elseif Current.Weather.Value == "Heavy Rain / Snow" then
+			cancount = true
+		elseif Current.Weather.Value == "Cloudy" then
+
+
+		elseif Current.Weather.Value == "Partly Cloudy" then
+
+		elseif Current.Weather.Value == "Mostly Cloudy" then
+
+
+		else
+
+		end
+	else
+		dwarn("Unable to find Weather System.")
+	end
+	
+
+	return (clockTime >= 17.2 or clockTime < 6.3) or cancount
 end
 
 local function computeFadeData(part, decal, rangeType)
@@ -203,24 +327,47 @@ local function FixPartOrientation(part: BasePart, decal)
 	end
 end
 
-local OverlapParams = OverlapParams.new()
-OverlapParams.FilterType = Enum.RaycastFilterType.Include
+local function InsertParts()
+	local partsDict = {}
+	
+	local seatCF = DriveSeat.CFrame
+	local boxCF = seatCF * BoxOffset
 
-OverlapParams.FilterDescendantsInstances = { workspace.Signs, workspace.Signer, workspace.StreetSigner, workspace["Street Name Signs"], workspace.SignsV1, workspace.NewJRGantries, workspace.Gantries,
-	workspace.Other.UOSigns, workspace.Other.UORoadSIgns, workspace.Decoration.NewGantriesV2
-}
+	if DebugBoundary then
+		debugBox.CFrame = boxCF
+		debugBox.Transparency = 0.7
+	end
+	
+	if UseRaycast then
+		for _, p in workspace:GetPartBoundsInBox(seatCF * BoxOffsetNear, BoxSizeNear, OverlapParams) do
+			partsDict[p] = "near"
+		end
+		for _, p in workspace:GetPartBoundsInBox(seatCF * BoxOffsetFar, BoxSizeFar, OverlapParams) do
+			if not partsDict[p] then partsDict[p] = "far" end
+		end
+	else
+		for _, v in SignsFolders do
+			for _, p in v:GetDescendants() do
+				partsDict[p] = "near"
+			end
+		end
+	end
+	
+	return partsDict
+end
+
 
 local function DetectBoundaries(Frequency)
 	local s,r = pcall(function()
+		local partsDict = if STREAMING then nil else InsertParts()
 		while true do
 			task.wait(AdaptiveWait(1,3))
 			local activeParts = {}
 
-	
 		
-			if not (LightValues.Value > 0) or not isNight() then
+			if not (LightValues.Value) or not isNight() then
 				if debugBox then debugBox.Transparency = 0.95 end
-				dprint("Cleaning up!")
+				--dprint("Cleaning up!")
 				for part, state in SurfaceGuiStates do
 						if state.gui then
 							state.gui.Enabled = false
@@ -235,21 +382,7 @@ local function DetectBoundaries(Frequency)
 				continue
 			end
 
-			local seatCF = DriveSeat.CFrame
-			local boxCF = seatCF * BoxOffset
-
-			if DebugBoundary then
-				debugBox.CFrame = boxCF
-				debugBox.Transparency = 0.7
-			end
-
-			local partsDict = {}
-			for _, p in workspace:GetPartBoundsInBox(seatCF * BoxOffsetNear, BoxSizeNear, OverlapParams) do
-				partsDict[p] = "near"
-			end
-			for _, p in workspace:GetPartBoundsInBox(seatCF * BoxOffsetFar, BoxSizeFar, OverlapParams) do
-				if not partsDict[p] then partsDict[p] = "far" end
-			end
+			if STREAMING then partsDict = InsertParts() end
 
 			for part, rangeType in partsDict do
 				local mainDecal = nil
@@ -319,8 +452,9 @@ end
 local function Render(Frequency)
 	local s,r = pcall(function()
 		while true do
-			task.wait(AdaptiveWait(45, 55))
-			local dt = 1 / 50
+			local dt = AdaptiveWait(45, 55)
+			task.wait(dt)
+		
 			local LerpSpeed = 5
 
 			for part, state in SurfaceGuiStates do
@@ -338,7 +472,7 @@ local function Render(Frequency)
 
 				local gui = state.gui
 				if gui and gui.Parent then
-					local dt = 1 / 50
+				
 					local LerpSpeed = 5
 
 					state.currentTransparency += (state.targetTransparency - state.currentTransparency) * math.clamp(LerpSpeed * dt, 0, 1)
