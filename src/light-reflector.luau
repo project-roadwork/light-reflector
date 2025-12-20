@@ -11,7 +11,7 @@ local ProjectRoadworkHeader = [[--[LIGHT-REFLECTOR]-----------------------------
   LANGUAGE:         Luau
   
   GROUP:            Project Roadwork
-  VERSION:          0.1.5-alpha.1
+  VERSION:          0.1.5-alpha
   CREATED:          2025-10-26 2:03 PM CDT  
   LAST UPDATED:     2025-12-19 9:27 PM CST   
   LICENSE:          Apache-2.0
@@ -37,7 +37,7 @@ local ProjectRoadworkHeader = [[--[LIGHT-REFLECTOR]-----------------------------
 -- Changelog [MM/DD/YYYY]
 -- This will be moved to a seperate script soon
 
-[12/19/2025 : Light-Reflector, Version 0.1.5.alpha.1]
+[12/19/2025 : Light-Reflector, Version 0.1.5-alpha]
 	Author: Illinois_Roadbuff "Rogue Jr"
 	
 	[Fixes]
@@ -48,7 +48,7 @@ local ProjectRoadworkHeader = [[--[LIGHT-REFLECTOR]-----------------------------
 		- another way to process signs via :GetDescendants() albeit it may lag when used frequently
 		- add streaming variable
 
-[10/29/2025 : Light-Reflector, Version 0.1.4.alpha]
+[10/29/2025 : Light-Reflector, Version 0.1.4-alpha]
 	Author: Illinois_Roadbuff "Rogue Jr"
 	
 	[Fixes]
@@ -59,7 +59,7 @@ local ProjectRoadworkHeader = [[--[LIGHT-REFLECTOR]-----------------------------
 
 	Raycast still lags badly on high part areas DESPITE overlap params
 	
-[10/27/2025 : Light-Reflector, Version 0.1.3.alpha]
+[10/27/2025 : Light-Reflector, Version 0.1.3-alpha]
 	Author: Illinois_Roadbuff "Rogue Jr"
 	
 	[Fixes]
@@ -70,15 +70,15 @@ local ProjectRoadworkHeader = [[--[LIGHT-REFLECTOR]-----------------------------
 		- make sure that surfacegui pool is reused
 		- automatically clean up when headlights are not enabled or when it is not night
 
-[10/27/2025 : Light-Reflector, Version 0.1.2.alpha]
+[10/27/2025 : Light-Reflector, Version 0.1.2-alpha]
 	Author: Illinois_Roadbuff "Rogue Jr"
 	WIP
 
-[10/27/2025 : Light-Reflector, Version 0.1.1.alpha]
+[10/27/2025 : Light-Reflector, Version 0.1.1-alpha]
 	Author: Illinois_Roadbuff "Rogue Jr"
 	WIP
 	
-[10/27/2025 : Light-Reflector, Version 0.1.0.alpha]
+[10/27/2025 : Light-Reflector, Version 0.1.0-alpha]
 	Author: Illinois_Roadbuff "Rogue Jr"
 	WIP
 ]]
