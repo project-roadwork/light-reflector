@@ -13,7 +13,7 @@ return [[
 		  LANGUAGE:         Luau
 
 		  GROUP:            Project Roadwork
-		  VERSION:          1.0.0-infdev
+		  VERSION:          1.0.0-infdev.1
 		  CREATED:          2025-10-26 2:03 PM CDT
 		  LAST UPDATED:     2025-12-26 5:45 AM CST
 
