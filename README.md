@@ -25,6 +25,9 @@ Link: https://devforum.roblox.com/t/v14-poolerplus-advanced-object-pooling/38173
 7. SurfaceGui pooling
 8. Multi-vehicle support
 
+## TODO
+1. Make custom pooler module since PoolerPlus is neither in Wally nor Pesde
+
 ---
 
 License: Apache 2.0
