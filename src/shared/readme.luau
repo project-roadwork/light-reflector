@@ -56,7 +56,7 @@ return [[
 
 	D. Changelog [MM/DD/YYYY]
 
-		[12/26/2025 : Light-Reflector, Version 1.0.0-infdev]
+		[12/26/2025 : Light-Reflector, Version 1.0.0-infdev.1]
 			Author: Illinois_Roadbuff "Rogue Jr"
 
 			[Fixes]
