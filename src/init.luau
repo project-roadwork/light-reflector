@@ -77,6 +77,9 @@ if config.SignConfig.DebugBoundary then
 end
 
 -- Pooler Safety Nets
+
+-- TODO
+-- Make custom pooler module so there would be no needed dependency
 local index, PoolerPlus = ReplicatedStorage:FindFirstChild("PoolerPlus"), nil
 if index then
 	PoolerPlus = require(index)
