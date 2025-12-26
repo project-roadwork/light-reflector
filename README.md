@@ -1,9 +1,9 @@
-# light-reflector
+# Light Reflector
 
- A vehicle-based light reflector that reflects decals and basepart reflectors at long distances on roads.
+ **A vehicle-based light reflector that reflects decals and basepart reflectors at long distances on roads.**
  #### ⚠️ Unstable - This script is under infdev and multi-vehicle support has not been tested thoroughly yet.
 
-**(ℹ️ MAIN) CODEBERG REPO:** https://codeberg.org/project-roadwork/light-reflector
+**(ℹ️ Main) CODEBERG REPO:** https://codeberg.org/project-roadwork/light-reflector
 
 **(❌ MIRRORED/BACKUP) GITHUB REPO:** https://github.com/project-roadwork/light-reflector
 
@@ -17,6 +17,8 @@ PoolerPlus is also not in Wally or Pesde, so you have to install it yourself via
 
 ## Notice
 Older versions in Pesde or Wally are not accurate! Accurate older releases are in Codeberg (not GitHub).
+
+Additionally, this is my first time using Pesde so my apologies if something is not formatted correctly.
 
 ## TODO
 1. Make custom pooler module since PoolerPlus is neither in Wally nor Pesde
@@ -44,6 +46,11 @@ workspace.Cars.ChildRemoved:Connect(function(car)
 	end
 end)
 ```
+## Older YouTube Showcase
+[![](https://utfs.io/f/nGnSqDveMsqxO7YMYJ0k5fKEn2LbBoPAuZ6XMTHDcNJ0QiG1)](https://www.youtube.com/watch?v=YK-_NzeLqjI)
+
+**Not up to date**
+
 ## Current features
 1. Adaptive waiting on performance-critical functions
 2. Distance fall-off
