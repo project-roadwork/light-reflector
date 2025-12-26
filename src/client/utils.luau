@@ -78,8 +78,6 @@ local function fixPartOrientation(part: BasePart, decal: Decal)
 	if isFixed == true then return end
 
 	if decal.Face == Enum.NormalId.Top then
-
-
 		part.CFrame *= CFrame.Angles(0, math.rad(-90), math.rad(-90))
 
 		local size = part.Size
