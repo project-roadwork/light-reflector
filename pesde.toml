@@ -4,6 +4,7 @@ description = "A vehicle-based light reflector that reflects decals and basepart
 authors = ["Illinois_Roadbuff (Rogue Jr)"]
 repository = "https://codeberg.org/project-roadwork/light-reflector"
 license = "Apache-2.0"
+includes = ["pesde.toml","README.md","LICENSE","src/**/*.luau"]
 
 [indices]
 default = "https://github.com/pesde-pkg/index"
@@ -19,13 +20,6 @@ rojo = { name = "pesde/rojo", version = "^7.5.1", target = "lune" }
 [engines]
 pesde = "^0.7.0"
 lune = "^0.10.2"
-
-includes = [
-  "pesde.toml",
-  "README.md",
-  "LICENSE",
-  "src/**/*.luau",
-]
 
 [target]
 environment = "roblox"
