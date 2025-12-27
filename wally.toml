@@ -6,5 +6,5 @@ registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 license = "Apache-2.0"
 includes = ["pesde.toml","README.md","LICENSE","NOTICE","src/**/*.luau"]
-
-[dependencies]
+repository = "https://codeberg.org/project-roadwork/light-reflector.git"
+authors = ["Illinois_Roadbuff (Rogue Jr)"]
