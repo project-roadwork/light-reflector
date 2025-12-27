@@ -6,6 +6,9 @@
 -- Types module
 local types = require("../shared/types")
 
+-- Debugger
+local debugger = require("../shared/debugger")
+
 -- Configuration
 local config: types.Configuration = require("../shared/config")
 
@@ -78,6 +81,8 @@ local function fixPartOrientation(part: BasePart, decal: Decal)
 	if isFixed == true then return end
 
 	if decal.Face == Enum.NormalId.Top then
+
+
 		part.CFrame *= CFrame.Angles(0, math.rad(-90), math.rad(-90))
 
 		local size = part.Size
@@ -93,24 +98,54 @@ local function fixPartOrientation(part: BasePart, decal: Decal)
 	end
 end
 
--- Public: Normalizes the base color of a part
+-- Public: Normalizes the base color of a part if it is too low or too high
 local function normalizeBaseColor(part: BasePart): Color3
 	local color = part.Color
 	if part:GetAttribute("BaseColor") then return color end
 
 	local maxComponent = math.max(color.R, color.G, color.B)
+	local minTarget = 0.78
+	local maxTarget = 0.9
 
-	local threshold = 0.9
-	local targetMax = 0.6
-
-	if maxComponent > threshold then
-		local scale = targetMax / maxComponent
-		color = Color3.new(color.R * scale, color.G * scale, color.B * scale)
+	if maxComponent < minTarget then
+		local scale = minTarget / maxComponent
+		color = Color3.new(
+			math.clamp(color.R * scale, 0, 1),
+			math.clamp(color.G * scale, 0, 1),
+			math.clamp(color.B * scale, 0, 1)
+		)
+	elseif maxComponent > maxTarget then
+		local scale = maxTarget / maxComponent
+		color = Color3.new(
+			math.clamp(color.R * scale, 0, 1),
+			math.clamp(color.G * scale, 0, 1),
+			math.clamp(color.B * scale, 0, 1)
+		)
 	end
 
 	part:SetAttribute("BaseColor", color)
-
 	return color
+end
+
+-- Public: pcall retry function
+local function pcallRetry(func: (...any) -> (...any), maxRetries: number, ...)
+	local args = {...}
+	local attempt = 0
+	local success, result
+
+	repeat
+		attempt += 1
+		success, result = pcall(func, table.unpack(args))
+		if not success then
+			debugger.warn("Warning", `pcallRetry: {result} | {maxRetries - attempt} attemps remaining`)
+		end
+	until success or attempt >= maxRetries
+
+	if not success then
+		debugger.warn("Warning", `pcallRetry: {result} All attempts exhausted.`)
+	end
+
+	return success, result
 end
 
 return table.freeze({
@@ -122,5 +157,6 @@ return table.freeze({
 	getFastestDriveSeat = getFastestDriveSeat,
 	isPavementReflector = isPavementReflector,
 	fixPartOrientation = fixPartOrientation,
-	normalizeBaseColor = normalizeBaseColor
+	normalizeBaseColor = normalizeBaseColor,
+	pcallRetry = pcallRetry
 })
