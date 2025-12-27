@@ -54,12 +54,13 @@ local pool = require("@self/client/pool")
 
 -- Variables
 local Vehicles: types.VehicleMap = {}
+local currentParts: { [BasePart]: true } = {}
+
 local SurfaceGuisInBox = {}
 local SurfaceGuiStates: types.SurfaceGuiStates = {}
-local ReflectorsisInBox = {}
-local ReflectorStates: types.ReflectorStates = {}
-local currentParts: { [BasePart]: true } = {}
-local CachedParts: { types.RangeType } = {}
+local ReflectorsisInBox = setmetatable({}, config.Keys)
+local ReflectorStates: types.ReflectorStates = setmetatable({}, config.Keys)
+local CachedParts: { types.RangeType } = setmetatable({}, config.Keys)
 
 local RenderThread: any, BoundaryThread: any = nil, nil
 local Starting: boolean = false
@@ -131,16 +132,38 @@ local SurfaceGuiPool = pool.new(SurfaceGuiTemplate.SurfaceGui,
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 local function AddVehicle(car: types.Vehicle, enabled: boolean | number): ()
-	debugger.assert(not Vehicles[car], "Fatal", "Vehicle already indexed in vehicle map.")
+
+	-- could have asserted but would flood the output with errors
+
+	if car == nil then
+		debugger.warn("Warning", "Vehicle (1st argument) CANNOT be nil.")
+		return
+	end
+
+	if Vehicles[car] then
+		debugger.warn("Warning", "Vehicle already indexed in vehicle map.")
+		return
+	end
 
 	local seat = car:FindFirstChildOfClass("VehicleSeat")
 
-	debugger.assert(seat, "Fatal", "Failed to find VehicleSeat in vehicle (1st argument). Did you ensure that the VehicleSeat instance exists before calling AddVehicle?")
-	debugger.assert(enabled ~= nil, "Fatal", "Enabled (2nd argument) CANNOT be nil.")
-	debugger.assert(
-		type(enabled) == "boolean" or type(enabled) == "number" or (typeof(enabled) == "Instance" and enabled:IsA("ValueBase")),
-		"Fatal", "Enabled (2nd argument) in AddVehicle MUST be a boolean, number, or a ValueBase like IntValue, etc."
-	)
+	if not seat then
+		debugger.warn("Warning", "Failed to find VehicleSeat in vehicle (1st argument). Did you ensure that the VehicleSeat instance exists before calling AddVehicle?")
+		return
+	end
+
+	if enabled == nil then
+		debugger.warn("Warning", "Enabled (2nd argument) CANNOT be nil.")
+		return
+	end
+
+	if type(enabled) ~= "boolean"
+		and type(enabled) ~= "number"
+		and not (typeof(enabled) == "Instance" and enabled:IsA("ValueBase")) then
+
+		debugger.warn("Warning", "Enabled (2nd argument) MUST be a boolean, number, or a ValueBase like IntValue, etc.")
+		return
+	end
 
 	Vehicles[car] = true
 
@@ -166,14 +189,17 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 local function RemoveVehicle(car: types.Vehicle): ()
-	debugger.assert(Vehicles[car], "Fatal", "Cannot find vehicle in vehicle map.")
+	if not Vehicles[car] then
+		debugger.warn("Warning", "Cannot find vehicle in vehicle map.")
+		return
+	end
 
 	local sourcesList = sources.list
 	Vehicles[car] = nil
 
 	for i = #sourcesList, 1, -1 do
 		if sourcesList[i].Owner == car then
-			debugger.print("found car!")
+			debugger.print("Info", "Found car")
 			table.remove(sourcesList, i)
 			break
 		end
@@ -235,11 +261,16 @@ end
 ]=]
 local function _resetSurfaceGui(gui: SurfaceGui)
 	if not gui then return end
-	if gui:GetAttribute("InPool") == true then return end
+
+	if gui.Parent == nil and gui.Enabled == false then
+		return
+	end
+
+	--if gui:GetAttribute("InPool") == true then return end
 	gui.Enabled = false
 	gui.Adornee = nil
 	gui.Parent = nil
-	gui:SetAttribute("InPool", true)
+	--gui:SetAttribute("InPool", true)
 
 --[[	for part, state in SurfaceGuiStates do
 		if state.gui == gui then
@@ -342,7 +373,12 @@ local function _detectBoundaries(Frequency: number): ()
 	if config.UseRaycast then
 		partsDict = _insertPartsRaycast()
 	else
-		partsDict = CachedParts
+
+		partsDict = {}
+
+		-- partsDict = CachedParts
+
+		-- cacheparts is a weak table, so probably better to clone everything to create an interm strong ref?
 	end
 
 	while true do
@@ -353,6 +389,13 @@ local function _detectBoundaries(Frequency: number): ()
 		local activeParts = {}
 
 		table.clear(ReflectorsisInBox)
+		table.clear(partsDict)
+
+		for part, range in CachedParts do
+			partsDict[part] = range
+		end
+
+
 		if not sources.anyActive() or not dark() then
 			if debugBox then debugBox.Transparency = 0.95 end
 			for part, state in SurfaceGuiStates do
@@ -431,7 +474,7 @@ local function _detectBoundaries(Frequency: number): ()
 
 				if gui == nil then debugger.warn("Warning", "Pool contains nil instances.") continue end
 
-				gui:SetAttribute("InPool", false)
+			--	gui:SetAttribute("InPool", false)
 				gui.Face = mainDecal.Face
 				gui.Adornee = part
 				gui.Parent = part
@@ -441,8 +484,8 @@ local function _detectBoundaries(Frequency: number): ()
 				SurfaceGuisInBox[part] = gui
 			end
 
-			if gui:GetAttribute("InPool") then
-				gui:SetAttribute("InPool", false)
+			if gui.Parent == nil then
+			--	gui:SetAttribute("InPool", false)
 				gui.Face = mainDecal.Face
 				gui.Parent = part
 				gui.Adornee = part
