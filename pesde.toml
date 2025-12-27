@@ -4,7 +4,7 @@ description = "A vehicle-based light reflector that reflects decals and basepart
 authors = ["Illinois_Roadbuff (Rogue Jr)"]
 repository = "https://codeberg.org/project-roadwork/light-reflector.git"
 license = "Apache-2.0"
-includes = ["pesde.toml","README.md","LICENSE","src/**/*.luau"]
+includes = ["pesde.toml","README.md","LICENSE","NOTICE","src/**/*.luau"]
 
 [indices]
 default = "https://github.com/pesde-pkg/index"
