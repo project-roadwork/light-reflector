@@ -1,3 +1,4 @@
+--!strict
 -- USAGE: lightreflector/shared/readme.luau
 -- README for Light Reflector.
 
@@ -13,14 +14,14 @@ return [[
 		  LANGUAGE:         Luau
 
 		  GROUP:            Project Roadwork
-		  VERSION:          1.0.0-infdev.1
+		  VERSION:          1.0.0-infdev.2
 		  CREATED:          2025-10-26 2:03 PM CDT
-		  LAST UPDATED:     2025-12-26 5:45 AM CST
+		  LAST UPDATED:     2025-12-26 11:09 PM CST
 
 		  SPDX-LICENSE-IDENTIFIER:   Apache-2.0
 
- 		  CODEBERG REPO:    https://codeberg.org/project-roadwork/light-reflector (MAIN)
-		  GITHUB REPO:      https://github.com/project-roadwork/light-reflector (BACKUP)
+ 		  CODEBERG REPO:    https://codeberg.org/project-roadwork/light-reflector.git (MAIN)
+		  GITHUB REPO:      https://github.com/project-roadwork/light-reflector.git (BACKUP)
 
  		 NOTES: Use the accompanying repository links for documentation, help, or
 		  to propose a suggestion or comment. The NOTICE file can be found in the respository
@@ -64,6 +65,9 @@ return [[
 				- Resolve performance issues with dark conditions function (with TTP / Redon Tech weather system compatibility)
 				- Resolve `OverlapParams` variable overwrite
 
+				- Resolve SurfaceGui instance memory leak - 1.0.0-infdev.2
+				- Resolve inaccurate contribution equations - 1.0.0-infdev.2
+
 			[Features]
 				- Full rewrite from a singular local script to a module with some attempt at type annotations and `--!strict`
 				- Multi-source / Multi-vehicle support (experimental)
@@ -94,6 +98,8 @@ return [[
 				- Old `isNight` function
 				- Legacy weather system compatibility
 				- Hard-coded configs
+
+				- PoolerPlus dependency; replaced with custom pooler - 1.0.0-infdev.2
 
 			[Other Notes]
 				- AS THIS IS A PRE-RELEASE, SOME FUNCTIONS MAY NOT WORK CORRECTLY FROM v0.1.5 AND NEEDS FIXING
