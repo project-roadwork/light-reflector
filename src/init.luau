@@ -21,10 +21,14 @@
 	VIEW README FILE FOR MORE INFORMATION LOCATED AT:
 		LUAU: lightreflector/shared/readme.luau
 		GIT: ./README.md
+
+	GIT REPOSITORIES:
+		Codeberg / Forgejo (main): https://codeberg.org/project-roadwork/light-reflector.git
+		GitHub (Mirror): https://github.com/project-roadwork/light-reflector.git
 ]]
 
 -- IMPORTANT: Services
-local Lighting: Lighting = game:GetService("Lighting")
+local Lighting: Lighting = game:GetService("Lighting") -- game.GetService(game, "Lighting") is faster but breaks typing
 local ReplicatedStorage: ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CollectionService: CollectionService = game:GetService("CollectionService")
 local RunService: RunService = game:GetService("RunService")
@@ -46,6 +50,7 @@ local utils = require("@self/client/utils")
 local dark = require("@self/client/dark")
 local equations = require("@self/client/equations")
 local sources = require("@self/client/sources")
+local pool = require("@self/client/pool")
 
 -- Variables
 local Vehicles: types.VehicleMap = {}
@@ -62,31 +67,26 @@ local PavementReflectors = {}
 local overlapParams: OverlapParams = OverlapParams.new()
 
 -- Debug Box Setup
-local debugBox= Instance.new("Part") -- forced to do instance.new instead of nil or else the type solver is going into a panic attack
+local debugBox = Instance.new("Part") -- forced to do instance.new instead of nil or else the type solver is going into a panic attack
+
 if config.SignConfig.DebugBoundary then
+	local DebugFolder = config.SignConfig.DebugBoxFolder
+		or Instance.new("Folder")
+
+	DebugFolder.Parent = workspace
 
 	debugBox.Anchored = true
 	debugBox.CanCollide = false
 	debugBox.CastShadow = false
-	debugBox.Transparency = 0.8
-	debugBox.Color = Color3.fromRGB(0, 255, 0)
-	debugBox.Material = Enum.Material.Plastic
-	debugBox.Name = "SensorDebugBox"
+	debugBox.Transparency = config.SignConfig.DebugBoxTransparency
+	debugBox.Color = config.SignConfig.DebugBoxColor
+	debugBox.Material = config.SignConfig.DebugBoxMaterial
+	debugBox.Name = config.SignConfig.DebugBoxName
 	debugBox.Size = config.SignConfig.BoxSizeNear
-	debugBox.Parent = workspace
+	debugBox.Parent = DebugFolder
 end
 
 -- Pooler Safety Nets
-
--- TODO
--- Make custom pooler module so there would be no needed dependency
-local index, PoolerPlus = ReplicatedStorage:FindFirstChild("PoolerPlus"), nil
-if index then
-	PoolerPlus = require(index)
-else
-	debugger.fatal("FatalInit","Dependency PoolerPlus does not exist! This script strictly needs this dependency! Halting execution...")
-end
-
 local SurfaceGuiTemplate = ReplicatedStorage:FindFirstChild("ReflectorTemplate")
 
 if not SurfaceGuiTemplate then
@@ -114,34 +114,46 @@ if not TemplateGui then
 end
 
 -- SurfaceGuiPool Setup
-local SurfaceGuiPool: any = PoolerPlus:GetPool("SurfaceGuis") :: any? -- literally cannot type this even with types.ObjectPool<SurfaceGui>? sorry
+local SurfaceGuiPool = pool.new(SurfaceGuiTemplate.SurfaceGui,
+	function(a0: Instance): Instance
+		--	print(a0:GetFullName())
+		local clone = a0:Clone()
+		return clone
+	end,
 
-if not SurfaceGuiPool then
-	SurfaceGuiPool= PoolerPlus:CreatePool("SurfaceGuis", function()
-		return SurfaceGuiTemplate.SurfaceGui:Clone()
-	end, nil, nil, {
-		preloadCount = 10,
-		enableAnalytics = false,
-		instanceConfig = { template = SurfaceGuiTemplate.SurfaceGui:Clone() },
-	}) :: any
-end
+	function(a0: Instance)
+		--	print("reset!")
+		a0.Parent = nil
+	end, config.SurfaceGuiMinPoolSize, config.SurfaceGuiMaxPoolSize) -- pool will warn ONCE if active parts exceed 350
 
--- Public: Adds a vehicle
+--[=[
+	Public: Adds a vehicle
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
 local function AddVehicle(car: types.Vehicle, enabled: boolean | number): ()
+	debugger.assert(not Vehicles[car], "Fatal", "Vehicle already indexed in vehicle map.")
+
+	local seat = car:FindFirstChildOfClass("VehicleSeat")
+
+	debugger.assert(seat, "Fatal", "Failed to find VehicleSeat in vehicle (1st argument). Did you ensure that the VehicleSeat instance exists before calling AddVehicle?")
+	debugger.assert(enabled ~= nil, "Fatal", "Enabled (2nd argument) CANNOT be nil.")
+	debugger.assert(
+		type(enabled) == "boolean" or type(enabled) == "number" or (typeof(enabled) == "Instance" and enabled:IsA("ValueBase")),
+		"Fatal", "Enabled (2nd argument) in AddVehicle MUST be a boolean, number, or a ValueBase like IntValue, etc."
+	)
 
 	Vehicles[car] = true
-	local seat = car.DriveSeat
 
 	sources.register(
 		car,
-		function() return seat.Position + Vector3.new(0,2,0) end,
+		function() return seat.Position + config.VehicleSeatOffset end,
 		function() return seat.CFrame.LookVector end,
 		function()
 			if typeof(enabled) == "Instance" and enabled:IsA("ValueBase") then
 				local v = enabled.Value
-				return (typeof(v) == "boolean" and v) or (typeof(v) == "number" and v > 0)
+				return (type(v) == "boolean" and v) or (type(v) == "number" and v > 0)
 			else
-				return (typeof(enabled) == "boolean" and enabled) or (typeof(enabled) == "number" and enabled > 0)
+				return (type(enabled) == "boolean" and enabled) or (type(enabled) == "number" and enabled > 0)
 			end
 		end,
 
@@ -149,8 +161,13 @@ local function AddVehicle(car: types.Vehicle, enabled: boolean | number): ()
 	)
 end
 
--- Public: Removes a vehicle
+--[=[
+	Public: Removes a vehicle
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
 local function RemoveVehicle(car: types.Vehicle): ()
+	debugger.assert(Vehicles[car], "Fatal", "Cannot find vehicle in vehicle map.")
+
 	local sourcesList = sources.list
 	Vehicles[car] = nil
 
@@ -164,22 +181,34 @@ local function RemoveVehicle(car: types.Vehicle): ()
 
 end
 
--- Public: Processes reflectors and normalizes base color
+--[=[
+	Public: Processes reflectors and normalizes base color
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
 local function ProcessReflector(p)
-	if config.ReflectorConfig.Condition(p) or p:HasTag("Reflector") then
+	if config.ReflectorConfig.Condition(p) or p:HasTag(config.ReflectorConfig.TagName) then
 		PavementReflectors[p] = true
 		utils.normalizeBaseColor(p)
 	end
 end
 
--- Public: Removes reflectors from the reflector rable
+--[=[
+	Public: Removes reflectors from the reflector rable
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
 local function RemoveReflector(p): ()
-	if config.ReflectorConfig.Condition(p) or p:HasTag("Reflector") then
+	if config.ReflectorConfig.Condition(p) or p:HasTag(config.ReflectorConfig.TagName) then
 		PavementReflectors[p] = nil
 	end
 end
 
--- Private: Builds Part Cache
+
+--[=[
+	Private: Builds Part Cache
+
+	@private
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
 local function _buildPartsCache()
 	for _, folder in config.SignConfig.SignsFolders do
 		for _, p in folder:GetDescendants() do
@@ -198,7 +227,48 @@ local function _buildPartsCache()
 	end
 end
 
--- Private: Inserts parts into a table via raycast
+--[=[
+	Private: Resets and returns SurfaceGui with pool check
+
+	@private
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+local function _resetSurfaceGui(gui: SurfaceGui)
+	if not gui then return end
+	if gui:GetAttribute("InPool") == true then return end
+	gui.Enabled = false
+	gui.Adornee = nil
+	gui.Parent = nil
+	gui:SetAttribute("InPool", true)
+
+--[[	for part, state in SurfaceGuiStates do
+		if state.gui == gui then
+			SurfaceGuiStates[part] = nil
+		end
+	end
+	for part, trackedGui in SurfaceGuisInBox do
+		if trackedGui == gui then
+			SurfaceGuisInBox[part] = nil
+		end
+	end]] -- Rmoved to prevent return duplication. This inactive code block is kept here for reference.
+
+	--SurfaceGuiPool:ReturnObject(gui)
+	local success:boolean, response:string? = pcall(SurfaceGuiPool.ReturnObject, SurfaceGuiPool, gui)
+	-- Pooler may warn that an object was returned to a pool that is not in the active list,
+	-- 	thus, a pcall is needed for this case to prevent the function from halting
+
+	if not success then
+		gui:Destroy() -- destroy the gui instead
+		debugger.warn("Warning", response)
+	end
+end
+
+--[=[
+	Private: Inserts parts into a table via raycast
+
+	@private
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
 local function _insertPartsRaycast()
 	local SignsConfig = config.SignConfig
 	local BoxOffset = SignsConfig.BoxOffset
@@ -219,7 +289,7 @@ local function _insertPartsRaycast()
 		if DebugBoundary then
 			local debugBoxClone = debugBox:Clone()
 			debugBox.CFrame = boxCF
-			debugBox.Transparency = 0.7
+			debugBox.Transparency = config.SignConfig.DebugBoxTransparency
 			debugBox.Parent = car.Body
 		end
 
@@ -229,21 +299,25 @@ local function _insertPartsRaycast()
 		for _, p in workspace:GetPartBoundsInBox(seatCF * BoxOffsetFar, BoxSizeFar, overlapParams) do
 			if not partsDict[p] then partsDict[p] = "far" end
 		end
-
 	end
 
 	return partsDict
 end
 
--- Private: Starts reflector indexing and processing
+--[=[
+	Private: Starts reflector indexing and processing
+
+	@private
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
 local function _startReflectorIndexing(): ()
 	if config.ReflectorConfig.UseTags then
-		for i,p in CollectionService:GetTagged("Reflector") do
-				ProcessReflector(p::any)
+		for i,p in CollectionService:GetTagged(config.ReflectorConfig.TagName) do
+			ProcessReflector(p::any)
 		end
 
-		CollectionService:GetInstanceAddedSignal("Reflector"):Connect(ProcessReflector)
-		CollectionService:GetInstanceRemovedSignal("Reflector"):Connect(RemoveReflector)
+		CollectionService:GetInstanceAddedSignal(config.ReflectorConfig.TagName):Connect(ProcessReflector)
+		CollectionService:GetInstanceRemovedSignal(config.ReflectorConfig.TagName):Connect(RemoveReflector)
 	else
 		for i,Folder in config.ReflectorConfig.ReflectorsFolder do
 			for i,p in Folder:GetDescendants() do
@@ -256,236 +330,283 @@ local function _startReflectorIndexing(): ()
 	end
 end
 
--- Private: Boundary / zone detection loop
+--[=[
+	Private: Boundary / zone detection loop
+
+	@private
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
 local function _detectBoundaries(Frequency: number): ()
-	local s:boolean, r:string? = pcall(function() -- pcall type bug, cannot fix on my end!
-		local partsDict
-		if config.UseRaycast then
-			partsDict = _insertPartsRaycast()
-		else
-			partsDict = CachedParts
+	-- pcall replaced with pcallRetry used in the Start function
+	local partsDict
+	if config.UseRaycast then
+		partsDict = _insertPartsRaycast()
+	else
+		partsDict = CachedParts
+	end
+
+	while true do
+		task.wait(utils.adaptiveWait(config.BoundaryMinFPS,
+			config.BoundaryMaxFPS,
+			utils.getFastestDriveSeat(Vehicles)))
+
+		local activeParts = {}
+
+		table.clear(ReflectorsisInBox)
+		if not sources.anyActive() or not dark() then
+			if debugBox then debugBox.Transparency = 0.95 end
+			for part, state in SurfaceGuiStates do
+				if state.gui then
+					state.gui.Enabled = false
+					state.gui.Adornee = nil
+					state.gui.Parent = nil
+					_resetSurfaceGui(state.gui)
+				end
+				SurfaceGuiStates[part] = nil
+				--	SurfaceGuisInBox[part] = nil -- Removed to prevent return duplication
+			end
+
+			for part, state in ReflectorStates do
+				ReflectorStates[part] = nil
+				ReflectorsisInBox[part] = nil
+
+				if state.baseColor then
+					part.Color = state.baseColor
+					part.Material = config.ReflectorConfig.InactiveMaterial
+				end
+			end
+			continue
 		end
 
-		while true do
-			task.wait(utils.adaptiveWait(1,3, utils.getFastestDriveSeat(Vehicles)))
-			local activeParts = {}
+		for part in PavementReflectors do
+			if not part then continue end
 
-			table.clear(ReflectorsisInBox)
+			ReflectorsisInBox[part] = true
+
+			local state = ReflectorStates[part]
+			if not state then
+				state = {
+					currentIntensity = 0,
+					targetIntensity = 0,
+					baseColor = part:GetAttribute("BaseColor"),
+					isActive = false,
+				}:: types.ReflectorState
+				ReflectorStates[part] = state
+			end
+
+			state.targetIntensity = equations.computeReflectorIntensity(part, sources.list)
+		end
+
+		for part, rangeType in partsDict do
+
 			if not sources.anyActive() or not dark() then
-				if debugBox then debugBox.Transparency = 0.95 end
-				for part, state in SurfaceGuiStates do
-					if state.gui then
-						state.gui.Enabled = false
-						state.gui.Adornee = nil
-						state.gui.Parent = nil
-						SurfaceGuiPool:Return(state.gui)
-					end
-					SurfaceGuiStates[part] = nil
-					SurfaceGuisInBox[part] = nil
-
-				end
-
-				for part, state in ReflectorStates do
-					ReflectorStates[part] = nil
-					ReflectorsisInBox[part] = nil
-
-					if state.baseColor then
-						part.Color = state.baseColor
-						part.Material = Enum.Material.Plastic
-					end
-				end
-
 				continue
 			end
 
-			for part in PavementReflectors do
-				if not part then continue end
+			local mainDecal = part:FindFirstChild(config.SignConfig.MainDecalName)
 
-				ReflectorsisInBox[part] = true
+			if not mainDecal then
+				for _, decal in part:GetChildren() do
+					if decal:IsA("Decal") then
+						local name = decal.Name
 
-				local state = ReflectorStates[part]
-				if not state then
-					state = {
-						currentIntensity = 0,
-						targetIntensity = 0,
-						baseColor = part:GetAttribute("BaseColor"),
-						isActive = false,
-					}:: types.ReflectorState
-					ReflectorStates[part] = state
-				end
-
-				state.targetIntensity = equations.computeReflectorIntensity(part, sources.list)
-			end
-
-			for part, rangeType in partsDict do
-				local mainDecal = part:FindFirstChild("ACTUALMainDecal123")
-
-				if not mainDecal then
-					for _, decal in part:GetChildren() do
-						if decal:IsA("Decal") then
-							local name = decal.Name
-							local isExcludedBottom = (name == "Decal" and decal.Face == Enum.NormalId.Bottom)
-							if name == "F" or (name ~= "Back" and name ~= "B" and name ~= "Images/Metal Lined" and not isExcludedBottom) then
-								mainDecal = decal
-								decal.Name = "ACTUALMainDecal123"
-								break
-							end
+						if config.SignConfig.MainDecalConditions(decal) then
+							mainDecal = decal
+							decal.Name = config.SignConfig.MainDecalName
+							break
 						end
 					end
 				end
-
-				if not mainDecal then continue end
-
-				if part:GetAttribute("IsFixed") ~= true then
-					utils.fixPartOrientation(part, mainDecal)
-				end
-
-				local gui = SurfaceGuisInBox[part]
-				if not gui then
-					gui = SurfaceGuiPool:Get()
-					gui.Face = mainDecal.Face
-					gui.Adornee = part
-					gui.Parent = part
-					gui.Enabled = true
-					gui.ImageLabel.Image = mainDecal.Texture
-					gui.ImageLabel.ImageTransparency = mainDecal.Transparency
-					SurfaceGuisInBox[part] = gui
-				end
-
-				local fadeData = equations.computeSignIntensity(part, mainDecal, "near", sources.list)
-
-
-				local state = SurfaceGuiStates[part]
-				if not state then
-					state = {
-						gui = gui,
-						currentTransparency = gui.ImageLabel.ImageTransparency,
-						currentBrightness = gui.Brightness,
-						currentLight = gui.LightInfluence,
-					}:: types.SurfaceGuiState -- forced to do this
-					SurfaceGuiStates[part] = state
-
-				end
-
-				state.targetTransparency = fadeData.transparency
-				state.targetBrightness = fadeData.brightness
-				state.targetLight = fadeData.light
-
-				activeParts[part] = true
 			end
-			currentParts = activeParts
-		end
-	end)
-	if not s then
-		debugger.warn("Warning",r)
-	end
 
+			if not mainDecal then continue end
+
+			if part:GetAttribute("IsFixed") ~= true then
+				utils.fixPartOrientation(part, mainDecal)
+			end
+
+			local gui = SurfaceGuisInBox[part]
+			if not gui  then
+				gui = SurfaceGuiPool:GetObject() :: SurfaceGui
+
+				if gui == nil then debugger.warn("Warning", "Pool contains nil instances.") continue end
+
+				gui:SetAttribute("InPool", false)
+				gui.Face = mainDecal.Face
+				gui.Adornee = part
+				gui.Parent = part
+				gui.Enabled = true
+				gui.ImageLabel.Image = mainDecal.Texture
+				gui.ImageLabel.ImageTransparency = mainDecal.Transparency
+				SurfaceGuisInBox[part] = gui
+			end
+
+			if gui:GetAttribute("InPool") then
+				gui:SetAttribute("InPool", false)
+				gui.Face = mainDecal.Face
+				gui.Parent = part
+				gui.Adornee = part
+				gui.Enabled = true
+				gui.ImageLabel.Image = mainDecal.Texture
+				gui.ImageLabel.ImageTransparency = mainDecal.Transparency
+			end
+
+			local fadeData = equations.computeSignIntensity(part, mainDecal, "near", sources.list)
+
+			local state = SurfaceGuiStates[part]
+			if not state then
+				state = {
+					gui = gui,
+					currentTransparency = gui.ImageLabel.ImageTransparency,
+					currentBrightness = gui.Brightness,
+					currentLight = gui.LightInfluence,
+					isActive = true
+				}:: types.SurfaceGuiState -- forced to do this
+				SurfaceGuiStates[part] = state
+			end
+
+			state.targetTransparency = fadeData.transparency
+			state.targetBrightness = fadeData.brightness
+			state.targetLight = fadeData.light
+
+			activeParts[part] = true
+		end
+
+		local previousParts = currentParts or {}
+
+		for part in previousParts do
+			if not activeParts[part] then
+				local gui = SurfaceGuisInBox[part]
+				if gui then
+					_resetSurfaceGui(gui)
+				end
+			end
+		end
+		currentParts = activeParts
+	end
 end
 
--- Private: Rendering loop
+--[=[
+	Private: Rendering loop
+
+	@private
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
 local function _render(Frequency: number): ()
-	local s,r = pcall(function()
-		while true do
-			local dt = utils.adaptiveWait(45, 55, utils.getFastestDriveSeat(Vehicles))
-			task.wait(dt)
+	-- pcall replaced with pcallRetry used in the Start function
+	while true do
+		local dt = utils.adaptiveWait(config.RenderMinFPS, config.RenderMaxFPS,
+			utils.getFastestDriveSeat(Vehicles))
 
-			local LerpSpeed = 10
-			for part, state in ReflectorStates do
-				if not ReflectorsisInBox[part] then
-					if state.baseColor then
-						part.Color = state.baseColor
-						part.Material = Enum.Material.Plastic
-					end
-					ReflectorStates[part] = nil
-					continue
+		task.wait(dt) -- dt = deltaTime
+
+		local LerpSpeed = config.ReflectorConfig.LerpSpeed
+		for part, state in ReflectorStates do
+			if not ReflectorsisInBox[part] then
+				if state.baseColor then
+					part.Color = state.baseColor
+					part.Material = Enum.Material.Plastic
 				end
+				ReflectorStates[part] = nil
+				continue
+			end
 
-				state.currentIntensity +=
-					(state.targetIntensity - state.currentIntensity)
-					* math.clamp(LerpSpeed * dt, 0, 1)
+			state.currentIntensity +=
+				(state.targetIntensity - state.currentIntensity)
+				* math.clamp(LerpSpeed * dt, 0, 1)
 
-				if state.isActive == nil then
+			if state.isActive == nil then
+				state.isActive = false
+			end
+
+			if state.isActive then
+				if state.currentIntensity <= config.ReflectorConfig.DeactivateThreshold then
 					state.isActive = false
 				end
-
-				if state.isActive then
-					if state.currentIntensity <= config.ReflectorConfig.DeactivateThreshold then
-						state.isActive = false
-					end
-				else
-					if state.currentIntensity >= config.ReflectorConfig.ActivateThreshold then
-						state.isActive = true
-					end
-				end
-
-				local intensity = state.currentIntensity
-
-				if intensity >= config.ReflectorConfig.NeonMinIntensity then
-					part.Material = Enum.Material.Neon
-
-
-					local baseColor: Color3 = state.baseColor
-					local minScale = config.ReflectorConfig.DarkBrightness / 255
-					local maxScale = config.ReflectorConfig.LightBrightness / 255
-
-					local scale = minScale + (maxScale - minScale) * intensity
-
-					local r = math.clamp(baseColor.R * scale, 0, 1)
-					local g = math.clamp(baseColor.G * scale, 0, 1)
-					local b = math.clamp(baseColor.B * scale, 0, 1)
-
-					part.Color = Color3.new(r, g, b)
-
-				elseif intensity > 0 then
-					part.Material = Enum.Material.Plastic
-
-					part.Color = state.baseColor:Lerp(
-						Color3.fromRGB(120, 120, 120),
-						intensity * 0.5
-					)
-				else
-					part.Material = Enum.Material.Plastic
-					part.Color = state.baseColor
+			else
+				if state.currentIntensity >= config.ReflectorConfig.ActivateThreshold then
+					state.isActive = true
 				end
 			end
 
+			local intensity = state.currentIntensity
 
-			for part, state in SurfaceGuiStates do
-				if not currentParts[part] then
-					if state.gui then
-						state.gui.Enabled = false
-						state.gui.Adornee = nil
-						state.gui.Parent = nil
-						SurfaceGuiPool:Return(state.gui)
-					end
+			if intensity >= config.ReflectorConfig.NeonMinIntensity then
+				part.Material = config.ReflectorConfig.ActiveMaterial
+
+				local baseColor: Color3 = state.baseColor
+				local minScale = config.ReflectorConfig.DarkBrightness / 255
+				local maxScale = config.ReflectorConfig.LightBrightness / 255
+
+				local scale = minScale + (maxScale - minScale) * intensity
+
+				local r = math.clamp(baseColor.R * scale, 0, 1)
+				local g = math.clamp(baseColor.G * scale, 0, 1)
+				local b = math.clamp(baseColor.B * scale, 0, 1)
+
+				part.Color = Color3.new(r, g, b)
+
+			elseif intensity > 0 then
+				part.Material = Enum.Material.Plastic
+
+				part.Color = state.baseColor:Lerp(
+					config.ReflectorConfig.PartialDimmingBaseColor,
+					intensity * 0.5
+				)
+			else
+				part.Material = config.ReflectorConfig.InactiveMaterial
+				part.Color = state.baseColor
+			end
+		end
+
+		for part, state in SurfaceGuiStates do
+			if not currentParts[part] then
+				if state.gui then
+					state.gui.Enabled = false
+					state.gui.Adornee = nil
+					state.gui.Parent = nil
+					_resetSurfaceGui(state.gui)
+				end
+				SurfaceGuiStates[part] = nil
+				SurfaceGuisInBox[part] = nil
+				continue
+			end
+
+			local gui = state.gui
+			if gui and gui.Parent then
+				local LerpSpeed = config.SignConfig.LerpSpeed
+				state.currentTransparency += (state.targetTransparency - state.currentTransparency) * math.clamp(LerpSpeed * dt, 0, 1)
+				state.currentBrightness += (state.targetBrightness - state.currentBrightness) * math.clamp(LerpSpeed * dt, 0, 1)
+				state.currentLight += (state.targetLight - state.currentLight) * math.clamp(LerpSpeed * dt, 0, 1)
+
+				gui.ImageLabel.ImageTransparency = state.currentTransparency
+				gui.Brightness = state.currentBrightness
+				gui.LightInfluence = state.currentLight
+
+				local num = config.SignConfig.InactiveTransparency
+
+				if state.targetTransparency >= num and state.currentTransparency >= num then
+					gui.Enabled = false
+					gui.Adornee = nil
+					gui.Parent = nil
+					_resetSurfaceGui(gui)
 					SurfaceGuiStates[part] = nil
 					SurfaceGuisInBox[part] = nil
-					continue
-				end
-
-				local gui = state.gui
-				if gui and gui.Parent then
-
-					local LerpSpeed = 5
-
-					state.currentTransparency += (state.targetTransparency - state.currentTransparency) * math.clamp(LerpSpeed * dt, 0, 1)
-					state.currentBrightness += (state.targetBrightness - state.currentBrightness) * math.clamp(LerpSpeed * dt, 0, 1)
-					state.currentLight += (state.targetLight - state.currentLight) * math.clamp(LerpSpeed * dt, 0, 1)
-
-					gui.ImageLabel.ImageTransparency = state.currentTransparency
-					gui.Brightness = state.currentBrightness
-					gui.LightInfluence = state.currentLight
 				end
 			end
-
 		end
-	end)
-	if not s then
-		debugger.warn("Warning",r)
 	end
 end
 
--- Public: Starts the module
+--[=[
+	Public: Starts the module
+
+	```lua
+	LightReflector.Start()
+	```
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
 local function Start() : ()
 	debugger.assert(not Starting, "AlreadyStarting")
 
@@ -498,18 +619,28 @@ local function Start() : ()
 
 	_startReflectorIndexing()
 
-	BoundaryThread= task.defer(_detectBoundaries)
-	RenderThread= task.defer(_render)
+	BoundaryThread = task.defer(utils.pcallRetry, _detectBoundaries, config.MaxPcallRetries)
+	RenderThread = task.defer(utils.pcallRetry, _render, config.MaxPcallRetries)
 
 	debugger.print("Info","Successfully loaded!")
 end
 
--- Public: Cleans up the module
+--[=[
+	Public: Cleans up the module
+
+	```lua
+	LightReflector.Cleanup()
+	```
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
 local function Cleanup(): ()
+	debugger.assert(Starting, "Warning", "Cleanup called before Start().")
+
 	debugger.print("Info","Cleaning up!")
 	task.cancel(BoundaryThread :: any)
 	task.cancel(RenderThread :: any)
-	SurfaceGuiPool:Clear()
+	--=SurfaceGuiPool:Clear()
 
 	for part, state in SurfaceGuiStates do
 		local gui = state.gui
@@ -517,7 +648,7 @@ local function Cleanup(): ()
 			gui.Enabled = false
 			gui.Adornee = nil
 			gui.Parent = nil
-			SurfaceGuiPool:Return(gui)
+			_resetSurfaceGui(gui)
 		end
 	end
 
@@ -526,7 +657,7 @@ local function Cleanup(): ()
 			gui.Enabled = false
 			gui.Adornee = nil
 			gui.Parent = nil
-			SurfaceGuiPool:Return(gui)
+			_resetSurfaceGui(gui)
 		end
 	end
 
@@ -535,6 +666,7 @@ local function Cleanup(): ()
 	table.clear(SurfaceGuisInBox)
 end
 
+-- Return Public Variables and API
 return table.freeze({
 	Start = Start,
 	AddVehicle = AddVehicle,
