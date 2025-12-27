@@ -4,5 +4,5 @@ registry = "test"
 
 [[package]]
 name = "illinois-roadbuff/light-reflector"
-version = "1.0.0-infdev.2"
+version = "0.0.1"
 dependencies = []
