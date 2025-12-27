@@ -1,7 +1,10 @@
 [package]
 name = "illinois-roadbuff/light-reflector"
 version = "1.0.0-infdev.2"
+description = "A vehicle-based light reflector that reflects decals and basepart reflectors at long distances on a road."
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
+license = "Apache-2.0"
+includes = ["pesde.toml","README.md","LICENSE","NOTICE","src/**/*.luau"]
 
 [dependencies]
