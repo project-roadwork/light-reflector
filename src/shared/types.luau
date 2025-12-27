@@ -82,8 +82,6 @@ export type ReflectorStates = { [BasePart]: ReflectorState }
 
 export type PavementMap = { [BasePart]: true }
 
-export type DarkWeathers = { [string]: boolean }
-
 export type PoolerType<T> = {
 	Get: () -> T,
 	Return: (T) -> (),
