@@ -16,14 +16,36 @@ local debugger = require("../shared/debugger")
 local rangeTypes: { [types.RangeType]: boolean } = { near = true, far = true }
 local clamp = math.clamp
 
+local function getNearbySources(signPos: Vector3, sources: types.SourceList, maxDistance: number)
+	local nearby = {}
+	for _, source in sources do
+		if source.isActive() then
+			local dist = (source.getPosition() - signPos).Magnitude
+			if dist <= maxDistance then
+				nearby[#nearby + 1] = source
+			end
+		end
+	end
+	return nearby
+end
+
 -- Public: Computes reflector intensity
 local function computeReflectorIntensity(part: BasePart, sources:types.SourceList)
+
+	--[[
+		             __________________________________________________________
+		Intensity = |  Σ  [ DotAlignment * DistanceFactor * WedgeFactor * ProximityFactor * LightIntensity ]
+		             ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+		Clamped between 0 and 1
+
+	]]
+
 	debugger.assert(part:IsA("BasePart"), "InvalidInstance", "BasePart", part.ClassName)
 
 	local intensity = 0
 
 	for _, source in sources do
-		if source.isActive() then
+		if source.isActive()  then
 			local pos = source.getPosition()
 			local dir = source.getDirection()
 
@@ -56,6 +78,22 @@ end
 
 -- Public: Computes sign intensity
 local function computeSignIntensity(part : Part, decal : Decal, rangeType: types.RangeType, sources: types.SourceList)
+
+	--[[
+			              			 ______________________________________________________________
+		ImageTransparency =           min [ BaseTransparency * ProximityFactor * AngleContribution ]
+			              			 ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+
+			           			     ___________________________________________________________________________________________________
+		SurfaceGuiBrightness =        Σ [ (1 + (1-DistanceFactor)*0.25 + AngleContribution*0.25)*ProximityFactor + (1-ProximityFactor) ]
+			          			     ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+
+		            			     __________________________________________________________________________________________
+		SurfaceGuiLightInfluence =     min [ (DistanceFactor*0.5 + AngleContribution*0.5)*ProximityFactor + (1-ProximityFactor) ]
+		              				 ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+
+	]]
+
 	debugger.assert(part:IsA("BasePart"), "InvalidInstance", "BasePart", part.ClassName)
 	debugger.assert(rangeTypes[rangeType], "InvalidType", `either "far" or "near"`, rangeType)
 
@@ -67,19 +105,30 @@ local function computeSignIntensity(part : Part, decal : Decal, rangeType: types
 	local FadeDistance = config.SignConfig.FadeDistance
 	local MinFadeDistance = config.SignConfig.MinFadeDistance
 
-	local accumTransparency = 0
-	local accumBrightness = 0
-	local accumLight = 0
+	-- INFO OF VARIABLES:
+	--   	Transparency affects the ImageLabel with the sign (SurfaceGui.ImageLabel)
+	--   	Brightness affects SurfaceGui.Brightness
+	--      Light affects SurfaceGui.LightInfluence
+
+	local finalTransparency = 1
+	local finalBrightness = 0
+	local finalLight = 1
+
 	local count = 0
 
 	local enabledLights = {}
 
-	for _, light in sources do
+	local nearbySources = getNearbySources(Parent.Position, sources, config.SignConfig.FadeDistance + 500)
+	if #nearbySources == 0 then
+		return { transparency = 1, brightness = 0, light = 0 }
+	end
+
+	for _, light in nearbySources do
 		if light.isActive() then
 			enabledLights[#enabledLights + 1] = light
 		end
 	end
-
+	local hasActiveLight =false
 
 	for _, light in enabledLights do
 		count += 1
@@ -109,25 +158,35 @@ local function computeSignIntensity(part : Part, decal : Decal, rangeType: types
 		local angleContribution = 1 - dotClamped
 		local distContribution = baseTransparency
 
-		accumTransparency += baseTransparency + (1 - proximityFactor) * config.SignConfig.FadeOutFactor * (1 - baseTransparency)
-		accumBrightness += (1 + (1 - distContribution) * 0.25 + angleContribution * 0.25) * proximityFactor + (1 - proximityFactor)
-		accumLight += (distContribution * 0.5 + angleContribution * 0.5) * proximityFactor + (1 - proximityFactor)
+		if dist < config.SignConfig.FadeDistance and dot > 0 then
+			local weightedTransparency = baseTransparency * proximityFactor * angleContribution
+			local weightedBrightness = (1 + (1 - distContribution) * 0.25 + angleContribution * 0.25) * proximityFactor + (1 - proximityFactor)
+			local weightedLight = (distContribution * 0.5 + angleContribution * 0.5) * proximityFactor + (1 - proximityFactor)
 
+			finalTransparency = math.min(finalTransparency, weightedTransparency)
+
+			finalBrightness += weightedBrightness
+
+			finalLight = math.min(finalLight, weightedLight)
+
+			hasActiveLight = true
+		end
 	end
-	if count == 0 then
-		return {
-			transparency = 1,
-			brightness = 0,
-			light = 0,
-		}
+	if not hasActiveLight then
+		finalTransparency = 1
+		finalBrightness = 0
+		finalLight = 1
 	else
-		return {
-			transparency = clamp(accumTransparency / count, 0, 1),
-			brightness   = clamp(accumBrightness / count, 0, 5),
-			light        = clamp(accumLight / count, 0, 1),
-		}
+		finalTransparency = clamp(finalTransparency , 0, 1)
+		finalBrightness   = clamp(finalBrightness , 0, 5)
+		finalLight        = clamp(finalLight , 0, 1)
 	end
 
+	return {
+		transparency = finalTransparency,
+		brightness   = finalBrightness,
+		light        = finalLight,
+	}
 end
 
 return table.freeze({
