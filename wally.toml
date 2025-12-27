@@ -1,0 +1,7 @@
+[package]
+name = "project-roadwork/light-reflector"
+version = "1.0.0-infdev.2"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+
+[dependencies]
