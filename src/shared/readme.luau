@@ -10,7 +10,7 @@ return [[
 		  DESCRIPTION:      A light reflector that reflects decals for now at long distances.
 		  functionality.
 		  INIT USAGE:       Packages/lightreflector.luau - or somewhere client accessable
-		  DEPENDENCIES:     POOLERPLUS
+		  DEPENDENCIES:     N/A
 		  LANGUAGE:         Luau
 
 		  GROUP:            Project Roadwork
