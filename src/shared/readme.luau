@@ -67,6 +67,7 @@ return [[
 
 				- Resolve SurfaceGui instance memory leak - 1.0.0-infdev.2
 				- Resolve inaccurate contribution equations - 1.0.0-infdev.2
+				- Resolve assert RunContext:IsClient() bug - 1.0.0-infdev.2
 
 			[Features]
 				- Full rewrite from a singular local script to a module with some attempt at type annotations and `--!strict`
