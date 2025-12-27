@@ -2,7 +2,7 @@
 **Version: 1.0.0-infdev.2**
 
  **A vehicle-based light reflector that reflects decals and basepart reflectors at long distances on roads.**
- #### ⚠️ Unstable - This script is under infdev and some functions may not work correctly.
+ #### ⚠️ Unstable - This script is under `infdev` and some functions may not work correctly.
 
 **(ℹ️ Main) CODEBERG REPO:** https://codeberg.org/project-roadwork/light-reflector.git
 
