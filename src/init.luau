@@ -37,7 +37,7 @@ local ver = require("@self/shared/ver")
 debugger.set(`Light Reflector {ver}`, logs.Ids::any, logs.URL)
 
 -- IMPORTANT: RunContext Safety Net
-debugger.assert(not RunService:IsClient(), "RunContext", "Init module should be run from the client.")
+debugger.assert(RunService:IsClient(), "RunContext", "Init module should be run from the client.")
 
 -- IMPORTANT: Other Modules
 local types = require("@self/shared/types")
