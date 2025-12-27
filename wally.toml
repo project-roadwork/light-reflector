@@ -1,5 +1,5 @@
 [package]
-name = "project-roadwork/light-reflector"
+name = "illinois-roadbuff/light-reflector"
 version = "1.0.0-infdev.2"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
