@@ -1,18 +1,49 @@
 -- USAGE: lightreflector/shared/config.luau
 -- Configuration file for Light Reflector
 
-return {
+return table.freeze({
 
-	-- Learn more:
-	-- 		https://codeberg.org/project-roadwork/light-reflector.git
+	--[[
+
+		Learn more:
+			https://codeberg.org/project-roadwork/light-reflector.git
+
+		It is recommended that one does NOT change any UPPER_SNAKE_CASE (or all capital) variables during runtime.
+
+	]]
 
 	-- [GENERAL]
 	STREAMING = true,
 	-- ^ Set this to true if you have a custom streaming system or have instance streaming enabled.
 
-	MphScale = 2.23694 * 0.28, -- (recommended -> 2.23694 * 0.28 -> 028m = 1 stud)
+	MPH_SCALE = 2.23694 * 0.28, -- (recommended -> 2.23694 * 0.28 -> 0.28 meters = 1 stud)
 	-- ^ (stud/sec) → mph
 
+	KEYS = { __mode = "k" }, -- (recommended -> { __mode = "k" } )
+	-- ^ Keys to use on weak tables
+
+	MAX_PCALL_RETRIES = 5,  -- (recommended -> 5)
+	-- ^ Amount of times to retry a pcall
+
+	-- [PERFORMANCE]
+	BOUNDARY_MIN_FPS = 1, -- (recommended -> 1)
+	BOUNDARY_MAX_FPS = 3, -- (recommended -> 3)
+	-- ^ FPS of the Boundary function
+
+	RENDER_MIN_FPS = 45, -- (recommended -> 45)
+	RENDER_MAX_FPS = 55, -- (recommended -> 55)
+	-- ^ FPS of the Render function
+
+	-- [POOLING]
+	SURFACE_GUI_MIN_POOL_SIZE = 20, -- (recommended -> 20)
+	SURFACE_GUI_MAX_POOL_SIZE = math.huge, -- (recommended -> math.huge)
+	-- ^ Pool size of SurfaceGuis
+
+	-- [ATTRIBUTES]
+	BASE_INTENSITY_ATTRIBUTE = "LRBaseIntensity",
+	-- ^ Base reflective intensity attribute name for both signs and reflectors
+
+	-- [DEBUG]
 	UseRaycast = false, -- (recommended -> false)
 	-- ^ Only set this to true if you actually need raycasting which is unneccesary (lots of lag).
 	-- 	 Otherwise, leaving this as false processes all of the signs
@@ -23,38 +54,33 @@ return {
 	ShowPrints = true, -- (recommended -> false)
 	-- ^ Show debug prints in the output
 
+	-- [TIME]
 	DarkClockTimeStart =  17.2, -- (recommended -> 17.2)
 	-- ^ ClockTime start of night
 
 	DarkClockTimeEnd =  6.3, -- (recommended -> 6.3)
 	-- ^ ClockTime end of night
 
+	-- [ANGLE]
 	LightHalfAngle = math.rad(10), -- (recommended -> 10)
 	-- ^ Half of the angle of the light cone in radians
-
-	MaxPcallRetries = 5,  -- (recommended -> 5)
-	-- ^ Amount of times to retry a pcall
-
-	-- [PERFORMANCE]
-	BoundaryMinFPS = 1, -- (recommended -> 1)
-	BoundaryMaxFPS = 3, -- (recommended -> 3)
-	-- ^ FPS of the Boundary function
-
-	RenderMinFPS = 45, -- (recommended -> 45)
-	RenderMaxFPS = 55, -- (recommended -> 55)
-	-- ^ FPS of the Render function
 
 	-- [OFFSETS]
 	VehicleSeatOffset = Vector3.new(0,2,0), -- (recommended -> Vector3.new(0,2,0))
 	-- ^ Offset of the vehicle seat
 
-	-- [POOLING]
-	SurfaceGuiMinPoolSize = 20, -- (recommended -> 20)
-	SurfaceGuiMaxPoolSize = math.huge, -- (recommended -> math.huge)
-	-- ^ Pool size of SurfaceGuis
-
 	-- [SIGN CONFIG]
 	SignConfig = {
+		Enabled = true,
+		-- ^ Enables or disables reflector functionality
+
+		UseTags = true ,-- (recommended -> true)
+		-- ^ It is recommended that you set this to true if your signs are parented under folders with many instances.
+		--   Additionally, this uses CollectionService.
+
+		TagName = "ReflectiveSign",
+		-- ^ Sign tag name should you use tags.
+
 		FadeDistance = 2500, -- (recommended -> 2500)
 		-- ^  Max fade distane of signs in studs
 
@@ -83,6 +109,8 @@ return {
 		LerpSpeed = 5, -- (recommended -> 5)
 		-- ^ Fade out and lerp speed of signage
 
+		DecalDotThreshold = 0,
+
 		MainDecalName = "ACTUALMainDecal123",
 		-- ^ Set this to something unique that no other decal has since that identifies the main decal
 
@@ -102,13 +130,14 @@ return {
 	-- [REFLECTOR CONFIG]
 	ReflectorConfig =  {
 		Enabled = true,
+		-- ^ Enables or disables reflector functionality
 
 		UseTags = true, -- (recommended -> true)
 		-- ^ It is recommended that you set this to true if your reflectors are parented under folders with many instances.
 		--   Additionally, this uses CollectionService.
 
 		TagName = "Reflector",
-		-- ^ Tag name should you use tags.
+		-- ^ Reflector tag name should you use tags.
 
 		ReflectorsFolder = { workspace.Roads },
 		-- ^ Folders where your reflectors are, seperated by a comma. This will not be used if you have tags enabled.
@@ -118,12 +147,12 @@ return {
 		end,
 		-- ^ Condition of what makes a BasePart a "reflector"
 
-		MinDistance = 40, -- (recommended -> 40)  -- studs
-		MaxDistance = 1200, -- (recommended -> 1200)  -- studs
+		MinDistance = 50, -- (recommended -> 50)  -- studs
+		MaxDistance = 1900, -- (recommended -> 1900)  -- studs
 		-- ^ Reflector Distances
 
 		UseWedgeFacingDetection = true, -- (recommended -> true)
-		WedgeFacingDotThreshold = 0.35,  -- (recommended -> 0.35)
+		WedgeFacingDotThreshold = 0,  -- (recommended -> 0)
 		-- ^ Reflector wedge logic
 
 		ActivateThreshold = 0.06, -- (recommended -> 0.06)
@@ -144,4 +173,4 @@ return {
 		-- ^ Brightness of reflectors
 
 	}
-}
+})
