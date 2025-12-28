@@ -2,6 +2,14 @@
 -- USAGE: lightreflector/shared/readme.luau
 -- README for Light Reflector.
 
+--[[
+
+   This Source Code Form is subject to the terms of the Mozilla Public
+   License, v. 2.0. If a copy of the MPL was not distributed with this
+   file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+]]
+
 return [[
 
 	A. PROJECT ROADWORK HEADER
@@ -16,9 +24,9 @@ return [[
 		  GROUP:            Project Roadwork
 		  VERSION:          1.0.0-infdev.3
 		  CREATED:          2025-10-26 2:03 PM CDT
-		  LAST UPDATED:     2025-12-27 9:54 PM CST
+		  LAST UPDATED:     2025-12-28 12:56 PM CST
 
-		  SPDX-LICENSE-IDENTIFIER:   Apache-2.0
+		  SPDX-LICENSE-IDENTIFIER:   MPL-2.0
 
  		  CODEBERG REPO:    https://codeberg.org/project-roadwork/light-reflector.git (MAIN)
 		  GITHUB REPO:      https://github.com/project-roadwork/light-reflector.git (BACKUP)
@@ -28,10 +36,11 @@ return [[
 		  links.
 
 		  LICENSE HEADER:
-			Copyright 2024-2026 Illinois_Roadbuff "Rogue Jr," Project Roadwork and Contributors
+			Copyright 2024-2026 Illinois_Roadbuff "Rogue Jr" and Project Roadwork
 
-			Licensed under the Apache License, Version 2.0 (the "License");
-		 	 http://www.apache.org/licenses/LICENSE-2.0
+			This Source Code Form is subject to the terms of the Mozilla Public
+			License, v. 2.0. If a copy of the MPL was not distributed with this
+			file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 		  AUTHORS:
 		   Illinois_Roadbuff (2653606809) - October 26th, 2025 - Created the file

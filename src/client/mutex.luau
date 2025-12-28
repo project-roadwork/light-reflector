@@ -3,6 +3,13 @@
 -- USAGE: lightreflector/client/mutex.luau
 -- Mutex module for the pool module (could be used in other modules too)
 
+--[[
+
+  Dual licensed under the Mozilla Public License 2.0 and the MIT License. You may choose either license.
+  Copyright (c) 2025 Project Roadwork
+
+]]
+
 -- Derived from: https://github.com/notqaltx/ObjectPool.git
 -- Original Notice: MIT License, Copyright (c) 2024 qaltx
 

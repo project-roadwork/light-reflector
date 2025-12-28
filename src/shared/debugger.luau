@@ -3,6 +3,13 @@
 -- A customizable and extendable debugger for open source software.
 -- Derived from: https://github.com/axiom-co/debugger
 
+--[[
+
+  Dual licensed under the Mozilla Public License 2.0 and the MIT License. You may choose either license.
+  Copyright (c) 2025 Project Roadwork
+
+]]
+
 -- Original Notice: MIT License | Copyright (c) 2025 Axiom & Contributors
 
 -- Variables
