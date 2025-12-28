@@ -35,7 +35,7 @@ end
 
 -- Public: Gets speed in MPH via respective MPH scale
 local function getSpeedMPH(DriveSeat: VehicleSeat): number
-	return DriveSeat.AssemblyLinearVelocity.Magnitude * config.MphScale
+	return DriveSeat.AssemblyLinearVelocity.Magnitude * config.MPH_SCALE
 end
 
 -- Public: Adaptive wait time based on vehicle speed
@@ -128,7 +128,7 @@ local function normalizeBaseColor(part: BasePart): Color3
 end
 
 -- Public: pcall retry function
-local function pcallRetry(func: (...any) -> (...any), maxRetries: number, ...)
+local function pcallRetry(func: (...any) -> (...any), maxRetries: number, ...): (boolean, string?)
 	local args = {...}
 	local attempt = 0
 	local success, result
