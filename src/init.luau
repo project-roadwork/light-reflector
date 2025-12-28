@@ -58,9 +58,9 @@ local currentParts: { [BasePart]: true } = {}
 
 local SurfaceGuisInBox = {}
 local SurfaceGuiStates: types.SurfaceGuiStates = {}
-local ReflectorsisInBox = setmetatable({}, config.Keys)
-local ReflectorStates: types.ReflectorStates = setmetatable({}, config.Keys)
-local CachedParts: { types.RangeType } = setmetatable({}, config.Keys)
+local ReflectorsisInBox = setmetatable({}, config.KEYS)
+local ReflectorStates: types.ReflectorStates = setmetatable({}, config.KEYS)
+local CachedParts: { types.RangeType } = setmetatable({}, config.KEYS)
 
 local RenderThread: any, BoundaryThread: any = nil, nil
 local Starting: boolean = false
@@ -125,7 +125,7 @@ local SurfaceGuiPool = pool.new(SurfaceGuiTemplate.SurfaceGui,
 	function(a0: Instance)
 		--	print("reset!")
 		a0.Parent = nil
-	end, config.SurfaceGuiMinPoolSize, config.SurfaceGuiMaxPoolSize) -- pool will warn ONCE if active parts exceed 350
+	end, config.SURFACE_GUI_MIN_POOL_SIZE, config.SURFACE_GUI_MAX_POOL_SIZE) -- pool will warn ONCE if active parts exceed 350
 
 --[=[
 	Public: Adds a vehicle
@@ -236,19 +236,39 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 local function _buildPartsCache()
-	for _, folder in config.SignConfig.SignsFolders do
-		for _, p in folder:GetDescendants() do
-			CachedParts[p] = "near"
+	local useTags = config.SignConfig.UseTags
+	local tagName = config.SignConfig.TagName
+
+	if useTags then
+		for _, p in CollectionService:GetTagged(tagName) do
+			CachedParts[p] = "near" -- near and far range types does not really make a difference
 		end
 
-		if config.STREAMING then
-			folder.DescendantAdded:Connect(function(p:Instance)
-				CachedParts[p::any] = "near"
-			end)
+			if config.STREAMING then
+				CollectionService:GetInstanceAddedSignal(tagName):Connect(function(p:Instance)
+					CachedParts[p::any] = "near"
+				end)
 
-			folder.DescendantRemoving:Connect(function(p:Instance)
-				CachedParts[p::any] = nil
-			end)
+				CollectionService:GetInstanceRemovedSignal(tagName):Connect(function(p:Instance)
+					CachedParts[p::any] = nil
+				end)
+			end
+
+	else
+		for _, folder in config.SignConfig.SignsFolders do
+			for _, p in folder:GetDescendants() do
+				CachedParts[p] = "near"
+			end
+
+			if config.STREAMING then
+				folder.DescendantAdded:Connect(function(p:Instance)
+					CachedParts[p::any] = "near"
+				end)
+
+				folder.DescendantRemoving:Connect(function(p:Instance)
+					CachedParts[p::any] = nil
+				end)
+			end
 		end
 	end
 end
@@ -270,6 +290,11 @@ local function _resetSurfaceGui(gui: SurfaceGui)
 	gui.Enabled = false
 	gui.Adornee = nil
 	gui.Parent = nil
+
+	gui.Brightness = 0
+	gui.LightInfluence = 1
+	gui.ImageLabel.ImageTransparency = 1
+
 	--gui:SetAttribute("InPool", true)
 
 --[[	for part, state in SurfaceGuiStates do
@@ -376,14 +401,13 @@ local function _detectBoundaries(Frequency: number): ()
 
 		partsDict = {}
 
-		-- partsDict = CachedParts
-
-		-- cacheparts is a weak table, so probably better to clone everything to create an interm strong ref?
+		-- OLD REFERENCE: partsDict = CachedParts
+		-- ^ Cacheparts is a weak table, so probably better to clone everything to create an interm (temp) strong ref?
 	end
 
 	while true do
-		task.wait(utils.adaptiveWait(config.BoundaryMinFPS,
-			config.BoundaryMaxFPS,
+		task.wait(utils.adaptiveWait(config.BOUNDARY_MIN_FPS,
+			config.BOUNDARY_MAX_FPS,
 			utils.getFastestDriveSeat(Vehicles)))
 
 		local activeParts = {}
@@ -395,23 +419,18 @@ local function _detectBoundaries(Frequency: number): ()
 			partsDict[part] = range
 		end
 
-
 		if not sources.anyActive() or not dark() then
 			if debugBox then debugBox.Transparency = 0.95 end
-			for part, state in SurfaceGuiStates do
-				if state.gui then
-					state.gui.Enabled = false
-					state.gui.Adornee = nil
-					state.gui.Parent = nil
-					_resetSurfaceGui(state.gui)
+				for part, state in SurfaceGuiStates do
+					state.targetTransparency = 1
+					state.targetBrightness = 0
+					state.targetLight = 1
 				end
-				SurfaceGuiStates[part] = nil
-				--	SurfaceGuisInBox[part] = nil -- Removed to prevent return duplication
-			end
 
 			for part, state in ReflectorStates do
-				ReflectorStates[part] = nil
-				ReflectorsisInBox[part] = nil
+				state.currentIntensity = 0
+				state.targetIntensity = 0
+				state.isActive = false
 
 				if state.baseColor then
 					part.Color = state.baseColor
@@ -422,6 +441,7 @@ local function _detectBoundaries(Frequency: number): ()
 		end
 
 		for part in PavementReflectors do
+			if config.ReflectorConfig.Enabled == false then break end
 			if not part then continue end
 
 			ReflectorsisInBox[part] = true
@@ -433,6 +453,7 @@ local function _detectBoundaries(Frequency: number): ()
 					targetIntensity = 0,
 					baseColor = part:GetAttribute("BaseColor"),
 					isActive = false,
+
 				}:: types.ReflectorState
 				ReflectorStates[part] = state
 			end
@@ -441,7 +462,7 @@ local function _detectBoundaries(Frequency: number): ()
 		end
 
 		for part, rangeType in partsDict do
-
+			if config.SignConfig.Enabled == false then break end
 			if not sources.anyActive() or not dark() then
 				continue
 			end
@@ -467,14 +488,18 @@ local function _detectBoundaries(Frequency: number): ()
 			if part:GetAttribute("IsFixed") ~= true then
 				utils.fixPartOrientation(part, mainDecal)
 			end
+			local fadeData = equations.computeSignIntensity(part, mainDecal, "near", sources.list)
+
+			if fadeData.transparency >= config.SignConfig.InactiveTransparency  then
+				continue
+			end
 
 			local gui = SurfaceGuisInBox[part]
-			if not gui  then
+			if not gui then
 				gui = SurfaceGuiPool:GetObject() :: SurfaceGui
 
 				if gui == nil then debugger.warn("Warning", "Pool contains nil instances.") continue end
 
-			--	gui:SetAttribute("InPool", false)
 				gui.Face = mainDecal.Face
 				gui.Adornee = part
 				gui.Parent = part
@@ -485,7 +510,6 @@ local function _detectBoundaries(Frequency: number): ()
 			end
 
 			if gui.Parent == nil then
-			--	gui:SetAttribute("InPool", false)
 				gui.Face = mainDecal.Face
 				gui.Parent = part
 				gui.Adornee = part
@@ -494,17 +518,16 @@ local function _detectBoundaries(Frequency: number): ()
 				gui.ImageLabel.ImageTransparency = mainDecal.Transparency
 			end
 
-			local fadeData = equations.computeSignIntensity(part, mainDecal, "near", sources.list)
-
 			local state = SurfaceGuiStates[part]
 			if not state then
 				state = {
 					gui = gui,
-					currentTransparency = gui.ImageLabel.ImageTransparency,
-					currentBrightness = gui.Brightness,
-					currentLight = gui.LightInfluence,
-					isActive = true
-				}:: types.SurfaceGuiState -- forced to do this
+					currentTransparency = 1,
+					currentBrightness = 0,
+					currentLight = 1,
+					isActive = true,
+					isPendingRemoval = false,
+				}:: types.SurfaceGuiState -- forced to do this or else type errors
 				SurfaceGuiStates[part] = state
 			end
 
@@ -519,12 +542,15 @@ local function _detectBoundaries(Frequency: number): ()
 
 		for part in previousParts do
 			if not activeParts[part] then
-				local gui = SurfaceGuisInBox[part]
-				if gui then
-					_resetSurfaceGui(gui)
+				local state = SurfaceGuiStates[part]
+				if state and state.isPendingRemoval and state.gui then
+					_resetSurfaceGui(state.gui)
+					SurfaceGuiStates[part] = nil
+					SurfaceGuisInBox[part] = nil
 				end
 			end
 		end
+
 		currentParts = activeParts
 	end
 end
@@ -538,13 +564,14 @@ end
 local function _render(Frequency: number): ()
 	-- pcall replaced with pcallRetry used in the Start function
 	while true do
-		local dt = utils.adaptiveWait(config.RenderMinFPS, config.RenderMaxFPS,
+		local dt = utils.adaptiveWait(config.RENDER_MIN_FPS, config.RENDER_MAX_FPS,
 			utils.getFastestDriveSeat(Vehicles))
 
 		task.wait(dt) -- dt = deltaTime
 
 		local LerpSpeed = config.ReflectorConfig.LerpSpeed
 		for part, state in ReflectorStates do
+			if config.ReflectorConfig.Enabled == false then break end
 			if not ReflectorsisInBox[part] then
 				if state.baseColor then
 					part.Color = state.baseColor
@@ -603,7 +630,8 @@ local function _render(Frequency: number): ()
 		end
 
 		for part, state in SurfaceGuiStates do
-			if not currentParts[part] then
+			if config.SignConfig.Enabled == false then break end
+		--[[	if not currentParts[part] then
 				if state.gui then
 					state.gui.Enabled = false
 					state.gui.Adornee = nil
@@ -613,14 +641,26 @@ local function _render(Frequency: number): ()
 				SurfaceGuiStates[part] = nil
 				SurfaceGuisInBox[part] = nil
 				continue
-			end
+			end]]
 
 			local gui = state.gui
 			if gui and gui.Parent then
 				local LerpSpeed = config.SignConfig.LerpSpeed
-				state.currentTransparency += (state.targetTransparency - state.currentTransparency) * math.clamp(LerpSpeed * dt, 0, 1)
-				state.currentBrightness += (state.targetBrightness - state.currentBrightness) * math.clamp(LerpSpeed * dt, 0, 1)
-				state.currentLight += (state.targetLight - state.currentLight) * math.clamp(LerpSpeed * dt, 0, 1)
+
+				local inPart = currentParts[part] ~= nil
+				if inPart then
+					state.currentTransparency += (state.targetTransparency - state.currentTransparency) * math.clamp(LerpSpeed * dt, 0, 1)
+					state.currentBrightness += (state.targetBrightness - state.currentBrightness) * math.clamp(LerpSpeed * dt, 0, 1)
+					state.currentLight += (state.targetLight - state.currentLight) * math.clamp(LerpSpeed * dt, 0, 1)
+				else
+					state.currentTransparency += (1 - state.currentTransparency) * math.clamp(LerpSpeed * dt, 0, 1)
+					state.currentBrightness += (0 - state.currentBrightness) * math.clamp(LerpSpeed * dt, 0, 1)
+					state.currentLight += (1 - state.currentLight) * math.clamp(LerpSpeed * dt, 0, 1)
+
+					if state.currentTransparency >= config.SignConfig.InactiveTransparency then
+						state.isPendingRemoval = true
+					end
+				end
 
 				gui.ImageLabel.ImageTransparency = state.currentTransparency
 				gui.Brightness = state.currentBrightness
@@ -628,7 +668,8 @@ local function _render(Frequency: number): ()
 
 				local num = config.SignConfig.InactiveTransparency
 
-				if state.targetTransparency >= num and state.currentTransparency >= num then
+				if state.currentTransparency >= num then
+					state.isActive = false
 					gui.Enabled = false
 					gui.Adornee = nil
 					gui.Parent = nil
@@ -662,8 +703,8 @@ local function Start() : ()
 
 	_startReflectorIndexing()
 
-	BoundaryThread = task.defer(utils.pcallRetry, _detectBoundaries, config.MaxPcallRetries)
-	RenderThread = task.defer(utils.pcallRetry, _render, config.MaxPcallRetries)
+	BoundaryThread = task.defer(utils.pcallRetry, _detectBoundaries, config.MAX_PCALL_RETRIES)
+	RenderThread = task.defer(utils.pcallRetry, _render, config.MAX_PCALL_RETRIES)
 
 	debugger.print("Info","Successfully loaded!")
 end
@@ -683,7 +724,6 @@ local function Cleanup(): ()
 	debugger.print("Info","Cleaning up!")
 	task.cancel(BoundaryThread :: any)
 	task.cancel(RenderThread :: any)
-	--=SurfaceGuiPool:Clear()
 
 	for part, state in SurfaceGuiStates do
 		local gui = state.gui
