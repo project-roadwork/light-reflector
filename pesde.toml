@@ -1,5 +1,5 @@
 name = "project_roadwork/light_reflector"
-version = "1.0.0-infdev.2"
+version = "1.0.0-infdev.3"
 description = "A vehicle-based light reflector that reflects decals and basepart reflectors at long distances on a road."
 authors = ["Illinois_Roadbuff (Rogue Jr)"]
 repository = "https://codeberg.org/project-roadwork/light-reflector.git"
