@@ -22,18 +22,17 @@ export type IntensityData = {
 }
 
 export type Configuration = {
-	MphScale: number,
-	ReflectorConfig: {
-		Enabled: boolean,
-		PartName: string
-	}
+	[string]: any,
+
+	SignConfig: { [string]: any },
+	ReflectorConfig: { [string]: any },
 }
 
 export type VehicleMap = {[Instance | Vehicle]: any}
 
 export type Utils = {
-	deepMerge: (defaults: table, overrides: table) -> (),
-	assignConfig: (userConfig: table?) -> Configuration,
+	deepMerge: (defaults: {}, overrides: {}) -> (),
+	assignConfig: (userConfig: {}?) -> Configuration,
 	getSpeedMPH: (DriveSeat: VehicleSeat) -> number,
 	adaptiveWait: (minFPS: number, maxFPS: number, DriveSeat: VehicleSeat?) -> number,
 	getFastestDriveSeat: (Vehicles: VehicleMap) -> VehicleSeat?,
@@ -81,11 +80,5 @@ export type ReflectorState = {
 export type ReflectorStates = { [BasePart]: ReflectorState }
 
 export type PavementMap = { [BasePart]: true }
-
-export type PoolerType<T> = {
-	Get: () -> T,
-	Return: (T) -> (),
-	Clear: () -> (),
-}
 
 return {}
