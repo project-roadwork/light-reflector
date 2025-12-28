@@ -16,13 +16,15 @@ local debugger = require("../shared/debugger")
 local Lighting:Lighting = game:GetService("Lighting")
 local ReplicatedStorage:ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- Dark weathers
+-- Dark weathers (TTP / Redon Tech weather system compatibility)
 local darkWeathers: types.DarkWeathers = {
 	["Heavy Rain"] = true,
 	["Thunderstorms"] = true,
 	["Strong Thunderstorms"] = true,
 	["Heavy Rain / Snow"] = true
 }
+
+local AlreadyPrinted: boolean = false
 
 -- Public: Dark conditional function
 return function(): boolean -- Additionally includes TTP / Redon Tech weather compatibility. Expand should you wish.
@@ -45,8 +47,9 @@ return function(): boolean -- Additionally includes TTP / Redon Tech weather com
 				end
 			end
 		end
-	else
-		debugger.print("info","Unable to find Weather System")
+	elseif AlreadyPrinted == false then
+		AlreadyPrinted = true
+		debugger.print("Info","Unable to find Weather System")
 	end
 	return (clockTime >= DarkClockTimeStart or clockTime < DarkClockTimeEnd)
 		or canCount
