@@ -16,6 +16,7 @@ local debugger = require("../shared/debugger")
 local rangeTypes: { [types.RangeType]: boolean } = { near = true, far = true }
 local clamp = math.clamp
 
+-- Public: Get nearby light sources
 local function getNearbySources(signPos: Vector3, sources: types.SourceList, maxDistance: number)
 	local nearby = {}
 	for _, source in sources do
@@ -42,6 +43,8 @@ local function computeReflectorIntensity(part: BasePart, sources:types.SourceLis
 
 	debugger.assert(part:IsA("BasePart"), "InvalidInstance", "BasePart", part.ClassName)
 
+	local baseIntensity = part:GetAttribute(config.BASE_INTENSITY_ATTRIBUTE) or 1
+
 	local intensity = 0
 
 	for _, source in sources do
@@ -49,22 +52,36 @@ local function computeReflectorIntensity(part: BasePart, sources:types.SourceLis
 			local pos = source.getPosition()
 			local dir = source.getDirection()
 
-			local toPart = (part.Position - pos).Unit
+			local change = part.Position - pos
+
+			local toPart = change.Unit
 			local dot = clamp(dir:Dot(toPart), 0, 1)
 
-			local dist = (part.Position - pos).Magnitude
+			local dist = change.Magnitude
 			local distFactor = clamp(1 - (dist / config.ReflectorConfig.MaxDistance), 0, 1)
 
 			local wedgeFactor = 1
-			if config.ReflectorConfig.UseWedgeFacingDetection and part:IsA("WedgePart") then
-				local slopeNormal = part.CFrame.LookVector
+			if config.ReflectorConfig.UseWedgeFacingDetection and part:IsA("WedgePart") or
+				(part:IsA("Part") and part.Shape == Enum.PartType.Wedge) then
+
+				local localSlopeNormal = Vector3.new(0, 1, -1).Unit
+				local slopeNormalWorld = part.CFrame:VectorToWorldSpace(localSlopeNormal)
+
 				local toLight = (pos - part.Position).Unit
-				local wedgeDot = clamp(slopeNormal:Dot(toLight), 0, 1)
-				wedgeFactor = clamp(
-					(wedgeDot - config.ReflectorConfig.WedgeFacingDotThreshold) /
-						(1 - config.ReflectorConfig.WedgeFacingDotThreshold),
-					0, 1
-				)
+				local rawDot = slopeNormalWorld:Dot(toLight)
+
+			--	part:SetAttribute("RawDOT", rawDot) -- Kept as reference for debugging
+
+				if rawDot <= 0 then
+					wedgeFactor = 0
+				else
+					local dotClamped = clamp(rawDot, 0, 1)
+					wedgeFactor = clamp(
+						(dotClamped - config.ReflectorConfig.WedgeFacingDotThreshold) /
+							(1 - config.ReflectorConfig.WedgeFacingDotThreshold), -- Usually near 0
+						0, 1
+					)
+				end
 			end
 
 			local proximityFactor = (dist < config.ReflectorConfig.MinDistance) and (dist / config.ReflectorConfig.MinDistance) or 1
@@ -73,7 +90,7 @@ local function computeReflectorIntensity(part: BasePart, sources:types.SourceLis
 		end
 	end
 
-	return clamp(intensity, 0, 1)
+	return clamp(intensity * baseIntensity, 0, 1)
 end
 
 -- Public: Computes sign intensity
@@ -96,6 +113,8 @@ local function computeSignIntensity(part : Part, decal : Decal, rangeType: types
 
 	debugger.assert(part:IsA("BasePart"), "InvalidInstance", "BasePart", part.ClassName)
 	debugger.assert(rangeTypes[rangeType], "InvalidType", `either "far" or "near"`, rangeType)
+
+	local baseIntensity = part:GetAttribute(config.BASE_INTENSITY_ATTRIBUTE) or 1
 
 	local parent: Instance = decal.Parent :: Instance
 	debugger.assert(parent and parent:IsA("BasePart"), "InvalidInstance", "BasePart", parent.ClassName)
@@ -143,7 +162,9 @@ local function computeSignIntensity(part : Part, decal : Decal, rangeType: types
 
 
 		local fadeRange = (rangeType == "near") and (isReflective and FadeDistance or FadeDistance / 2)
-			or (isReflective and FadeDistance * 2 or FadeDistance) local distFade = clamp(dist / fadeRange, 0, 1)
+			or (isReflective and FadeDistance * 2 or FadeDistance)
+
+		local distFade = clamp(dist / fadeRange, 0, 1)
 		local distanceFactor = clamp(1 - (dist / fadeRange), 0, 1)
 
 		local toDecal = ((Parent.Position - seatPos) * Vector3.new(1, 0, 1)).Unit
@@ -158,20 +179,31 @@ local function computeSignIntensity(part : Part, decal : Decal, rangeType: types
 		local angleContribution = 1 - dotClamped
 		local distContribution = baseTransparency
 
+		local faceNormalLocal = Vector3.FromNormalId(decal.Face)
+		local faceNormalWorld = Parent.CFrame:VectorToWorldSpace(faceNormalLocal)
+
+		local toLight = (seatPos - Parent.Position).Unit
+		local facedot = clamp(faceNormalWorld:Dot(toLight), 0, 1)
+
+		--	part:SetAttribute("DOT", facedot) -- Kept as reference for debugging
+
+		if facedot <= config.SignConfig.DecalDotThreshold then -- Usually near 0
+			continue
+		end
+
 		if dist < config.SignConfig.FadeDistance and dot > 0 then
-			local weightedTransparency = baseTransparency * proximityFactor * angleContribution
-			local weightedBrightness = (1 + (1 - distContribution) * 0.25 + angleContribution * 0.25) * proximityFactor + (1 - proximityFactor)
-			local weightedLight = (distContribution * 0.5 + angleContribution * 0.5) * proximityFactor + (1 - proximityFactor)
+			local weightedTransparency = (baseTransparency * proximityFactor * angleContribution) * baseIntensity
+			local weightedBrightness = ((1 + (1 - distContribution) * 0.25 + angleContribution * 0.25) * proximityFactor + (1 - proximityFactor)) * baseIntensity
+			local weightedLight = ((distContribution * 0.5 + angleContribution * 0.5) * proximityFactor + (1 - proximityFactor)) * baseIntensity
 
 			finalTransparency = math.min(finalTransparency, weightedTransparency)
-
 			finalBrightness += weightedBrightness
-
 			finalLight = math.min(finalLight, weightedLight)
 
 			hasActiveLight = true
 		end
 	end
+
 	if not hasActiveLight then
 		finalTransparency = 1
 		finalBrightness = 0
