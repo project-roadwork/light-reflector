@@ -24,8 +24,9 @@ if config.ReflectorConfig.Enabled then
 			end
 		end
 	end
+end
 
-elseif config.SignConfig.Enabled then
+if config.SignConfig.Enabled then
 	for i,Folder in signFolders do
 		for i,p in Folder:GetDescendants() do
 			if p:IsA("Decal") and p.Parent and p.Parent:IsA("BasePart") then
