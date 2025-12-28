@@ -5,7 +5,7 @@
 
 --[[
 
-  Dual licensed under the Mozilla Public License 2.0 and the MIT License. You may choose either license.
+  Dual licensed under the Mozilla Public License 2.0 OR the MIT License. You may choose either license.
   Copyright (c) 2025 Project Roadwork
 
 ]]
