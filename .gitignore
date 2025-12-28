@@ -5,6 +5,9 @@ lune_packages
 luau_packages
 pesde.lock
 
+# wally
+wally.lock
+
 # Rojo
 sourcemap.json
 
