@@ -81,7 +81,7 @@ export type Pool = {
 	Logger: any, Mutex: any,
 	ObjectTaken: any, ObjectReturned: any,
 	GetObject: (Pool) -> Object,
-	ReturnObject: (Pool, Object) -> (),
+	ReturnObject: (Pool, Object) -> (boolean, string?),
 	Prewarm: (Pool, number) -> (),
 	CreateLog: (Pool, string, string) -> (),
 }
@@ -185,6 +185,11 @@ end
 -- Returns an object to the pool, resetting it for future use.
 --@param obj Object  Object to return to the pool.
 function ObjectPool:ReturnObject(obj: Object)
+
+	if obj.Parent ~= nil then
+		obj.Parent = nil
+	end
+
 	self.Mutex:lock()
 	local index = table.find(self.ActiveObjects, obj)
 	if index then
@@ -212,12 +217,15 @@ function ObjectPool:ReturnObject(obj: Object)
 				childPool:ReturnObject(child)
 			end
 		end
+		self.Mutex:unlock()
+		return true, nil
 	else
-		debugger.fatal("Fatal",
+		debugger.warn("Warning",
 			"Attempted to return an object that was not in the active list."
 		);
+		return false, "Attempted to return an object that was not in the active list"
 	end
-	self.Mutex:unlock()
+
 end
 
 return ObjectPool
