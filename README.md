@@ -1,5 +1,5 @@
 # Light Reflector 
-**Version: 1.0.0-infdev.2**
+**Version: 1.0.0-infdev.3**
 
  **A vehicle-based light reflector that reflects decals and basepart reflectors at long distances on roads.**
  #### ⚠️ Unstable - This script is under `infdev` and some functions may not work correctly.
@@ -44,6 +44,8 @@ workspace.Cars.ChildRemoved:Connect(function(car)
 	end
 end)
 ```
+**Other examples such as server pre-tagging and a vehicle handler are provided in the examples folder.**
+
 ## Older YouTube Showcase
 [![](https://utfs.io/f/nGnSqDveMsqxO7YMYJ0k5fKEn2LbBoPAuZ6XMTHDcNJ0QiG1)](https://www.youtube.com/watch?v=YK-_NzeLqjI)
 

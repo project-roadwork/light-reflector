@@ -14,9 +14,9 @@ return [[
 		  LANGUAGE:         Luau
 
 		  GROUP:            Project Roadwork
-		  VERSION:          1.0.0-infdev.2
+		  VERSION:          1.0.0-infdev.3
 		  CREATED:          2025-10-26 2:03 PM CDT
-		  LAST UPDATED:     2025-12-26 11:09 PM CST
+		  LAST UPDATED:     2025-12-27 9:54 PM CST
 
 		  SPDX-LICENSE-IDENTIFIER:   Apache-2.0
 
@@ -72,6 +72,11 @@ return [[
 				- Improved comments on the init module - 1.0.0-infdev.2
 				- More assertions - 1.0.0-infdev.2
 
+				- Wedge logic or `:Dot` actually works correctly - 1.0.0-infdev.3
+				- Resolved pool error where a gui not in the activeparts is returned which occurs in sudden changes of time - 1.0.0-infdev.3
+				- Resolved debug spam printing when no weather system is detected - 1.0.0-infdev.3
+				- Resolved sign flickering - 1.0.0-infdev.3
+
 			[Features]
 				- Full rewrite from a singular local script to a module with some attempt at type annotations and `--!strict`
 				- Multi-source / Multi-vehicle support (experimental)
@@ -99,6 +104,11 @@ return [[
 
 				- New modules "pool" and "mutex" - 1.0.0-infdev.2
 				- New pcallRetry utility function - 1.0.0-infdev.2
+
+				- Reflector tables and cached parts are now weak tables - 1.0.0-infdev.3
+				- Ensures signs only light up when vehicle is actually facing the decal - 1.0.0-infdev.3
+				- New configuration options and UPPER_SNAKE_CASE constraints - 1.0.0-infdev.3
+
 
 			[Omitted (left out) or Removed]
 				- Old debug functions
