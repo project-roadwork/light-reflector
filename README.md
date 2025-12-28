@@ -4,11 +4,11 @@
  **A vehicle-based light reflector that reflects decals and basepart reflectors at long distances on roads.**
  #### ⚠️ Unstable - This script is under `infdev` and some functions may not work correctly.
 
-**(ℹ️ Main) CODEBERG REPO:** https://codeberg.org/project-roadwork/light-reflector.git
+**(ℹ️ Main) Codeberg Repo: https://codeberg.org/project-roadwork/light-reflector.git**
 
-**(❌ MIRRORED/BACKUP) GITHUB REPO:** https://github.com/project-roadwork/light-reflector.git
+**(❌ Mirror/Backup) GitHub Repo: https://github.com/project-roadwork/light-reflector.git**
 
-***Please use the main repository especially with contributions!*** *Additionally, please **DO NOT** make any changes in the mirrored repository as it cannot be pulled into the main repo.*
+***Please use the main repository especially with contributions or commits!*** *Additionally, please **DO NOT** make any changes in the mirrored repository as it cannot be pulled into the main repo.*
 
 ## Module Prerequisites
 **None;** *PoolerPlus in this module has been superseded by Light Reflector's own pool module.*
