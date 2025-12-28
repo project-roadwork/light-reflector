@@ -62,4 +62,4 @@ end)
 8. Multi-vehicle support (only tested for two vehicles)
 
 ## License
-**License: [MPL 2.0](https://mozilla.org/MPL/2.0/) (open source)**
+**License: [Mozilla Public License 2.0](https://mozilla.org/MPL/2.0/) (open source)**
