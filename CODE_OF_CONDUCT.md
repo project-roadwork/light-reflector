@@ -10,7 +10,7 @@ includes but is not limited to:**
 - Non-development platforms if misbehavior is also applicable to development channels
 - Any other communication method for development of software
 
-**Modertor actions are final in development channels.**
+**Moderator actions are final in development channels.**
 
 ## Standards of Communication
 
