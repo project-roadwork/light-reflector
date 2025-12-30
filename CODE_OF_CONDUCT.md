@@ -10,7 +10,7 @@ includes but is not limited to:**
 - Non-development platforms if misbehavior is also applicable to development channels
 - Any other communication method for development of software
 
-**Off-topic channels are subject to their own rules and guidelines. Modertor actions are final in development channels.**
+**Modertor actions are final in development channels.**
 
 ## Standards of Communication
 
@@ -24,7 +24,7 @@ includes but is not limited to:**
 - Attempts to flame, or otherwise derail communication
 - Troll feeding
 
-**Critisism must encompass code, design, or implementation—not individuals.**
+**Criticism must encompass code, design, or implementation—not individuals.**
 
 ***If you see misbehavior, ignore the person(s) and speak with a moderator or administrator in [Illinois_Roadbuff's Discord server](https://discord.gg/sd4XfAqNF9), or contact Illinois_Roadbuff directly via email: [< illinois_roadbuff@proton.me >](mailto:illinois_roadbuff@proton.me).***
 
