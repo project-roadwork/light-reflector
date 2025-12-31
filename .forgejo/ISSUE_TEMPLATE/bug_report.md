@@ -1,5 +1,5 @@
 ---
-name: CODEBERG - Create a Bug report
+name: CODEBERG - Create a bug report
 about: Create a report to help us improve.
 title: ''
 labels: ''
