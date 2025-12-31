@@ -1,16 +1,13 @@
 # Light Reflector 
 **Version: 1.0.0-alpha.1**
 
-[![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
-
  **A vehicle-based light reflector that reflects decals and basepart reflectors at long distances on roads.**
- #### ⚠️ Unstable - This script is under `infdev` and some functions may not work correctly.
 
-**(ℹ️ Main) Codeberg Repo: https://codeberg.org/project-roadwork/light-reflector.git**
-
-**(❌ Mirror/Backup) GitHub Repo: https://github.com/project-roadwork/light-reflector.git**
+[![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0) [![Codeberg](https://img.shields.io/badge/Codeberg-Main%20Repository-white?logo=codeberg)](https://codeberg.org/project-roadwork/light-reflector.git) [![GitHub](https://img.shields.io/badge/GitHub-Mirror/Backup%20Repository-darkgrey?logo=github)](https://github.com/project-roadwork/light-reflector.git) 
 
 ***Please use the main repository especially with contributions or commits!*** *Additionally, please **DO NOT** make any changes in the mirrored repository as it cannot be pulled into the main repo.*
+
+ #### ⚠️ Unstable - This script is under `infdev` and some functions may not work correctly.
 
 ## Module Prerequisites
 **None;** *PoolerPlus in this module has been superseded by Light Reflector's own pool module.*
