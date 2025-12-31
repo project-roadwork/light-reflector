@@ -9,6 +9,6 @@
 
 ]]
 
-local version = { major = 1, minor = 0, patch = 0, pre_release = "alpha", build = 0 }
+local version = { major = 1, minor = 0, patch = 0, pre_release = "alpha", build = 1 }
 
-return "1.0.0-alpha.0"
+return "1.0.0-alpha.1"

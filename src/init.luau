@@ -53,7 +53,7 @@ local surfaceGuisByPart: { [BasePart]: types.SurfaceGuiTemplate } = {}
 local surfaceGuiStatesByPart: types.SurfaceGuiStates = {}
 local reflectorsByPart = setmetatable({}, config.Constraints.KEYS)
 local reflectorStatesByPart: types.ReflectorStates = setmetatable({}, config.Constraints.KEYS)
-local cachedSignParts: { types.RangeType } = setmetatable({}, config.Constraints.KEYS)
+local cachedSignParts: { [BasePart]: types.RangeType } = setmetatable({}, config.Constraints.KEYS)
 
 local renderLoopThread: thread?, boundaryLoopThread: thread? = nil, nil
 local isStarting: boolean = false
@@ -517,6 +517,7 @@ local function _runBoundaryDetectionLoop(): ()
 			if not state then
 				state = {
 					currentIntensity = 0,
+					lastIntensity = 0.1,
 					targetIntensity = 0,
 					baseColor = part:GetAttribute("BaseColor"),
 					isActive = false,
@@ -525,7 +526,7 @@ local function _runBoundaryDetectionLoop(): ()
 					targetTransparency = 1,
 					isHybrid = if config.ReflectorConfig.isHybridEnabled then part:GetAttribute(config.ReflectorConfig.hybridAttributeName) else false,
 					currentTransparency = 1,
-					lastTransparency = 0
+					lastTransparency = 0,
 
 				}:: types.ReflectorState
 				reflectorStatesByPart[part] = state
@@ -634,6 +635,29 @@ local function _runBoundaryDetectionLoop(): ()
 			end
 		end
 
+		for part in registeredReflectors do
+			if not part:IsDescendantOf(workspace) then
+				registeredReflectors[part] = nil
+				reflectorStatesByPart[part] = nil
+			--	part:Destroy()
+			end
+		end
+
+		for car in registeredVehicles do
+			if not car:IsDescendantOf(workspace) then
+				UnregisterVehicle(car)
+				--car:Destroy()
+			end
+		end
+
+		for part, range in cachedSignParts do
+			if not part:IsDescendantOf(workspace) then
+				cachedSignParts[part] = nil
+			end
+		end
+
+
+
 		currentDetectedParts = detectedPartsThisFrame
 	end
 end
@@ -654,13 +678,9 @@ local function _runRenderLoop(): ()
 		-- render stepped / prerender runs on the client framerate so it would make sense to put the fading animations under that event,
 		--  also considering that the target time to wait which is around 1/45 - 1/60 could be higher than the actual client framerate, which is not ideal
 
-		task.wait(deltaTime)
-
 		local lerpSpeed:number = config.ReflectorConfig.lerpSpeed
 
 		for part, state in reflectorStatesByPart do
-			local Material = part.Material
-			local Color = part.Color
 
 			if config.ReflectorConfig.isEnabled == false then break end
 
@@ -691,7 +711,7 @@ local function _runRenderLoop(): ()
 				state.currentTransparency += (state.targetTransparency - state.currentTransparency)
 					* math.clamp(lerpSpeed * deltaTime, 0, 1)
 
-				if state.currentTransparency ~= part.Transparency then
+				if math.abs(state.currentTransparency - state.lastTransparency) > 0.01 then
 					part.Transparency = state.currentTransparency
 					state.lastTransparency = state.currentTransparency
 				end
@@ -712,6 +732,9 @@ local function _runRenderLoop(): ()
 			end
 
 			local intensity = state.currentIntensity
+			if math.abs(intensity - state.lastIntensity) < 0.00015 then
+				continue
+			end
 
 			local newColor
 			local newMaterial
@@ -754,6 +777,8 @@ local function _runRenderLoop(): ()
 				part.Color = newColor
 				state.lastColor = newColor
 			end
+
+			state.lastIntensity = intensity
 		end
 
 		lerpSpeed = config.SignConfig.lerpSpeed
@@ -792,6 +817,7 @@ local function _runRenderLoop(): ()
 
 				if state.lastLightInfluence ~= state.currentLightInfluence then
 					gui.LightInfluence = state.currentLightInfluence
+					state.lastLightInfluence = state.currentLightInfluence
 				end
 
 				local num = config.SignConfig.inactiveTransparencyThreshold

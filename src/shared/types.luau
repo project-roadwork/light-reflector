@@ -89,6 +89,7 @@ export type SurfaceGuiStates = { [BasePart]: SurfaceGuiState }
 export type ReflectorState = {
 	currentIntensity: number,
 	targetIntensity: number,
+	lastIntensity: number,
 
 	baseColor: Color3,
 	isActive: boolean?,

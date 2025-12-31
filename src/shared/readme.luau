@@ -22,9 +22,9 @@ return [[
 		  LANGUAGE:         Luau
 
 		  GROUP:            Project Roadwork
-		  VERSION:          1.0.0-infdev.3
+		  VERSION:          1.0.0-alpha.1
 		  CREATED:          2025-10-26 2:03 PM CDT
-		  LAST UPDATED:     2025-12-30 7:34 PM CST
+		  LAST UPDATED:     2025-12-31 12:43 AM CST
 
 		  SPDX-LICENSE-IDENTIFIER:   MPL-2.0
 
@@ -91,6 +91,11 @@ return [[
 				- `Cleanup()` function actually works properly - 1.0.0-alpha.0
 				- Resolved some typing issues albiet this system/library is not fully typed - 1.0.0-alpha.0
 				- Some sign flickering on the first few parts - 1.0.0-alpha.0
+
+				- Attempted to resolve reflector memory/instance leak - 1.0.0-alpha.1
+				- Removed unused `.Color` and `.Material` reads which consumed A LOT of CPU resources - 1.0.0-alpha.1
+				- Loops get `continued` if there is barely any difference in the reflector intensities - 1.0.0-alpha.1
+				- New reflector state property `lastIntensity` - 1.0.0-alpha.1
 
 			[Features]
 				- Full rewrite from a singular local script to a module with some attempt at type annotations and `--!strict`
