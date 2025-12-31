@@ -14,4 +14,4 @@ assignees: ''
 
 ***Main Repository Link: https://codeberg.org/project-roadwork/light-reflector.git***
 
-*Big thanks! - Illinois_Roadbuff ("Rogue Jr") <<illinois_roadbuff@proton.me>>*
+*Big thanks! - Jr*
