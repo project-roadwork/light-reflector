@@ -1,6 +1,6 @@
 ---
-name: Bug report
-about: Create a report to help us improve.
+name: CODEBERG: Create a Bug report
+about: Create a report to help us improve. Select if you are using Codeberg/Forejo.
 title: 'READ NOTICE'
 labels: ''
 assignees: ''
