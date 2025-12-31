@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Create a report to help us improve. ⚠️ NOTICE: Please DO NOT submit bug reports / issues on GitHub
+about: Create a report to help us improve.
 title: ''
 labels: ''
 assignees: ''
