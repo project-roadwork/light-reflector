@@ -1,24 +1,28 @@
 # Light Reflector 
 **Version: 1.0.0-alpha.1**
 
- **A vehicle-based light reflector that reflects decals and basepart reflectors at long distances on roads.**
+ **A vehicle-based light reflector system that reflects `Decals` and `BasePart` reflectors at long distances on roads.**
 
 [![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0) [![Codeberg](https://img.shields.io/badge/Codeberg-Main%20Repository-white?logo=codeberg)](https://codeberg.org/project-roadwork/light-reflector.git) [![GitHub](https://img.shields.io/badge/GitHub-Mirror/Backup%20Repository-darkgrey?logo=github)](https://github.com/project-roadwork/light-reflector.git) 
 
 ***Please use the main repository especially with contributions or commits!*** *Additionally, please **DO NOT** make any changes in the mirrored repository as it cannot be pulled into the main repo.*
 
- #### ⚠️ Unstable - This script is under `infdev` and some functions may not work correctly.
+ #### ⚠️ Unstable - This script is under `alpha` and some functions may not work correctly.
 
-## Module Prerequisites
-**None;** *PoolerPlus in this module has been superseded by Light Reflector's own pool module.*
-
-## Notice
+## Wally / Pesde Notice
 *Older versions in Pesde or Wally are not accurate! Accurate older releases are in Codeberg (not GitHub).*
 
-*Additionally, this is my first time using Pesde so my apologies if something is not formatted correctly.*
+*Additionally, this is my first time using Pesde - apologies if something is not formatted correctly.*
 
-## TODO
-1. ~~Make custom pooler module since PoolerPlus is neither in Wally nor Pesde~~ Finished v1.0.0-infdev.2
+## Current features
+1. Adaptive waiting on performance-critical functions
+2. Distance fall-off
+3. Angle-based brightness
+4. Utilizes `SurfaceGuis` for reflectivity
+5. Non-tweened linear intoperlation for gradual brightness
+6. Uses ImageTransparency, Brightness, and LightInfluence
+7. SurfaceGui pooling
+8. Multi-vehicle support (only tested for two vehicles)
 
 ## Example Usage
 ```lua
@@ -55,16 +59,6 @@ end)
 [![](https://utfs.io/f/nGnSqDveMsqxO7YMYJ0k5fKEn2LbBoPAuZ6XMTHDcNJ0QiG1)](https://www.youtube.com/watch?v=YK-_NzeLqjI)
 
 ***Not up to date***
-
-## Current features
-1. Adaptive waiting on performance-critical functions
-2. Distance fall-off
-3. Angle-based brightness
-4. Utilizes `SurfaceGuis` for reflectivity
-5. Non-tweened linear intoperlation for gradual brightness
-6. Uses ImageTransparency, Brightness, and LightInfluence
-7. SurfaceGui pooling
-8. Multi-vehicle support (only tested for two vehicles)
 
 ## License
 **License: [Mozilla Public License 2.0](https://mozilla.org/MPL/2.0/) (open source)**
