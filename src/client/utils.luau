@@ -52,15 +52,21 @@ local function renderWait(waitTime: number?): number
 end
 
 -- Public: Deep merges two dictionaries
-local function deepMerge(defaults: types.Dict, overrides: types.Dict): ()
-	for key, value in next, overrides do
+local function deepMerge(defaults: types.Dict, overrides: types.Dict, path: string?): ()
+	path = path or ""
 
-		if defaults[key] == nil then
-			debugger.warn("Warning", `Unknown configuration key: -> {key} <- ; are you sure that this key is spelt or capitalized correctly?`)
+	for key, value in next, overrides do
+		if typeof(key) == "string" and defaults[key] == nil then
+			local fullPath = path ~= "" and (`{path}.{key}`) or tostring(key)
+			debugger.warn(
+				"Warning",
+				`Unknown configuration key: -> {fullPath} <-; are you sure it is spelled or capitalized correctly?`
+			)
 		end
 
 		if typeof(value) == "table" and typeof(defaults[key]) == "table" then
-			deepMerge(defaults[key], value)
+			local nextPath = path ~= "" and (`{path}.{key}`) or tostring(key)
+			deepMerge(defaults[key], value, nextPath)
 		else
 			defaults[key] = value
 		end
