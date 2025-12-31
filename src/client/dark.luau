@@ -32,6 +32,7 @@ local darkWeathers: types.DarkWeathers = {
 	["Heavy Rain / Snow"] = true
 }
 
+-- Variables
 local AlreadyPrinted: boolean = false
 
 -- Public: Dark conditional function
@@ -40,8 +41,8 @@ return function(): boolean -- Additionally includes TTP / Redon Tech weather com
 	local Weather: Folder? = ReplicatedStorage:FindFirstChild("WeatherResources") :: Folder?
 	local canCount = false
 
-	local DarkClockTimeStart = config.DarkClockTimeStart
-	local DarkClockTimeEnd = config.DarkClockTimeEnd
+	local DarkClockTimeStart = config.General.darkClockTimeStart
+	local DarkClockTimeEnd = config.General.darkClockTimeEnd
 
 	if Weather then
 		local WeatherFolder: Folder? = Weather:FindFirstChild("Weather") :: Folder?

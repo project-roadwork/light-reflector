@@ -11,6 +11,9 @@
 
 ]]
 
+-- Services
+local RunService:RunService = game:GetService("RunService")
+
 -- Types module
 local types = require("../shared/types")
 
@@ -20,9 +23,42 @@ local debugger = require("../shared/debugger")
 -- Configuration
 local config: types.Configuration = require("../shared/config")
 
+-- Variables
+local PreRender: RBXScriptSignal = RunService.PreRender
+
+-- Valid faces for Enum.NormalId
+local validFaces: { [string]: boolean }  =  {
+	Top = true,
+	Bottom = true,
+	Left = true,
+	Right = true,
+	Front = true,
+	Back = true
+}
+
+-- Public: Waits via RunService.PreRender rather than RunService.Heartbeat
+local function renderWait(waitTime: number?): number
+	if waitTime ~= nil then
+		local total:number = 0
+
+		while total < waitTime do
+			total += PreRender.Wait(PreRender) -- I think .Function(self) (explicit) is faster than :Function() (implicit)?
+		end
+
+		return total
+	else
+		return PreRender.Wait(PreRender)
+	end
+end
+
 -- Public: Deep merges two dictionaries
 local function deepMerge(defaults: types.Dict, overrides: types.Dict): ()
-	for key, value in pairs(overrides) do
+	for key, value in next, overrides do
+
+		if defaults[key] == nil then
+			debugger.warn("Warning", `Unknown configuration key: -> {key} <- ; are you sure that this key is spelt or capitalized correctly?`)
+		end
+
 		if typeof(value) == "table" and typeof(defaults[key]) == "table" then
 			deepMerge(defaults[key], value)
 		else
@@ -32,33 +68,38 @@ local function deepMerge(defaults: types.Dict, overrides: types.Dict): ()
 end
 
 -- Public: Assigns config via deep merge
-local function assignConfig(userConfig): types.Configuration
+local function assignConfiguration(userConfig): types.Configuration
 	if typeof(userConfig) ~= "table" then
 		return config
 	end
 
 	deepMerge(config :: types.Dict, userConfig)
+
 	return config
 end
 
 -- Public: Gets speed in MPH via respective MPH scale
 local function getSpeedMPH(DriveSeat: VehicleSeat): number
-	return DriveSeat.AssemblyLinearVelocity.Magnitude * config.MPH_SCALE
+	-- converts studs to MPH based on the mphScale config
+	return DriveSeat.AssemblyLinearVelocity.Magnitude * config.Constraints.MPH_SCALE
 end
 
 -- Public: Adaptive wait time based on vehicle speed
-local function adaptiveWait(minFPS: number, maxFPS: number, DriveSeat: VehicleSeat?): number
+local function adaptiveWait(waitFunction: (number?) -> number, minFPS: number, maxFPS: number, DriveSeat: VehicleSeat?): number
+	-- faster VehicleSeat velocity = more FPS and vice versa
 	if not DriveSeat then
-		return 1 / maxFPS
+		return waitFunction(1 / maxFPS)
 	end
 
 	local speedMph = getSpeedMPH(DriveSeat)
 	local targetFPS = math.clamp((speedMph / 80) * maxFPS, minFPS, maxFPS)
-	return 1 / targetFPS
+	return waitFunction(1 / targetFPS)
 end
 
 -- Public: Gets the fastest VehicleSeat in a vehicle map table
 local function getFastestDriveSeat(Vehicles: types.VehicleMap)
+	-- ^ since the package is no longer tailored towards one vehicle, it needs to get the fastest drive seat out of all of the
+	--    vehicles
 	local fastestSeat = nil
 	local maxSpeed = 0
 
@@ -76,20 +117,13 @@ local function getFastestDriveSeat(Vehicles: types.VehicleMap)
 	return fastestSeat
 end
 
--- Public: Determines if a part is a reflector
-local function isPavementReflector(part: BasePart): boolean
-	return config.ReflectorConfig.Enabled
-		and part:IsA("BasePart")
-		and part.Name == config.ReflectorConfig.PartName
-end
-
 -- Public: Fixes the orientation of a sign part
-local function fixPartOrientation(part: BasePart, decal: Decal)
+local function fixPartOrientation(part: BasePart, decal: Decal): ()
+	-- ^ this function is needed since the top face in Decals and SurfaceGuis are NOT in the same orientation
 	local isFixed: boolean? = part:GetAttribute("IsFixed")
 	if isFixed == true then return end
 
 	if decal.Face == Enum.NormalId.Top then
-
 
 		part.CFrame *= CFrame.Angles(0, math.rad(-90), math.rad(-90))
 
@@ -107,9 +141,15 @@ local function fixPartOrientation(part: BasePart, decal: Decal)
 end
 
 -- Public: Normalizes the base color of a part if it is too low or too high
-local function normalizeBaseColor(part: BasePart): Color3
+local function normalizeBaseColor(part: BasePart, isNormalizeEnabled: boolean): Color3
+	-- if a reflector color is too low, it would barely light up at all. If it is too high, it would blind one's eyes
 	local color = part.Color
 	if part:GetAttribute("BaseColor") then return color end
+
+	if isNormalizeEnabled == false then
+		part:SetAttribute("BaseColor", color)
+		return color
+	end
 
 	local maxComponent = math.max(color.R, color.G, color.B)
 	local minTarget = 0.78
@@ -137,6 +177,7 @@ end
 
 -- Public: pcall retry function
 local function pcallRetry(func: (...any) -> (...any), maxRetries: number, ...): (boolean, string?)
+	-- mainly due to pool errors, better to try again instead of erroring the entire function
 	local args = {...}
 	local attempt = 0
 	local success, result
@@ -156,15 +197,38 @@ local function pcallRetry(func: (...any) -> (...any), maxRetries: number, ...): 
 	return success, result
 end
 
+-- Public: determines if the provided Color3's are equal
+local function areColorsEqual(colorA:Color3, colorB:Color3, epsilon: number)
+	-- ^ needed since Color3's have floating points
+	local epsilon = epsilon or 0.001
+
+	if math.abs(colorA.R - colorB.R) > epsilon then
+		return false
+	end
+
+	if math.abs(colorA.G - colorB.G) > epsilon then
+		return false
+	end
+
+	if math.abs(colorA.B - colorB.B) > epsilon then
+		return false
+	end
+
+	return true
+end
+
+
 return table.freeze({
 	Name = "utils",
 	deepMerge = deepMerge,
-	assignConfig = assignConfig,
+	assignConfiguration = assignConfiguration,
 	getSpeedMPH = getSpeedMPH,
 	adaptiveWait = adaptiveWait,
 	getFastestDriveSeat = getFastestDriveSeat,
-	isPavementReflector = isPavementReflector,
 	fixPartOrientation = fixPartOrientation,
 	normalizeBaseColor = normalizeBaseColor,
-	pcallRetry = pcallRetry
+	pcallRetry = pcallRetry,
+	areColorsEqual = areColorsEqual,
+	validFaces = validFaces,
+	renderWait = renderWait
 })

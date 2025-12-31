@@ -5,7 +5,7 @@
 
 --[[
 
-  Dual licensed under the Mozilla Public License 2.0 OR the MIT License. You may choose either license.
+  Dual licensed under the Mozilla Public License 2.0 and the MIT License. You may choose either license.
   Copyright (c) 2025 Project Roadwork
 
 ]]
@@ -23,7 +23,7 @@ local Data = {
 	Name = "Package",
 }
 
-local Configuration = require("./config")
+local config = require("./config")
 
 -- Functions
 
@@ -40,13 +40,13 @@ local function format(id: string, trace: string, ...: any): string
 end
 
 local function warn(id: string, ...: any)
-	if not Configuration.ShowWarnings then return end
+	if not config.General.showWarnings then return end
 
 	luauwarn(format(id, debug.traceback(nil, 2), ...))
 end
 
 local function print(id: string, ...: any)
-	if not Configuration.ShowPrints then return end
+	if not config.General.showPrints then return end
 
 	luauprint(format(id, debug.traceback(nil, 2), ...))
 end
@@ -72,6 +72,7 @@ end
 
 local function set(name: string, logs: {[string]: string}, url: string?)
 	if game:GetService("RunService"):IsStudio() and url then
+	--if url then
 		Data.URL = url :: any
 	end
 	Data.Name = name :: any

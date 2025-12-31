@@ -1,4 +1,4 @@
--- USAGE: lightreflector/shared/ver.luau
+-- USAGE: lightreflector/shared/version.luau
 -- Version for Light Reflector
 
 --[[
@@ -9,6 +9,6 @@
 
 ]]
 
-local version = { major = 1, minor = 0, patch = 0, tag = "infdev", build = 3 }
+local version = { major = 1, minor = 0, patch = 0, pre_release = "alpha", build = 0 }
 
-return "1.0.0-infdev.3"
+return "1.0.0-alpha.0"

@@ -24,7 +24,7 @@ return [[
 		  GROUP:            Project Roadwork
 		  VERSION:          1.0.0-infdev.3
 		  CREATED:          2025-10-26 2:03 PM CDT
-		  LAST UPDATED:     2025-12-28 12:56 PM CST
+		  LAST UPDATED:     2025-12-30 7:34 PM CST
 
 		  SPDX-LICENSE-IDENTIFIER:   MPL-2.0
 
@@ -36,14 +36,14 @@ return [[
 		  links.
 
 		  LICENSE HEADER:
-			Copyright 2024-2026 Illinois_Roadbuff "Rogue Jr" and Project Roadwork
+			Copyright 2024-2026 Illinois_Roadbuff ("Rogue Jr") and Project Roadwork
 
 			This Source Code Form is subject to the terms of the Mozilla Public
 			License, v. 2.0. If a copy of the MPL was not distributed with this
 			file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 		  AUTHORS:
-		   Illinois_Roadbuff (2653606809) - October 26th, 2025 - Created the file
+		   Illinois_Roadbuff (RBX 2653606809) - October 26th, 2025 - Created the file
 		-----------------------------------------------------------------------------------
 
 	B. ABOUT
@@ -86,6 +86,12 @@ return [[
 				- Resolved debug spam printing when no weather system is detected - 1.0.0-infdev.3
 				- Resolved sign flickering - 1.0.0-infdev.3
 
+				- Actually fixed the SurfaceGui instance leak & pool malfunction - 1.0.0-alpha.0
+				- Raycasting and debug boxes have been fixed - 1.0.0-alpha.0
+				- `Cleanup()` function actually works properly - 1.0.0-alpha.0
+				- Resolved some typing issues albiet this system/library is not fully typed - 1.0.0-alpha.0
+				- Some sign flickering on the first few parts - 1.0.0-alpha.0
+
 			[Features]
 				- Full rewrite from a singular local script to a module with some attempt at type annotations and `--!strict`
 				- Multi-source / Multi-vehicle support (experimental)
@@ -118,6 +124,28 @@ return [[
 				- Ensures signs only light up when vehicle is actually facing the decal - 1.0.0-infdev.3
 				- New configuration options and UPPER_SNAKE_CASE constraints - 1.0.0-infdev.3
 
+				- Reduced the amount of `.Material` and `.Color` writes - 1.0.0-alpha.0
+				- New hybrid subsystem that works alongside the Reflector system - 1.0.0-alpha.0
+				- Many new configuration options - 1.0.0-alpha.0
+				- The render loop now relies on a `RunService.PreRender` form of `wait()` for the loop - 1.0.0-alpha.0
+				- New hybrid subsystem that works alongside the Reflector system - 1.0.0-alpha.0
+				- Better and more specific varianle naming in the init module - 1.0.0-alpha.0
+				- Separate vehicle light intensities are now compatible - 1.0.0-alpha.0
+				- Functionality to keep textures or not on the Reflector system - 1.0.0-alpha.0
+				- Renamed module `ver` to `version` - 1.0.0-alpha.0
+				- Configuration deep merge safety check on keys and whether they exist or not - 1.0.0-alpha.0
+				- Constraints are now frozen upon start - 1.0.0-alpha.0
+				- Connections are now cleared out upon calling `Cleanup()` - 1.0.0-alpha.0
+				- Computation optimizations by reducing `.Position` and `.CFrame` reads - 1.0.0-alpha.0
+				- Reflectors now support assigning "reflecting" faces to be used on `:Dot()` or whether the light is
+				  facing it or not - 1.0.0-alpha.0
+
+			[API Changes]
+				- `AddVehicle` has been changed to `RegisterVehicle` - 1.0.0-alpha.0
+				- `RemoveVehicle` has been changed to `UnregisterVehicle` - 1.0.0-alpha.0
+				- `ProcessReflector` has been changed to `RegisterReflector` - 1.0.0-alpha.0
+				- 'RemoveReflector' has been changed to `UnregisterReflector` - 1.0.0-alpha.0
+				- 'AssignConfig' has been changed to 'AssignConfiguration' - 1.0.0-alpha.0
 
 			[Omitted (left out) or Removed]
 				- Old debug functions
@@ -126,6 +154,8 @@ return [[
 				- Hard-coded configs
 
 				- PoolerPlus dependency; replaced with custom pooler - 1.0.0-infdev.2
+				- Certain assertions in `RegisterVehicle` since they error out the function when
+				   it is just a safety check - 1.0.0-alpha.0
 
 			[Other Notes]
 				- AS THIS IS A PRE-RELEASE, SOME FUNCTIONS MAY NOT WORK CORRECTLY FROM v0.1.5 AND NEEDS FIXING

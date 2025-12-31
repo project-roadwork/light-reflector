@@ -5,7 +5,7 @@
 
 --[[
 
-  Dual licensed under the Mozilla Public License 2.0 OR the MIT License. You may choose either license.
+  Dual licensed under the Mozilla Public License 2.0 and the MIT License. You may choose either license.
   Copyright (c) 2025 Project Roadwork
 
 ]]
@@ -147,7 +147,7 @@ function ObjectPool:Prewarm(count: number)
 	self.UsageMetrics.AvailableCount = #self.Objects
 --	debugger.print("Info", "Prewarming completed.")
 end
-
+local Returned = 0
 --- Retrieves an object from the pool, creating a new one if necessary.
 ---@return Object  Object retrieved from the pool.
 function ObjectPool:GetObject(): Object
@@ -203,6 +203,7 @@ function ObjectPool:ReturnObject(obj: Object)
 		table.remove(self.ActiveObjects, index)
 		self.UsageMetrics.ActiveCount -= 1
 		self.ResetObject(obj)
+		Returned += 1
 		if #self.Objects < self.MaxSize then
 			table.insert(self.Objects, obj)
 			self.UsageMetrics.AvailableCount += 1

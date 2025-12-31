@@ -16,7 +16,7 @@ export type LightSource = {
 	getPosition: () -> Vector3,
 	getDirection: () -> Vector3,
 	isActive: () -> boolean | () -> number,
-	Intensity: number,
+	getIntensity: () -> number,
 }
 
 export type SourceList = { LightSource }
@@ -36,7 +36,7 @@ export type Configuration = {
 	ReflectorConfig: { [string]: any },
 }
 
-export type VehicleMap = {[Instance | Vehicle]: any}
+export type VehicleMap = {[Instance & Vehicle]: any}
 
 export type Utils = {
 	deepMerge: (defaults: {}, overrides: {}) -> (),
@@ -66,13 +66,22 @@ export type Vehicle = {
 }
 
 export type SurfaceGuiState = {
-	gui: SurfaceGui?,
+	gui: SurfaceGuiTemplate?,
 	currentTransparency: number,
 	currentBrightness: number,
-	currentLight: number,
+	currentLightInfluence: number,
 	targetTransparency: number,
 	targetBrightness: number,
-	targetLight: number,
+	targetLightInfluence: number,
+	isPendingRemoval: boolean,
+	isActive: boolean,
+	lastTransparency: number,
+	lastBrightness: number,
+	lastLightInfluence: number,
+}
+
+export type SurfaceGuiTemplate = SurfaceGui & {
+	ImageLabel: ImageLabel
 }
 
 export type SurfaceGuiStates = { [BasePart]: SurfaceGuiState }
@@ -83,6 +92,14 @@ export type ReflectorState = {
 
 	baseColor: Color3,
 	isActive: boolean?,
+
+	lastMaterial: Enum.Material,
+	lastColor: Color3,
+
+	isHybrid: boolean?,
+	targetTransparency: number,
+	currentTransparency: number,
+	lastTransparency: number,
 }
 
 export type ReflectorStates = { [BasePart]: ReflectorState }
