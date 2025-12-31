@@ -10,6 +10,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LightReflector = require(ReplicatedStorage.lightreflector)
 local Cars = workspace.Cars
 
+local function determineIntensity(car:Instance)
+  local finalIntensity = 1
+-- logic to see if high beams are enabled or not (thus increase the intensity)
+  return finalIntensity
+end
+
 local function CheckForRegLightValue(car:Model)
 	local Body = car.Body
 	local Headlight = Body:FindFirstChild("Headlight")
@@ -48,13 +54,13 @@ workspace.Cars.ChildAdded:Connect(function(car)
 	task.wait() -- a-chassis init reasons
 	if car:IsA("Model") and (car:FindFirstChildOfClass("VehicleSeat") or car:WaitForChild("DriveSeat",5)) then
 		print("Indexed Vehicle")
-		LightReflector.AddVehicle(car, CheckForRegLightValue(car))
+		LightReflector.RegisterVehicle(car, CheckForRegLightValue(car), determineIntensity)
 	end
 end)
 
 workspace.Cars.ChildRemoved:Connect(function(car)
 	if car:IsA("Model") and (car:FindFirstChildOfClass("VehicleSeat") or car:WaitForChild("DriveSeat",5)) then
-		LightReflector.RemoveVehicle(car)
+		LightReflector.UnregisterVehicle(car)
 	end
 end)
 

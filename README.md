@@ -1,5 +1,5 @@
 # Light Reflector 
-**Version: 1.0.0-infdev.3**
+**Version: 1.0.0-alpha.0**
 
 [![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
 

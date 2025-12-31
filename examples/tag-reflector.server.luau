@@ -13,8 +13,8 @@ local LightReflector = ReplicatedStorage.lightreflector
 
 local config = require(LightReflector.shared.config)
 
-local signFolders = config.SignConfig.SignsFolders
-local reflectorFolders = config.ReflectorConfig.ReflectorsFolder
+local signFolders = config.SignConfig.signsFolders
+local reflectorFolders = config.ReflectorConfig.reflectorsFolder
 
 if config.ReflectorConfig.Enabled then
 	for i,Folder in reflectorFolders do
@@ -30,7 +30,7 @@ if config.SignConfig.Enabled then
 	for i,Folder in signFolders do
 		for i,p in Folder:GetDescendants() do
 			if p:IsA("Decal") and p.Parent and p.Parent:IsA("BasePart") then
-				CollectionService:AddTag(p.Parent, config.SignConfig.TagName)
+				CollectionService:AddTag(p.Parent, config.SignConfig.tagName)
 			end
 		end
 	end
