@@ -1,6 +1,8 @@
 # Light Reflector 
 **Version: 1.0.0-infdev.3**
 
+[![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
+
  **A vehicle-based light reflector that reflects decals and basepart reflectors at long distances on roads.**
  #### ⚠️ Unstable - This script is under `infdev` and some functions may not work correctly.
 
