@@ -1,3 +1,12 @@
+---
+name: Bug report
+about: Create a report to help us improve. ⚠️ NOTICE: Please DO NOT submit bug reports / issues on GitHub
+title: ''
+labels: ''
+assignees: ''
+
+---
+
 ### ⚠️ NOTICE: Please **DO NOT** submit bug reports / issues on GitHub
 **Any pull request or issue submitted to the mirrored repositoy in GitHub CANNOT be pulled into the [main repositoy](https://codeberg.org/project-roadwork/light-reflector.git) in Codeberg/ForgeJo.**
 
