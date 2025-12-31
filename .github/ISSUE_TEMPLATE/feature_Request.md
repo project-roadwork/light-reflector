@@ -1,3 +1,12 @@
+---
+name: Feature request
+about: Suggest an idea for this project
+title: ''
+labels: ''
+assignees: ''
+
+---
+
 ### ⚠️ NOTICE: Please **DO NOT** submit feature requests / issues on GitHub
 **Any pull request or issue submitted to the mirrored repositoy in GitHub CANNOT be pulled into the [main repositoy](https://codeberg.org/project-roadwork/light-reflector.git) in Codeberg/ForgeJo.**
 
