@@ -22,7 +22,7 @@ local function create(car: Instance | types.Vehicle,
 	getPosition: () -> Vector3,
 	getDirection: () -> Vector3,
 	getEnabled: (() -> boolean | () -> number),
-	intensity: (() -> number)?
+	intensity: ((Instance) -> number)?
 ): types.LightSource
 
 	return {
@@ -30,7 +30,7 @@ local function create(car: Instance | types.Vehicle,
 		getPosition = getPosition,
 		getDirection = getDirection,
 		isActive = getEnabled or function() return true end,
-		getIntensity = if intensity then intensity else function() return 1 end,
+		getIntensity = if intensity then intensity else function(car) return 1 end,
 	}
 end
 
@@ -45,7 +45,7 @@ local function register(car: Instance | types.Vehicle,
 	getPosition: () -> Vector3,
 	getDirection: () -> Vector3,
 	getEnabled: () -> boolean | () -> number,
-	intensity: (() -> number)?
+	intensity: ((Instance) -> number)?
 ): types.LightSource
 
 	return add(create(car, getPosition, getDirection, getEnabled, intensity))

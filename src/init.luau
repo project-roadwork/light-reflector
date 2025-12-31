@@ -113,7 +113,7 @@ local SurfaceGuiPool = pool.new(templateGui,
 	Public: Adds a vehicle
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-local function RegisterVehicle(car: Instance, isEnabled: boolean | number, getIntensity: () -> number): ()
+local function RegisterVehicle(car: Instance, isEnabled: boolean | number, getIntensity: (Instance) -> number): ()
 	-- could have asserted but would flood the output with errors
 
 	if car == nil then

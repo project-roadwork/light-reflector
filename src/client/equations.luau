@@ -96,7 +96,7 @@ local function computeReflectorIntensity(part: BasePart, sources:types.SourceLis
 		if source.isActive()  then
 			local pos = source.getPosition()
 			local dir = source.getDirection()
-			local lightIntensity = source.getIntensity()
+			local lightIntensity = source.getIntensity(source.Owner)  or 1
 
 			local change = partPosition - pos
 
@@ -254,7 +254,7 @@ local function computeSignIntensity(part : BasePart, decal : Decal, rangeType: t
 
 		local seatPos = light.getPosition()
 		local carLook = light.getDirection()
-		local intensity = light.getIntensity() or 1
+		local intensity = light.getIntensity(light.Owner) or 1
 
 		local dist = (seatPos - partPosition).Magnitude
 

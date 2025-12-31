@@ -16,7 +16,7 @@ export type LightSource = {
 	getPosition: () -> Vector3,
 	getDirection: () -> Vector3,
 	isActive: () -> boolean | () -> number,
-	getIntensity: () -> number,
+	getIntensity: (Instance) -> number,
 }
 
 export type SourceList = { LightSource }
