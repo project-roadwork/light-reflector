@@ -27,7 +27,13 @@
 ```lua
 local LightReflector = require(path.to.module)
 
-LightReflector.AssignConfig({
+local function determineIntensity(car)
+  local finalIntensity = 1
+-- logic to see if high beams are enabled or not (thus increase the intensity)
+  return finalIntensity
+end
+
+LightReflector.AssignConfiguration({
   -- make any config changes here
 })
 
@@ -36,13 +42,13 @@ LightReflector.Start()
 workspace.Cars.ChildAdded:Connect(function(car)
 	if car:IsA("Model") and car:FindFirstChildOfClass("VehicleSeat") then
 		print("Indexed Vehicle")
-		LightReflector.AddVehicle(car, true) -- true is the placeholder of what "enables" the light source like a Headlight boolean value
+		LightReflector.RegisterVehicle(car, true, determineIntensity) -- true is the placeholder of what "enables" the light source like a Headlight boolean value
 	end
 end)
 
 workspace.Cars.ChildRemoved:Connect(function(car)
 	if car:IsA("Model") and car:FindFirstChildOfClass("VehicleSeat") then
-		LightReflector.RemoveVehicle(car)
+		LightReflector.UnregisterVehicle(car)
 	end
 end)
 ```
