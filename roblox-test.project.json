@@ -1,0 +1,19 @@
+{
+  "name": "lightreflector-dev",
+
+  "emitLegacyScripts": false,
+
+  "tree": {
+    "$className": "DataModel",
+
+    "ReplicatedStorage": {
+      "Packages": {
+        "$className": "Folder",
+
+        "chrono": {
+          "$path": "default.project.json"
+        }
+      }
+    }
+  }
+}
