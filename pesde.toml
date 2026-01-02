@@ -1,7 +1,7 @@
 name = "project_roadwork/light_reflector"
 version = "1.0.0-alpha.1"
 description = "A vehicle-based light reflector that reflects decals and basepart reflectors at long distances on a road."
-authors = ["Illinois_Roadbuff (Rogue Jr)"]
+authors = ["Illinois_Roadbuff [Rogue Jr]"]
 repository = "https://codeberg.org/project-roadwork/light-reflector.git"
 license = "MPL-2.0"
 includes = ["pesde.toml","README.md","LICENSE","NOTICE","src/**/*.luau"]

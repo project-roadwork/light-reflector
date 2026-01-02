@@ -7,4 +7,4 @@ realm = "shared"
 license = "MPL-2.0"
 includes = ["pesde.toml","README.md","LICENSE","NOTICE","src/**/*.luau"]
 repository = "https://codeberg.org/project-roadwork/light-reflector.git"
-authors = ["Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>"]
+authors = ["Illinois_Roadbuff [Rogue Jr] <illinois_roadbuff@proton.me>"]
