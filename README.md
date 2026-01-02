@@ -17,9 +17,20 @@
 > **This script is under `alpha` and some functions may not work correctly or be unstable. Additionally, there are no *external* documentation for this module at the moment.**
 
 ### Wally / Pesde Notice
-**Older versions in Pesde or Wally are not accurate! Accurate older releases are in Codeberg (not GitHub).**
+**Older versions in Pesde AND Wally are not accurate! Accurate older releases are in Codeberg (not GitHub).**
 
-*Additionally, this is my first time using Pesde - apologies if something is not formatted correctly.*
+**Additionally, the published packages are broken with version mismatching.**
+
+*Additionally, this is my first time using Pesde AND Wally - apologies if something is not formatted correctly.*
+
+### Issues
+1. **Broken Wally and Pesde packages, with mismatched versioning**
+   * The Pesde package has version issues as well due to my custom pre-release tag `infdev`
+2. **Rojo may not work correctly?**
+3. **Possible BasePart memory leak on games with Instance Streaming**
+4. **Many `:GetAttribute` calls popping up in the Microprofiler**
+5. **No external documentation**
+6. **Some signs and reflectors may not work at all in very rare occasions**
 
 ## Global features
 1. Adaptive waiting on performance-critical functions
