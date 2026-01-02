@@ -8,6 +8,7 @@
 
 > [!NOTE]
 > ****Please use the main repository especially with contributions or commits!*** *Additionally, please **DO NOT** make any changes in the mirrored repository as it cannot be pulled into the main repo.**
+> 
 > **The main repository is in Codeberg; however, I provided a *push* mirror on GitHub (pulls are not supported). Open an issue in Codeberg if you have concerns with this.**
 
 
@@ -108,14 +109,15 @@ end)
 
 *This may be changed to a more permissive license in the future if most people seem uncomfortable with it.*
 
-### Mozilla Public License 2.0 Summary
-**Warning: This summary does NOT act as a subsitute for the entire legal text. This is also not legal advice**
-
-* **The Mozilla Public License 2.0 (MPL-2.0) is a weak copyleft license**
-
-* **You must make any changes you made to the MPL covered files available under the MPL**
-* ***You can use the code in your games as long as you keep the MPL covered files open sourced under MPL in separate files***
-  * *You do **NOT** have to disclose the source of your entire game unlike the GPL-2.0 license, **only the MPL covered files ITSELF***
+> [!NOTE]
+> ### Mozilla Public License 2.0 Summary
+> **Warning: This summary does NOT act as a subsitute for the entire legal text. This is also not legal advice**
+> 
+> * **The Mozilla Public License 2.0 (MPL-2.0) is a weak copyleft license**
+> 
+> * **You must make any changes you made to the MPL covered files available under the MPL**
+> * ***You can use the code in your games as long as you keep the MPL covered files open sourced under MPL in separate files***
+>   * *You do **NOT** have to disclose the source of your entire game unlike the GPL-2.0 license, **only the MPL covered files ITSELF***
 
 
 ### License Comparison (not legal advice)
