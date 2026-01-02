@@ -1,5 +1,5 @@
 # Security
-**Really this is not needed since a) there is no HTTP requests, and b) it is just a light reflector system; however, I am just adding this document for reference.**
+**Really this is not needed since a) there are no HTTP requests, and b) it is just a light reflector system; however, I am adding this document just for reference.**
 
 ## Supported Versions
 
