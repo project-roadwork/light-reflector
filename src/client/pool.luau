@@ -236,4 +236,4 @@ function ObjectPool:ReturnObject(obj: Object)
 
 end
 
-return ObjectPool
+return table.freeze(ObjectPool)

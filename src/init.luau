@@ -5,7 +5,7 @@
 -- Typing has been attempted but not complete
 
 --[[
-	Copyright (c) 2024-2026 Illinois_Roadbuff ("Rogue Jr") and Project Roadwork
+	Copyright (c) 2024-2026 Project Roadwork
 
 	This Source Code Form is subject to the terms of the Mozilla Public
 	License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -17,7 +17,7 @@
 
 	GIT REPOSITORIES:
 		Codeberg / Forgejo (main): https://codeberg.org/project-roadwork/light-reflector.git
-		GitHub (Mirror): https://github.com/project-roadwork/light-reflector.git
+		GitHub (mirror): https://github.com/project-roadwork/light-reflector.git
 ]]
 
 -- IMPORTANT: Services
@@ -930,6 +930,13 @@ local function Cleanup(): ()
 			part.Color = newColor
 			state.lastColor = newColor
 		end
+
+		if part:GetAttribute(config.ReflectorConfig.hybridCloneAttributeName) then
+			part:Destroy()
+		end
+
+		registeredReflectors[part] = nil
+		reflectorStatesByPart[part] = nil
 	end
 
 	if not config.SignConfig.debugBoxFolder and debugFolder then
@@ -957,7 +964,7 @@ return table.freeze({
 	RegisterVehicle = RegisterVehicle,
 	UnregisterVehicle = UnregisterVehicle,
 	Cleanup = Cleanup,
-	AssignConfiguration = utils.assignConfiguration,
+	Configure = utils.configure,
 	RegisterReflector = RegisterReflector,
 	UnregisterReflector = UnregisterReflector,
 })

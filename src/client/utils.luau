@@ -73,8 +73,9 @@ local function deepMerge(defaults: types.Dict, overrides: types.Dict, path: stri
 	end
 end
 
+
 -- Public: Assigns config via deep merge
-local function assignConfiguration(userConfig): types.Configuration
+local function configure(userConfig): types.Configuration
 	if typeof(userConfig) ~= "table" then
 		return config
 	end
@@ -159,7 +160,7 @@ local function normalizeBaseColor(part: BasePart, isNormalizeEnabled: boolean): 
 
 	local maxComponent = math.max(color.R, color.G, color.B)
 	local minTarget = 0.78
-	local maxTarget = 0.9
+	local maxTarget = 0.8
 
 	if maxComponent < minTarget then
 		local scale = minTarget / maxComponent
@@ -227,7 +228,7 @@ end
 return table.freeze({
 	Name = "utils",
 	deepMerge = deepMerge,
-	assignConfiguration = assignConfiguration,
+	configure = configure,
 	getSpeedMPH = getSpeedMPH,
 	adaptiveWait = adaptiveWait,
 	getFastestDriveSeat = getFastestDriveSeat,

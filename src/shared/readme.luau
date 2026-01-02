@@ -22,28 +22,28 @@ return [[
 		  LANGUAGE:         Luau
 
 		  GROUP:            Project Roadwork
-		  VERSION:          1.0.0-alpha.1
+		  VERSION:          1.0.0-alpha.2
 		  CREATED:          2025-10-26 2:03 PM CDT
-		  LAST UPDATED:     2025-12-31 12:43 AM CST
+		  LAST UPDATED:     2026-1-1 9:02 PM CST
 
 		  SPDX-LICENSE-IDENTIFIER:   MPL-2.0
 
  		  CODEBERG REPO:    https://codeberg.org/project-roadwork/light-reflector.git (MAIN)
-		  GITHUB REPO:      https://github.com/project-roadwork/light-reflector.git (BACKUP)
+		  GITHUB REPO:      https://github.com/project-roadwork/light-reflector.git (BACKUP/MIRROR)
 
  		 NOTES: Use the accompanying repository links for documentation, help, or
 		  to propose a suggestion or comment. The NOTICE file can be found in the respository
 		  links.
 
 		  LICENSE HEADER:
-			Copyright 2024-2026 Illinois_Roadbuff ("Rogue Jr") and Project Roadwork
+			Copyright 2024-2026 Project Roadwork
 
 			This Source Code Form is subject to the terms of the Mozilla Public
 			License, v. 2.0. If a copy of the MPL was not distributed with this
 			file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 		  AUTHORS:
-		   Illinois_Roadbuff (RBX 2653606809) - October 26th, 2025 - Created the file
+		   Illinois_Roadbuff (Rogue Jr) (RBX 2653606809) - October 26th, 2025 - Created the file
 		-----------------------------------------------------------------------------------
 
 	B. ABOUT
@@ -96,6 +96,9 @@ return [[
 				- Removed unused `.Color` and `.Material` reads which consumed A LOT of CPU resources - 1.0.0-alpha.1
 				- Loops get `continued` if there is barely any difference in the reflector intensities - 1.0.0-alpha.1
 				- New reflector state property `lastIntensity` - 1.0.0-alpha.1
+
+				- Resolved `Cleanup()` not resetting reflectors properly - 1.0.0-alpha.2
+				- The table `ObjectPool` and `Mutex` are now frozen - 1.0.0-alpha.2
 
 			[Features]
 				- Full rewrite from a singular local script to a module with some attempt at type annotations and `--!strict`
@@ -151,6 +154,8 @@ return [[
 				- `ProcessReflector` has been changed to `RegisterReflector` - 1.0.0-alpha.0
 				- 'RemoveReflector' has been changed to `UnregisterReflector` - 1.0.0-alpha.0
 				- 'AssignConfig' has been changed to 'AssignConfiguration' - 1.0.0-alpha.0
+
+				- `AssignConfiguration` has been changed to `Configure` - 1.0.0-alpha.2
 
 			[Omitted (left out) or Removed]
 				- Old debug functions
