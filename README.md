@@ -34,7 +34,7 @@ local function determineIntensity(car)
   return finalIntensity
 end
 
-LightReflector.AssignConfiguration({
+LightReflector.Configure({
   -- make any config changes here
 })
 

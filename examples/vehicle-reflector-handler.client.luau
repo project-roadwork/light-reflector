@@ -42,7 +42,7 @@ local function CheckForRegLightValue(car:Model)
 	end
 end
 
-LightReflector.AssignConfig({
+LightReflector.Configure({
 	SignConfig = {
 		SignsFolders = {workspace.Signs}
 	}
