@@ -3,9 +3,10 @@
 -- USAGE: tag-reflector.server.luau
 -- Reflector pre-tagger for Light Reflector
 
--- Copyright (c) 2024-2026 Project Roadwork and Contributors
+-- Copyright (c) 2024-2026 Project Roadwork
 -- Licensed under the Apache License, Version 2.0
 
+-- Variables
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 

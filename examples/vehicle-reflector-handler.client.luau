@@ -3,13 +3,16 @@
 -- USAGE: vehicle-reflector-handler.client.luau
 -- Vehicle handler and initializer for Light Reflector
 
--- Copyright (c) 2024-2026 Project Roadwork and Contributors
+-- Copyright (c) 2024-2026 Project Roadwork
 -- Licensed under the Apache License, Version 2.0
 
+-- Variables
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LightReflector = require(ReplicatedStorage.lightreflector)
 local Cars = workspace.Cars
 
+
+-- Functions
 local function determineIntensity(car:Instance)
   local finalIntensity = 1
 -- logic to see if high beams are enabled or not (thus increase the intensity)
