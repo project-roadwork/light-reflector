@@ -27,6 +27,7 @@
 3. Angle-based brightness
 4. Multi-vehicle support
 5. Non-tweened fading/transitions for gradual brightness
+6. Option to use `Tags` with `CollectionService`
 
 ## Sign/Gantry System Features
 1. Utilizes `SurfaceGuis` and `ImageLabel` for reflectivity
