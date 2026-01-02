@@ -56,9 +56,9 @@
 ## Essential Public API
 1. `.Start()` - Starts the module
 2. `.Cleanup()` - Resets states and cleans up the module
-3. `.Configure()` - Parses user configuration before starting (if you cannot do it IN the module first)
-4. `.RegisterVehicle()` - Registers vehicles into the module
-5. `.UnregisterVehicle()` - Unregisters vehicles from the module
+3. `.Configure({})` - Parses user configuration before starting (if you cannot do it IN the module first)
+4. `.RegisterVehicle(car: Instance, isHeadlightEnabled: () -> boolean, getIntensity: () -> number)` - Registers vehicles into the module
+5. `.UnregisterVehicle(car: Instance)` - Unregisters vehicles from the module
 
 ## Example Usage
 ```lua
