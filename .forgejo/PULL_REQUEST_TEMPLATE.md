@@ -1,3 +1,5 @@
+<!-- NOTICE: By contributing to this project, you agree that your contributions may be redistributed and relicensed by this project under other open-source licenses in the future (such as Apache-2.0). See ./CONTRIBUTING.md for the reason why this clause exists. -->
+
 <!-- You can erase any parts of this template not applicable to your Pull Request. -->
 
 <!--- Put an `x` in all the boxes that apply -->

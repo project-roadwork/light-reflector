@@ -7,6 +7,8 @@ assignees: ''
 
 ---
 
+<!-- NOTICE: By contributing to this project, you agree that your contributions may be redistributed and relicensed by this project under other open-source licenses in the future (such as Apache-2.0). See ./CONTRIBUTING.md for the reason why this clause exists. -->
+
 ### Checklist
 * [ ] Is your feature request related to a problem?
 
