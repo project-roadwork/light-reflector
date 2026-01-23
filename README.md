@@ -130,7 +130,7 @@ end)
 > 
 > * **You must make any changes you made to the MPL covered files available under the MPL**
 > * ***You can use the code in your games as long as you keep the MPL covered files open sourced under MPL in separate files***
->   * *You do **NOT** have to disclose the source of your entire game unlike the GPL-2.0 license, **only the MPL covered files ITSELF***
+>   * *You do **NOT** have to disclose the source of your entire game unlike the GPL/GNU license, **only the MPL covered files ITSELF***
 
 
 ### License Comparison (not legal advice)
