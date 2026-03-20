@@ -51,6 +51,8 @@ local currentDetectedParts: { [BasePart]: boolean } = {}
 
 local surfaceGuisByPart: { [BasePart]: types.SurfaceGuiTemplate } = {}
 local surfaceGuiStatesByPart: types.SurfaceGuiStates = {}
+local mainDecalsByPart: { [BasePart]: Decal } = {}
+local decalStatesByPart: types.DecalStates = {}
 local reflectorsByPart = setmetatable({}, config.Constraints.KEYS)
 local reflectorStatesByPart: types.ReflectorStates = setmetatable({}, config.Constraints.KEYS)
 local cachedSignParts: { [BasePart]: types.RangeType } = setmetatable({}, config.Constraints.KEYS)
@@ -65,6 +67,10 @@ local scriptConnections: { [RBXScriptConnection]: boolean } = {}
 -- Debug Box Setup
 local debugBoxTemplate:BasePart = Instance.new("Part") -- forced to do instance.new instead of nil or else the type solver is going into a panic attack
 local debugFolder: Folder?
+
+-- Miscellaneous
+local clamp = math.clamp
+local abs = math.abs
 
 -- Pooler Safety Nets
 local surfaceGuiTemplate:Instance? = ReplicatedStorage:FindFirstChild("ReflectorTemplate")
@@ -113,7 +119,7 @@ local SurfaceGuiPool = pool.new(templateGui,
 	Public: Adds a vehicle
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-local function RegisterVehicle(car: Instance, isEnabled: boolean | number, getIntensity: (Instance) -> number): ()
+local function RegisterVehicle(car: Instance, isEnabled: (Instance) -> boolean, getIntensity: (Instance) -> number): ()
 	-- could have asserted but would flood the output with errors
 
 	if car == nil then
@@ -196,18 +202,21 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 local function RegisterReflector(part: BasePart)
-	if part:GetAttribute(config.ReflectorConfig.hybridCloneAttributeName) then
+
+	local reflectorConfig = config.ReflectorConfig
+
+	if part:GetAttribute(reflectorConfig.hybridCloneAttributeName) then
 		return
 	end
 
-	if config.ReflectorConfig.isReflector(part) or part:HasTag(config.ReflectorConfig.tagName) then
+	if reflectorConfig.isReflector(part) or part:HasTag(reflectorConfig.tagName) then
 		if part:IsA("MeshPart") then
-			local canKeepTexturesAttribute:boolean? = part:GetAttribute(config.ReflectorConfig.canKeepTexturesAttribute)
+			local canKeepTexturesAttribute:boolean? = part:GetAttribute(reflectorConfig.canKeepTexturesAttribute)
 
 			local canKeepTextureProperty: boolean =
 				if typeof(canKeepTexturesAttribute) == "boolean"
 				then canKeepTexturesAttribute
-				else config.ReflectorConfig.defaultCanKeepTextures
+				else reflectorConfig.defaultCanKeepTextures
 
 			if canKeepTexturesAttribute == false then
 				if part.TextureID then
@@ -216,19 +225,19 @@ local function RegisterReflector(part: BasePart)
 			end
 		end
 
-		if config.ReflectorConfig.isHybridEnabled and part:GetAttribute(config.ReflectorConfig.hybridAttributeName) then
+		if reflectorConfig.isHybridEnabled and part:GetAttribute(reflectorConfig.hybridAttributeName) then
 			local clone = part:Clone()
 
-			clone:SetAttribute(config.ReflectorConfig.hybridCloneAttributeName, true)
-			CollectionService:RemoveTag(clone, config.ReflectorConfig.tagName)
+			clone:SetAttribute(reflectorConfig.hybridCloneAttributeName, true)
+			CollectionService:RemoveTag(clone, reflectorConfig.tagName)
 
 			if clone:IsA("MeshPart") then
-				local canKeepTexturesAttribute:boolean? = clone:GetAttribute(config.ReflectorConfig.canHybridKeepTexturesAttribute)
+				local canKeepTexturesAttribute:boolean? = clone:GetAttribute(reflectorConfig.canHybridKeepTexturesAttribute)
 
 				local canKeepTextureProperty: boolean =
 					if typeof(canKeepTexturesAttribute) == "boolean"
 					then canKeepTexturesAttribute
-					else config.ReflectorConfig.defaultHybridCanKeepTextures
+					else reflectorConfig.defaultHybridCanKeepTextures
 
 				if not canKeepTexturesAttribute then
 					if clone.TextureID then
@@ -237,33 +246,33 @@ local function RegisterReflector(part: BasePart)
 				end
 			end
 
-			local hybridCanKeepColorsAttribute = part:GetAttribute(config.ReflectorConfig.hybridKeepColorsAttribute)
+			local hybridCanKeepColorsAttribute = part:GetAttribute(reflectorConfig.hybridKeepColorsAttribute)
 
 			local canHybridKeepColors: boolean =
 				if typeof(hybridCanKeepColorsAttribute) == "boolean"
 				then hybridCanKeepColorsAttribute
-				else config.ReflectorConfig.defaultCanHybridKeepColors
+				else reflectorConfig.defaultCanHybridKeepColors
 
 
 			if part:IsA("UnionOperation") and canHybridKeepColors == false then part.UsePartColor = true end
 
-			if config.ReflectorConfig.isHybridFaceOffsetEnabled then
-				local offset = config.ReflectorConfig.hybridOffset
+			if reflectorConfig.isHybridFaceOffsetEnabled then
+				local offset = reflectorConfig.hybridOffset
 
 				local face = part:GetAttribute("LRFace")
 				if face and utils.validFaces[face] then
 					local faceNormalLocal = Vector3.FromNormalId(Enum.NormalId[face])
 					local faceNormalWorld = part.CFrame:VectorToWorldSpace(faceNormalLocal)
 
-					local offsetDistance = math.abs(faceNormalWorld.X) > 0 and offset
-						or math.abs(faceNormalWorld.Y) > 0 and offset
+					local offsetDistance = abs(faceNormalWorld.X) > 0 and offset
+						or abs(faceNormalWorld.Y) > 0 and offset
 						or offset
 
 					clone.CFrame = part.CFrame + faceNormalWorld * (offsetDistance)
 				end
 			end -- an offset may be needed or else the neon clone and non-neon clone may overlap and flicker
 
-			clone.Name = config.ReflectorConfig.hybridCloneName
+			clone.Name = reflectorConfig.hybridCloneName
 			clone.Transparency = 1
 			clone.CanCollide = false
 			clone.CanTouch = false
@@ -284,10 +293,12 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 local function UnregisterReflector(part:BasePart): ()
-	if config.ReflectorConfig.isReflector(part) or part:HasTag(config.ReflectorConfig.tagName) then
+	local reflectorConfig = config.ReflectorConfig
+
+	if reflectorConfig.isReflector(part) or part:HasTag(reflectorConfig.tagName) then
 		registeredReflectors[part] = nil
 
-		if part:GetAttribute(config.ReflectorConfig.hybridCloneAttributeName) then
+		if part:GetAttribute(reflectorConfig.hybridCloneAttributeName) then
 			part:Destroy()
 		end
 	end
@@ -426,18 +437,20 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 local function _cacheReflectors(): ()
-	if config.ReflectorConfig.isTagsEnabled then
-		for _, part:Instance in CollectionService:GetTagged(config.ReflectorConfig.tagName) do
+	local reflectorConfig = config.ReflectorConfig
+
+	if reflectorConfig.isTagsEnabled then
+		for _, part:Instance in CollectionService:GetTagged(reflectorConfig.tagName) do
 			RegisterReflector(part::any)
 		end
 
-		local instanceAddedSignal:RBXScriptConnection = CollectionService:GetInstanceAddedSignal(config.ReflectorConfig.tagName):Connect(RegisterReflector)
-		local instanceRemovedSignal:RBXScriptConnection = CollectionService:GetInstanceRemovedSignal(config.ReflectorConfig.tagName):Connect(UnregisterReflector)
+		local instanceAddedSignal:RBXScriptConnection = CollectionService:GetInstanceAddedSignal(reflectorConfig.tagName):Connect(RegisterReflector)
+		local instanceRemovedSignal:RBXScriptConnection = CollectionService:GetInstanceRemovedSignal(reflectorConfig.tagName):Connect(UnregisterReflector)
 
 		scriptConnections[instanceAddedSignal] = true
 		scriptConnections[instanceRemovedSignal] = true
 	else
-		for _, Folder in config.ReflectorConfig.reflectorsFolder do
+		for _, Folder in reflectorConfig.reflectorsFolder do
 			for _, part:Instance in Folder:GetDescendants() do
 				RegisterReflector(part)
 			end
@@ -466,6 +479,8 @@ local function _runBoundaryDetectionLoop(): ()
 		-- ^ Cacheparts is a weak table, so probably better to clone everything to create an interm (temp) strong ref?
 	end
 
+	local reflectorConfig = config.ReflectorConfig
+
 	while true do
 		utils.adaptiveWait(task.wait, config.Constraints.BOUNDARY_MIN_FPS,
 			config.Constraints.BOUNDARY_MAX_FPS,
@@ -473,9 +488,14 @@ local function _runBoundaryDetectionLoop(): ()
 		-- ^ adaptive waiting based on vehicle speed. This only indexes parts in the area rather than renders,
 		--    so the FPS numbers should be low
 
+		-- This loop SHOULD run slower than the `runRenderLoop()`
+
 
 		table.clear(detectedPartsThisFrame)
 		table.clear(reflectorsByPart)
+
+		local isSourceActive = sources.anyActive()
+		local isDark = dark()
 
 		if config.Constraints.IS_RAYCAST_ENABLED == false then
 			table.clear(partsDictionary)
@@ -486,12 +506,21 @@ local function _runBoundaryDetectionLoop(): ()
 			partsDictionary = _collectPartsByRaycast()
 		end
 
-		if not sources.anyActive() or not dark() then
+		if not isSourceActive or not isDark then
 			if debugBoxTemplate then debugBoxTemplate.Transparency = 0.95 end
-			for part, state in surfaceGuiStatesByPart do
-				state.targetTransparency = 1
-				state.targetBrightness = 0
-				state.targetLightInfluence = 1
+
+			if config.Constraints.SIGNS_PRIMARY_RENDER_MODE == "SurfaceGui" or config.SignConfig.allowMultipleRenderModes then
+				for part, state in surfaceGuiStatesByPart do
+					state.targetTransparency = 1
+					state.targetBrightness = 0
+					state.targetLightInfluence = 1
+				end
+			end
+
+			if config.Constraints.SIGNS_PRIMARY_RENDER_MODE == "Decal" or config.SignConfig.allowMultipleRenderModes then
+				for part, state in decalStatesByPart do
+					state.targetBrightness = 0
+				end
 			end
 
 			for part, state in reflectorStatesByPart do
@@ -501,122 +530,169 @@ local function _runBoundaryDetectionLoop(): ()
 
 				if state.baseColor then
 					part.Color = state.baseColor
-					part.Material = config.ReflectorConfig.inactiveMaterial
+					part.Material = reflectorConfig.inactiveMaterial
 				end
 			end
 			continue
 		end
 
-		for part in registeredReflectors do
-			if config.ReflectorConfig.isEnabled == false then break end
-			if not part then continue end
+		if reflectorConfig.isEnabled then
+			for part in registeredReflectors do
 
-			reflectorsByPart[part] = true
+				if not part then continue end
 
-			local state = reflectorStatesByPart[part]
-			if not state then
-				state = {
-					currentIntensity = 0,
-					lastIntensity = 0.1,
-					targetIntensity = 0,
-					baseColor = part:GetAttribute("BaseColor"),
-					isActive = false,
-					lastMaterial = Enum.Material.Rock,
-					lastColor = Color3.fromRGB(1,2,3),
-					targetTransparency = 1,
-					isHybrid = if config.ReflectorConfig.isHybridEnabled then part:GetAttribute(config.ReflectorConfig.hybridAttributeName) else false,
-					currentTransparency = 1,
-					lastTransparency = 0,
+				reflectorsByPart[part] = true
 
-				}:: types.ReflectorState
-				reflectorStatesByPart[part] = state
+				local state = reflectorStatesByPart[part]
+				if not state then
+					state = {
+						currentIntensity = 0,
+						lastIntensity = 0.1,
+						targetIntensity = 0,
+						baseColor = part:GetAttribute("BaseColor"),
+						isActive = false,
+						lastMaterial = Enum.Material.Rock,
+						lastColor = Color3.fromRGB(1,2,3),
+						targetTransparency = 1,
+						isHybrid = if reflectorConfig.isHybridEnabled then part:GetAttribute(reflectorConfig.hybridAttributeName) else false,
+						currentTransparency = 1,
+						lastTransparency = 0,
+
+					}:: types.ReflectorState
+					reflectorStatesByPart[part] = state
+				end
+
+				local intensity, transparency = equations.computeReflectorIntensity(part, sources.list)
+
+				state.targetIntensity = intensity
+				state.targetTransparency = if state.isHybrid then transparency else 0
 			end
-
-			local intensity, transparency = equations.computeReflectorIntensity(part, sources.list)
-
-			state.targetIntensity = intensity
-			state.targetTransparency = if state.isHybrid then transparency else 0
 		end
 
-		for part, rangeType in partsDictionary do
-			if config.SignConfig.isEnabled == false then break end
-			if not sources.anyActive() or not dark() then
-				continue
-			end
+		if config.SignConfig.isEnabled then
+			for part, rangeType in partsDictionary do
 
-			local mainDecal = part:FindFirstChild(config.SignConfig.mainDecalName)
-			-- ^ unfortunately one cannot set instances as attributes
-			if not mainDecal then
-				for _, decal in part:GetChildren() do
-					if decal:IsA("Decal") then
-						local name = decal.Name
+				if not isSourceActive or not isDark then
+					continue
+				end
 
-						if config.SignConfig.isMainDecal(decal) then
-							mainDecal = decal
-							decal.Name = config.SignConfig.mainDecalName
-							break
+				local mainDecal = mainDecalsByPart[part]
+
+				if not mainDecal then
+					mainDecal = part:FindFirstChild(config.SignConfig.mainDecalName)
+					-- ^ unfortunately one cannot set instances as attributes
+					if not mainDecal then
+						for _, decal in part:GetChildren() do
+							if decal:IsA("Decal") then
+								local name = decal.Name
+
+								if config.SignConfig.isMainDecal(decal) then
+									mainDecal = decal
+									decal.Name = config.SignConfig.mainDecalName
+									break
+								end
+							end
 						end
 					end
+
+					if not mainDecal then continue end
+
+					mainDecalsByPart[part] = mainDecal
+				end
+
+
+				local signData = equations.computeSignIntensity(part, mainDecal, "near", sources.list)
+
+				if signData.transparency >= config.SignConfig.inactiveTransparencyThreshold  then
+					continue
+				end
+
+				local partRenderMode = part:GetAttribute(config.SignConfig.partRenderModeAttributeName)
+				partRenderMode = partRenderMode or config.Constraints.SIGNS_PRIMARY_RENDER_MODE
+
+				if partRenderMode == "SurfaceGui" then
+					if part:GetAttribute("IsFixed") ~= true then
+						utils.fixPartOrientation(part, mainDecal)
+					end
+
+					local gui: types.SurfaceGuiTemplate = surfaceGuisByPart[part]
+
+					if not gui then
+						gui = SurfaceGuiPool:GetObject() :: types.SurfaceGuiTemplate
+
+						if gui == nil then debugger.warn("Warning", "Pool contains nil instances.") continue end
+
+						gui.Face = mainDecal.Face
+						gui.Adornee = part
+						gui.Parent = part
+						gui.Enabled = true
+						gui.ImageLabel.Image = mainDecal.Texture
+						gui.ImageLabel.ImageTransparency = mainDecal.Transparency
+						surfaceGuisByPart[part] = gui
+					end
+
+					if gui.Parent == nil then
+						gui.Face = mainDecal.Face
+						gui.Parent = part
+						gui.Adornee = part
+						gui.Enabled = true
+						gui.ImageLabel.Image = mainDecal.Texture
+						gui.ImageLabel.ImageTransparency = mainDecal.Transparency
+					end
+
+					local state = surfaceGuiStatesByPart[part]
+					if not state then
+						state = {
+							gui = gui,
+							currentTransparency = 1,
+							currentBrightness = 0,
+							currentLightInfluence = 1,
+							isActive = true,
+							isPendingRemoval = false,
+							lastTransparency = 1,
+							lastBrightness = 0,
+							lastLightInfluence = 1,
+						--	renderMode = "SurfaceGui",
+						}:: types.SurfaceGuiState -- forced to do this or else type errors
+						surfaceGuiStatesByPart[part] = state
+					end
+
+					state.targetTransparency = signData.transparency
+					state.targetBrightness = signData.brightness
+					state.targetLightInfluence = signData.lightInfluence
+
+					detectedPartsThisFrame[part] = true
+
+				end
+				if partRenderMode == "Decal" then
+					local baseColor = Color3.fromRGB(255, 255, 255)
+
+					local attribute = mainDecal:GetAttribute("BaseColor")
+					if attribute then
+						baseColor = attribute
+					else
+						baseColor = mainDecal.Color3
+						mainDecal:SetAttribute("BaseColor", baseColor)
+					end
+
+					local state = decalStatesByPart[part]
+
+					if not state then
+						state = {
+							currentBrightness = 0,
+							targetBrightness = 0,
+							baseColor = baseColor,
+						}
+						decalStatesByPart[part] = state
+					end
+
+					state.targetBrightness = signData.brightness
+
+					detectedPartsThisFrame[part] = true
+
+
 				end
 			end
-
-			if not mainDecal then continue end
-
-			if part:GetAttribute("IsFixed") ~= true then
-				utils.fixPartOrientation(part, mainDecal)
-			end
-			local signData = equations.computeSignIntensity(part, mainDecal, "near", sources.list)
-
-			if signData.transparency >= config.SignConfig.inactiveTransparencyThreshold  then
-				continue
-			end
-
-			local gui: types.SurfaceGuiTemplate = surfaceGuisByPart[part]
-
-			if not gui then
-				gui = SurfaceGuiPool:GetObject() :: types.SurfaceGuiTemplate
-
-				if gui == nil then debugger.warn("Warning", "Pool contains nil instances.") continue end
-
-				gui.Face = mainDecal.Face
-				gui.Adornee = part
-				gui.Parent = part
-				gui.Enabled = true
-				gui.ImageLabel.Image = mainDecal.Texture
-				gui.ImageLabel.ImageTransparency = mainDecal.Transparency
-				surfaceGuisByPart[part] = gui
-			end
-
-			if gui.Parent == nil then
-				gui.Face = mainDecal.Face
-				gui.Parent = part
-				gui.Adornee = part
-				gui.Enabled = true
-				gui.ImageLabel.Image = mainDecal.Texture
-				gui.ImageLabel.ImageTransparency = mainDecal.Transparency
-			end
-
-			local state = surfaceGuiStatesByPart[part]
-			if not state then
-				state = {
-					gui = gui,
-					currentTransparency = 1,
-					currentBrightness = 0,
-					currentLightInfluence = 1,
-					isActive = true,
-					isPendingRemoval = false,
-					lastTransparency = 1,
-					lastBrightness = 0,
-					lastLightInfluence = 1,
-				}:: types.SurfaceGuiState -- forced to do this or else type errors
-				surfaceGuiStatesByPart[part] = state
-			end
-
-			state.targetTransparency = signData.transparency
-			state.targetBrightness = signData.brightness
-			state.targetLightInfluence = signData.lightInfluence
-
-			detectedPartsThisFrame[part] = true
 		end
 
 		for part, state in surfaceGuiStatesByPart do
@@ -635,11 +711,18 @@ local function _runBoundaryDetectionLoop(): ()
 			end
 		end
 
+		for part, mainDecal in mainDecalsByPart do
+			if not part:IsDescendantOf(workspace) then
+				decalStatesByPart[part] = nil
+				mainDecalsByPart[part] = nil
+			end
+		end
+
 		for part in registeredReflectors do
 			if not part:IsDescendantOf(workspace) then
 				registeredReflectors[part] = nil
 				reflectorStatesByPart[part] = nil
-			--	part:Destroy()
+				--	part:Destroy()
 			end
 		end
 
@@ -655,8 +738,6 @@ local function _runBoundaryDetectionLoop(): ()
 				cachedSignParts[part] = nil
 			end
 		end
-
-
 
 		currentDetectedParts = detectedPartsThisFrame
 	end
@@ -678,14 +759,17 @@ local function _runRenderLoop(): ()
 		-- render stepped / prerender runs on the client framerate so it would make sense to put the fading animations under that event,
 		--  also considering that the target time to wait which is around 1/45 - 1/60 could be higher than the actual client framerate, which is not ideal
 
-		local lerpSpeed:number = config.ReflectorConfig.lerpSpeed
+		local reflectorConfig = config.ReflectorConfig
 
-		for part, state in reflectorStatesByPart do
+		local lerpSpeed:number = reflectorConfig.lerpSpeed
 
-			if config.ReflectorConfig.isEnabled == false then break end
+		for part in reflectorsByPart do
+			local state = reflectorStatesByPart[part]
+
+			if reflectorConfig.isEnabled == false then break end
 
 			if not reflectorsByPart[part] then
-				local BaseMaterial = config.ReflectorConfig.inactiveMaterial
+				local BaseMaterial = reflectorConfig.inactiveMaterial
 
 				if state.baseColor then
 					if state.lastMaterial ~= BaseMaterial then -- reducing writes
@@ -704,14 +788,14 @@ local function _runRenderLoop(): ()
 
 			state.currentIntensity +=
 				(state.targetIntensity - state.currentIntensity)
-				* math.clamp(lerpSpeed * deltaTime, 0, 1)
+				* clamp(lerpSpeed * deltaTime, 0, 1)
 
 			if state.isHybrid then
 
 				state.currentTransparency += (state.targetTransparency - state.currentTransparency)
-					* math.clamp(lerpSpeed * deltaTime, 0, 1)
+					* clamp(lerpSpeed * deltaTime, 0, 1)
 
-				if math.abs(state.currentTransparency - state.lastTransparency) > 0.01 then
+				if abs(state.currentTransparency - state.lastTransparency) > 0.01 then
 					part.Transparency = state.currentTransparency
 					state.lastTransparency = state.currentTransparency
 				end
@@ -722,17 +806,17 @@ local function _runRenderLoop(): ()
 			end
 
 			if state.isActive then
-				if state.currentIntensity <= config.ReflectorConfig.inactivateIntensityThreshold then
+				if state.currentIntensity <= reflectorConfig.inactivateIntensityThreshold then
 					state.isActive = false
 				end
 			else
-				if state.currentIntensity >= config.ReflectorConfig.activateIntensityThreshold then
+				if state.currentIntensity >= reflectorConfig.activateIntensityThreshold then
 					state.isActive = true
 				end
 			end
 
 			local intensity = state.currentIntensity
-			if math.abs(intensity - state.lastIntensity) < 0.00015 then
+			if abs(intensity - state.lastIntensity) < 0.00015 then
 				continue
 			end
 
@@ -741,18 +825,18 @@ local function _runRenderLoop(): ()
 			-- ^ variables to reduce .Material and .Color calls
 			--   Will only be changed if the material/color is not the same as the current one
 
-			if intensity >= config.ReflectorConfig.neonActivationIntensity or state.isHybrid == true then
-				newMaterial = config.ReflectorConfig.activeMaterial
+			if intensity >= reflectorConfig.neonActivationIntensity or state.isHybrid == true then
+				newMaterial = reflectorConfig.activeMaterial
 
 				local baseColor: Color3 = state.baseColor
-				local minScale = config.ReflectorConfig.minBrightness / 255
-				local maxScale = config.ReflectorConfig.maxBrightness / 255
+				local minScale = reflectorConfig.minBrightness / 255
+				local maxScale = reflectorConfig.maxBrightness / 255
 
 				local scale = minScale + (maxScale - minScale) * intensity
 
-				local r = math.clamp(baseColor.R * scale, 0, 1)
-				local g = math.clamp(baseColor.G * scale, 0, 1)
-				local b = math.clamp(baseColor.B * scale, 0, 1)
+				local r = clamp(baseColor.R * scale, 0, 1)
+				local g = clamp(baseColor.G * scale, 0, 1)
+				local b = clamp(baseColor.B * scale, 0, 1)
 
 				newColor = Color3.new(r, g, b)
 
@@ -760,11 +844,11 @@ local function _runRenderLoop(): ()
 				newMaterial = Enum.Material.Plastic
 
 				newColor = state.baseColor:Lerp(
-					config.ReflectorConfig.partialDimmingBaseColor,
+					reflectorConfig.partialDimmingBaseColor,
 					intensity * 0.5
 				)
 			else
-				newMaterial = config.ReflectorConfig.inactiveMaterial
+				newMaterial = reflectorConfig.inactiveMaterial
 				newColor = state.baseColor
 			end
 
@@ -783,49 +867,74 @@ local function _runRenderLoop(): ()
 
 		lerpSpeed = config.SignConfig.lerpSpeed
 
-		for part, state in surfaceGuiStatesByPart do
-			if config.SignConfig.isEnabled == false then break end
+		if config.Constraints.SIGNS_PRIMARY_RENDER_MODE == "SurfaceGui" or config.SignConfig.allowMultipleRenderModes then
+			for part, state in surfaceGuiStatesByPart do
+				if config.SignConfig.isEnabled == false then break end
 
-			local gui = state.gui
-			if gui and gui.Parent then
+				local gui = state.gui
+				if gui and gui.Parent then
+					local inPart = currentDetectedParts[part] ~= nil
+					if inPart then
+						state.currentTransparency += (state.targetTransparency - state.currentTransparency) * clamp(lerpSpeed * deltaTime, 0, 1)
+						state.currentBrightness += (state.targetBrightness - state.currentBrightness) * clamp(lerpSpeed * deltaTime, 0, 1)
+						state.currentLightInfluence += (state.targetLightInfluence - state.currentLightInfluence) * clamp(lerpSpeed * deltaTime, 0, 1)
+					else
+						state.currentTransparency += (1 - state.currentTransparency) * clamp(lerpSpeed * deltaTime, 0, 1)
+						state.currentBrightness += (0 - state.currentBrightness) * clamp(lerpSpeed * deltaTime, 0, 1)
+						state.currentLightInfluence += (1 - state.currentLightInfluence) * clamp(lerpSpeed * deltaTime, 0, 1)
 
+						if state.currentTransparency >= config.SignConfig.inactiveTransparencyThreshold then
+							state.isPendingRemoval = true
+						end
+					end
 
-				local inPart = currentDetectedParts[part] ~= nil
-				if inPart then
-					state.currentTransparency += (state.targetTransparency - state.currentTransparency) * math.clamp(lerpSpeed * deltaTime, 0, 1)
-					state.currentBrightness += (state.targetBrightness - state.currentBrightness) * math.clamp(lerpSpeed * deltaTime, 0, 1)
-					state.currentLightInfluence += (state.targetLightInfluence - state.currentLightInfluence) * math.clamp(lerpSpeed * deltaTime, 0, 1)
-				else
-					state.currentTransparency += (1 - state.currentTransparency) * math.clamp(lerpSpeed * deltaTime, 0, 1)
-					state.currentBrightness += (0 - state.currentBrightness) * math.clamp(lerpSpeed * deltaTime, 0, 1)
-					state.currentLightInfluence += (1 - state.currentLightInfluence) * math.clamp(lerpSpeed * deltaTime, 0, 1)
+					if state.lastBrightness ~= state.currentBrightness then
+						gui.Brightness = state.currentBrightness
+						state.lastBrightness = state.currentBrightness
+					end
 
-					if state.currentTransparency >= config.SignConfig.inactiveTransparencyThreshold then
+					if state.lastTransparency ~= state.currentTransparency then
+						gui.ImageLabel.ImageTransparency = state.currentTransparency
+						state.lastTransparency = state.currentTransparency
+					end
+
+					if state.lastLightInfluence ~= state.currentLightInfluence then
+						gui.LightInfluence = state.currentLightInfluence
+						state.lastLightInfluence = state.currentLightInfluence
+					end
+
+					local num = config.SignConfig.inactiveTransparencyThreshold
+
+					if state.currentTransparency >= num then
+						state.isActive = false
 						state.isPendingRemoval = true
 					end
 				end
+			end
+		end
+		if config.Constraints.SIGNS_PRIMARY_RENDER_MODE == "Decal"  or config.SignConfig.allowMultipleRenderModes then
+			for part, state in decalStatesByPart do
+				local decal = mainDecalsByPart[part]
+				if not decal then continue end
 
-				if state.lastBrightness ~= state.currentBrightness then
-					gui.Brightness = state.currentBrightness
-					state.lastBrightness = state.currentBrightness
+				local lerpSpeed = config.SignConfig.lerpSpeed
+
+				local inPart = currentDetectedParts[part] ~= nil
+
+				if inPart then
+					state.currentBrightness += (state.targetBrightness - state.currentBrightness) * clamp(lerpSpeed * deltaTime, 0, 1)
+				else
+					state.currentBrightness += (0 - state.currentBrightness) * clamp(lerpSpeed * deltaTime, 0, 1)
 				end
 
-				if state.lastTransparency ~= state.currentTransparency then
-					gui.ImageLabel.ImageTransparency = state.currentTransparency
-					state.lastTransparency = state.currentTransparency
-				end
+				local base = state.baseColor
+				local scale = 1 + (clamp(state.currentBrightness, 0, 4) * config.SignConfig.decalIntensityMultiplier) -- multiply to better match up the brightness with the SurfaceGui rendering mode
 
-				if state.lastLightInfluence ~= state.currentLightInfluence then
-					gui.LightInfluence = state.currentLightInfluence
-					state.lastLightInfluence = state.currentLightInfluence
-				end
+				local r = base.R * scale
+				local g = base.G * scale
+				local b = base.B * scale
 
-				local num = config.SignConfig.inactiveTransparencyThreshold
-
-				if state.currentTransparency >= num then
-					state.isActive = false
-					state.isPendingRemoval = true
-				end
+				decal.Color3 = Color3.new(r, g, b)
 			end
 		end
 	end
@@ -844,6 +953,8 @@ local function Start() : ()
 	debugger.assert(not isStarting, "AlreadyStarting")
 
 	isStarting = true
+
+	config.Constraints.LOCKED = true
 
 	table.freeze(config.Constraints)
 
@@ -893,6 +1004,8 @@ local function Cleanup(): ()
 
 	debugger.print("Info","Cleaning up!")
 
+	local reflectorConfig = config.ReflectorConfig
+
 	for scriptSignal:RBXScriptSignal, boolean:boolean in scriptConnections do
 		scriptSignal:Disconnect()
 		scriptConnections[scriptSignal] = nil
@@ -919,7 +1032,7 @@ local function Cleanup(): ()
 		local Color = part.Color
 
 		local newColor = state.baseColor
-		local newMaterial = config.ReflectorConfig.inactiveMaterial
+		local newMaterial = reflectorConfig.inactiveMaterial
 
 		if state.lastMaterial ~= newMaterial then
 			part.Material = newMaterial
@@ -931,7 +1044,7 @@ local function Cleanup(): ()
 			state.lastColor = newColor
 		end
 
-		if part:GetAttribute(config.ReflectorConfig.hybridCloneAttributeName) then
+		if part:GetAttribute(reflectorConfig.hybridCloneAttributeName) then
 			part:Destroy()
 		end
 

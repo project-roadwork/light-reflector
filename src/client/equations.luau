@@ -90,7 +90,7 @@ local function computeReflectorIntensity(part: BasePart, sources:types.SourceLis
 
 		canHybridKeepColors = if typeof(hybridCanKeepColorsAttribute) == "boolean" then hybridCanKeepColorsAttribute
 			else config.ReflectorConfig.defaultCanHybridKeepColors
-	end
+	end -- Added isHybrid if-block since :GetAttribute() calls may be expensive?
 
 	for _, source in sources do
 		if source.isActive()  then
@@ -206,7 +206,7 @@ local function computeSignIntensity(part : BasePart, decal : Decal, rangeType: t
 
 	]]
 
-	debugger.assert(part:IsA("BasePart"), "InvalidInstance", "BasePart", part.ClassName)
+	--debugger.assert(part:IsA("BasePart"), "InvalidInstance", "BasePart", part.ClassName) Removed since :IsA() calls are expensive
 	debugger.assert(rangeTypes[rangeType], "InvalidType", `either "far" or "near"`, rangeType)
 
 	local baseIntensity:number = part:GetAttribute(config.Constraints.BASE_INTENSITY_ATTRIBUTE) or 1

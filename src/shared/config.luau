@@ -1,3 +1,4 @@
+--!native
 -- USAGE: lightreflector/shared/config.luau
 -- Configuration file for Light Reflector
 
@@ -17,9 +18,25 @@ return {
 			I. Sign / Gantry System (Input: Decal & BasePart adornee)
 
 				-> Manipulates real life light reflection on highway/road signs
-				  DESPITE native light rendering limitations by utilizting a SurfaceGui to imitate brightness
+				  DESPITE native light rendering limitations by utilizting a SurfaceGui or a decal by itself to imitate brightness
 
-				-> Provides SurfaceGui pooling to reduce lag and improve performance
+				RENDER MODES:
+				  1. SurfaceGui - Utilizes a SurfaceGui with an image label to reflect by using `.Brightness`, `.LightInfluence`, and `.ImageTransparency` properties
+				  	Benefits:
+				  		1.  Prevents the sign from appearing extremely bright
+				  		2.  Can be applied to every material
+				  	Cons:
+				  		1.  Appears slightly unrealistic when viewed at an angle
+				  		2.  Orientation may be distorted or incorrect on meshes or unions
+
+				  2. Decal - Utilizes a decal by itself to reflect by increasing the decal's base Color3 above (255, 255, 255)
+				  	Benefits:
+				  		1.  Appears more realistic when viewed at an angle
+				  		2.  Orientation is preserved on meshes or unions
+				  		3.  Probably more light-weight as no SurfaceGuis need to be created
+				  	Cons:
+				  		1.  Sign may appear overwhelmingly bright when faced uprfront
+				  		2.  Materials such as `Metal` will make the decal appear distorted
 
 			II. Reflector System (Input: BasePart)
 
@@ -47,6 +64,8 @@ return {
 	]]
 
 	Constraints = { -- This table will be frozen once the module starts
+		LOCKED = false, -- (recommended -> false) DO NOT CHANGE
+
 		-- [GENERAL]
 		IS_STREAMING_ENABLED = true,
 		-- ^ Set this to true if you have a custom streaming system or have instance streaming enabled.
@@ -63,6 +82,9 @@ return {
 		SPAWN = task.defer, -- (recommended -> a defer function) - THIS MUST NOT YIELD
 		-- ^ Function to spawn or resume threads/coroutines.
 		--   this is provided in case you would want to switch to a custom function or task.spawn/coroutine.wrap
+
+		SIGNS_PRIMARY_RENDER_MODE = "SurfaceGui",
+		-- ^ Rendering method for signs. Can either be "SurfaceGui" or "Decal"; these render modes are described in the large comment block above
 
 		-- [PERFORMANCE]
 		BOUNDARY_MIN_FPS = 1, -- (recommended -> 1)
@@ -127,6 +149,17 @@ return {
 
 		tagName = "ReflectiveSign",
 		-- ^ Sign tag name should you use tags.
+
+		partRenderModeAttributeName = "LRRenderMode",
+		-- ^ Part attribute name for render mode
+
+		allowMultipleRenderModes = true,
+		-- ^ If set to true, it will allow multiple render modes in the Sign System. Otherwise, it will use the primary render mode.
+
+		decalIntensityMultiplier = 1.4, -- (recommended -> 1.4)
+		-- ^ Decal intensity multiplier to match up with the appearance of the SurfaceGui
+		-- Decals relying on the base brightness itself appears darker than SurfaceGuis,
+		-- so it would be best to add a multiplier.
 
 		maxFadeDistance = 2500, -- (recommended -> 2500)
 		-- ^  Max fade distane of signs in studs

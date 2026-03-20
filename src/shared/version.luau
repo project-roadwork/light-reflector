@@ -9,6 +9,21 @@
 
 ]]
 
-local version = table.freeze({ major = 1, minor = 0, patch = 0, pre_release = "alpha", build = 2 })
+local version = table.freeze({major = 1, minor = 1, patch = 0, pre_release = "beta", build = -1, metadata = ""})
 
-return "1.0.0-alpha.2"
+-- Private: Converts version to string
+local function _versionToString(v)
+	local str = `{v.major}.{v.minor}.{v.patch}`
+	if v.pre_release and v.pre_release ~= "" then
+		str = str .. `-{v.pre_release}`
+	end
+	if v.build and v.build >= 0 then
+		str = str .. `.{v.build}`
+	end
+	if v.metadata and v.metadata ~= "" then
+		str = str .. `+{v.metadata}`
+	end
+	return str
+end
+
+return _versionToString(version)

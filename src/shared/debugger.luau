@@ -1,16 +1,18 @@
 --!native
 -- USAGE: lightreflector/shared/debugger.luau
 -- A customizable and extendable debugger for open source software.
--- Derived from: https://github.com/axiom-co/debugger
+--
 
 --[[
+	Debugger
+	Derived from: https://github.com/axiom-co/debugger
+	Original Notice: MIT License (https://opensource.org/licenses/MIT), Copyright (c) 2025 Axiom & Contributors
 
-  Dual licensed under the Mozilla Public License 2.0 and the MIT License. You may choose either license.
-  Copyright (c) 2025 Project Roadwork
+	 Used in Project Roadwork - Light Reflector
+ 	 Overall project licensed under Mozilla Public License 2.0 (https://mozilla.org/MPL/2.0/)
+ 	 Copyright (c) 2025 Project Roadwork
 
 ]]
-
--- Original Notice: MIT License | Copyright (c) 2025 Axiom & Contributors
 
 -- Variables
 

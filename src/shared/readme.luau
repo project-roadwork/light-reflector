@@ -24,7 +24,7 @@ return [[
 		  GROUP:            Project Roadwork
 		  VERSION:          1.0.0-alpha.2
 		  CREATED:          2025-10-26 2:03 PM CDT
-		  LAST UPDATED:     2026-1-1 9:02 PM CST
+		  LAST UPDATED:     2026-03-15 6:32 PM CDT
 
 		  SPDX-LICENSE-IDENTIFIER:   MPL-2.0
 
@@ -65,6 +65,28 @@ return [[
 			https://discord.gg/sd4XfAqNF9
 
 	D. Changelog [MM/DD/YYYY]
+
+		[03/20/2026 : Light-Reflector, Version 1.1.0-beta] [Pre-release]
+			Author: Illinois_Roadbuff "Rogue Jr"
+
+			[Fixes]
+				- Moved cleanup loops out of the `partDictionary` loop (why was it even there in the first place)
+				- Modifying the constraints after startup now warns the user and returns the function
+				- Main decals on a part are now cached to reduce repeated lookups
+
+			[Features]
+				- The Sign system now runs on two render modes: `SurfaceGui` and `Decal`
+				- Added support for light reflection on the decal itself by increasing the Color3 above (255, 255, 255)
+				- Improved version handling
+
+			[Other Notes]
+				- To reduce confusion, the `pool`, `debugger`, and `mutex` module are no longer dual-licensed, and now follows the overall
+					project license (MPL-2.0). There are barely any changes to the original derived source, so users could
+					simply head over to the repository and get the code under the original license (MIT) instead.
+
+				- Bumped from version `1.0.0` to `1.1.0` since Wally and Psede packages are broken with the invalid `infdev` tag.
+					Additionally, continuing to stay on `1.0.0` until the module is "stable" is unnecessary, and more features are
+					being added anyway which are outside the scope of the original `1.0.0` plan.
 
 		[12/26/2025 : Light-Reflector, Version 1.0.0] [Pre-release]
 			Author: Illinois_Roadbuff "Rogue Jr"

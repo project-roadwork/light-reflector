@@ -80,6 +80,11 @@ local function configure(userConfig): types.Configuration
 		return config
 	end
 
+	if userConfig["Constraints"] and config.Constraints.LOCKED then
+		debugger.warn("Warning", "CONSTRAINTS is locked; cannot update configuration. Please remove CONSTRAINTS and try again.")
+		return config
+	end
+
 	deepMerge(config :: types.Dict, userConfig)
 
 	return config
