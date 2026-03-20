@@ -1,5 +1,5 @@
 # Light Reflector 
-**Version: 1.0.0-alpha.2**
+**Version: 1.1.0-beta**
 
  **A vehicle-based light reflector system that reflects `Decals` and `BasePart` reflectors at long distances on roads.**
 
@@ -41,7 +41,7 @@
 6. Option to use `Tags` with `CollectionService`
 
 ## Sign/Gantry System Features
-1. Utilizes `SurfaceGuis` and `ImageLabel` for reflectivity
+1. Utilizes `SurfaceGuis` and `ImageLabel` OR `Decals` by itself for reflectivity
 2. Uses `.ImageTransparency`, `.Brightness`, and `.LightInfluence`
 3. SurfaceGui pooling to increase performance
 4. Automatic sign `:Dot` support
@@ -143,5 +143,3 @@ end)
 | **Roblox Asset Usage**   | ✅      | ✅          | ℹ️ Depends; must share any changes    | ❌ May violate terms      |
 
 * ¹ Proprietary use in MPL is permitted (allowed) as long as the MPL-covered files remain open souce.
-
-
