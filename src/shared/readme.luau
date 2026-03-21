@@ -22,9 +22,9 @@ return [[
 		  LANGUAGE:         Luau
 
 		  GROUP:            Project Roadwork
-		  VERSION:          1.0.0-alpha.2
+		  VERSION:          1.1.1-beta
 		  CREATED:          2025-10-26 2:03 PM CDT
-		  LAST UPDATED:     2026-03-15 6:32 PM CDT
+		  LAST UPDATED:     2026-03-15 7:17 PM CDT
 
 		  SPDX-LICENSE-IDENTIFIER:   MPL-2.0
 
@@ -65,6 +65,12 @@ return [[
 			https://discord.gg/sd4XfAqNF9
 
 	D. Changelog [MM/DD/YYYY]
+
+		[03/20/2026 : Light-Reflector, Version 1.1.1-beta] [Pre-release]
+			Author: Illinois_Roadbuff "Rogue Jr"
+
+			[Fixes]
+				- Resolved issue where reflector states may be nil
 
 		[03/20/2026 : Light-Reflector, Version 1.1.0-beta] [Pre-release]
 			Author: Illinois_Roadbuff "Rogue Jr"

@@ -763,8 +763,8 @@ local function _runRenderLoop(): ()
 
 		local lerpSpeed:number = reflectorConfig.lerpSpeed
 
-		for part in reflectorsByPart do
-			local state = reflectorStatesByPart[part]
+		for part, state in reflectorStatesByPart do
+			--local state = reflectorStatesByPart[part]
 
 			if reflectorConfig.isEnabled == false then break end
 
