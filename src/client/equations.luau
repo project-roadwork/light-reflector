@@ -23,6 +23,9 @@ local debugger = require("../shared/debugger")
 -- Utilities
 local utils = require("./utils")
 
+-- Grid
+local grid = require("./grid")
+
 -- Variables
 local rangeTypes: { [types.RangeType]: boolean } = { near = true, far = true }
 local clamp = math.clamp
@@ -42,7 +45,7 @@ local function getNearbySources(signPos: Vector3, sources: types.SourceList, max
 end
 
 -- Public: Computes reflector intensity
-local function computeReflectorIntensity(part: BasePart, sources:types.SourceList)
+local function computeReflectorIntensity(part: BasePart, state, source, MPH: number): (boolean | number, boolean | number, number)
 
 	--[[
 		             __________________________________________________________
@@ -52,22 +55,19 @@ local function computeReflectorIntensity(part: BasePart, sources:types.SourceLis
 
 	]]
 
-	debugger.assert(part:IsA("BasePart"), "InvalidInstance", "BasePart", part.ClassName)
+	--	debugger.assert(part:IsA("BasePart"), "InvalidInstance", "BasePart", part.ClassName)
 
-	local baseIntensity:number = part:GetAttribute(config.Constraints.BASE_INTENSITY_ATTRIBUTE) or 1
+	local baseIntensity:number = state.baseIntensity
 
 	local intensity:number = 0
 	local finalTransparency:number = 1
-	local isHybrid:boolean = if config.ReflectorConfig.isHybridEnabled then
-		part:GetAttribute(config.ReflectorConfig.hybridAttributeName)
-		else false
 
 	local hybridTransparencyMultiplier:number = 1
 
-	local partCFrame:CFrame = part.CFrame
-	local partPosition:Vector3 = part.Position
+	local partCFrame:CFrame = state.CFrame
+	local partPosition:Vector3 = partCFrame.Position
 
-	local face:string? = part:GetAttribute(config.ReflectorConfig.hybridFaceAttributeName)
+	local face:string? = state.faceAttributeName
 
 	local hybridFadeRange:number = 0
 	local hybridMinDistance:number = 0
@@ -78,118 +78,108 @@ local function computeReflectorIntensity(part: BasePart, sources:types.SourceLis
 
 	local maxDot = 0
 
-	if isHybrid then
-		-- only do :GetAttribute if it is actually a hybrid part
-		maxDot = math.cos(config.General.lightHalfAngle)
-		hybridFadeRange = part:GetAttribute(config.ReflectorConfig.hybridMaxDistanceAttribute) or config.ReflectorConfig.defaultHybridMaxDistance
-		hybridMinDistance = part:GetAttribute(config.ReflectorConfig.hybridMinDistanceAttribute) or config.ReflectorConfig.defaultHybridMinDistance
-		hybridCanKeepColorsAttribute = part:GetAttribute(config.ReflectorConfig.hybridKeepColorsAttribute)
-		hybridTransparencyAttribute = part:GetAttribute(config.ReflectorConfig.hybridTransparencyAttribute)
-		hybridTransparencyMultiplier = if typeof(hybridTransparencyAttribute) == "number" then hybridTransparencyAttribute else
-			config.ReflectorConfig.defaultHybridTransparencyMultiplier
+	if state.isHybrid then
+		maxDot =  math.cos(config.General.lightHalfAngle)
+		hybridFadeRange = state.hybridFadeRange
+		hybridMinDistance = state.hybridMinDistance
+		hybridTransparencyMultiplier = state.hybridTransparencyMultiplier
 
-		canHybridKeepColors = if typeof(hybridCanKeepColorsAttribute) == "boolean" then hybridCanKeepColorsAttribute
-			else config.ReflectorConfig.defaultCanHybridKeepColors
+		canHybridKeepColors = state.canHybridKeepColors
 	end -- Added isHybrid if-block since :GetAttribute() calls may be expensive?
 
-	for _, source in sources do
-		if source.isActive()  then
-			local pos = source.getPosition()
-			local dir = source.getDirection()
-			local lightIntensity = source.getIntensity(source.Owner)  or 1
+	local seatPos: Vector3 = source.getPosition()
+	local dir:Vector3 = source.getDirection()
 
-			local change = partPosition - pos
+	local predictionFactor = 0.5
 
-			local toPart = change.Unit
-			local dot =  clamp(dir:Dot(toPart), 0, 1)
+	local offset = MPH * predictionFactor
 
-			local dist = change.Magnitude
-			local distFactor = clamp(1 - (dist / config.ReflectorConfig.maxDistance), 0, 1)
+	local pos = seatPos + dir * offset
 
-			local wedgeFactor = 1
+	local lightIntensity = source.getIntensity(source.Owner)  or 1
 
-			if config.ReflectorConfig.useWedgeFacingDetection and part:IsA("WedgePart") or
-				(part:IsA("Part") and part.Shape == Enum.PartType.Wedge) then
+	local change = partPosition - pos
 
-				local localSlopeNormal = Vector3.new(0, 1, -1).Unit
-				local slopeNormalWorld = partCFrame:VectorToWorldSpace(localSlopeNormal)
+	local toPart = change.Unit
+	local dot =  clamp(dir:Dot(toPart), 0, 1)
 
-				local toLight = (pos - partPosition).Unit
-				local rawDot = slopeNormalWorld:Dot(toLight)
+	local dist = change.Magnitude
+	local distFactor = clamp(1 - (dist / config.ReflectorConfig.maxDistance), 0, 1)
 
-			--	part:SetAttribute("RawDOT", rawDot) -- Kept as reference for debugging
+	local wedgeFactor = 1
 
-				if rawDot <= 0 then
-					wedgeFactor = 0
-				else
-					local dotClamped = clamp(rawDot, 0, 1)
-					wedgeFactor = clamp(
-						(dotClamped - config.ReflectorConfig.wedgeFacingDotThreshold) /
-							(1 - config.ReflectorConfig.wedgeFacingDotThreshold), -- Usually near 0
-						0, 1
-					)
-				end
-			end
+	if state.isWedge then
+		local toLight = -toPart
+		local rawDot = state.slopeNormalWorld:Dot(toLight)
 
-			if face then
-				if not utils.validFaces[face] then
-					debugger.warn("Warning", `Invalid Enum.NormalID face; got {face}.`)
-					continue
-				end
+		--	part:SetAttribute("RawDOT", rawDot) -- Kept as reference for debugging
 
-				local faceNormalLocal = Vector3.FromNormalId(Enum.NormalId[face])
-				local faceNormalWorld = partCFrame:VectorToWorldSpace(faceNormalLocal)
-
-				local toLight = (pos - partPosition).Unit
-				local facedot = math.max(0, faceNormalWorld:Dot(toLight)) -- clamping seems to bug
-				--	part:SetAttribute("DOT", facedot) -- Kept as reference for debugging
-
-				if facedot <= config.ReflectorConfig.hybridFacingDotThreshold then -- Usually near 0
-					continue
-				end
-
-			end
-
-			local proximityFactor = (dist < config.ReflectorConfig.minDistance) and (dist / config.ReflectorConfig.minDistance) or 1
-
-			intensity += dot * distFactor * wedgeFactor * proximityFactor * (lightIntensity or 1)
-
-			if isHybrid then
-				if canHybridKeepColors == false then intensity = .5 end
-
-				local distFade = clamp(dist / hybridFadeRange, 0, 1)
-
-				if distFade <= 0 then
-					continue
-				end
-
-				local distanceFactor = clamp(1 - (dist / hybridFadeRange), 0, 1)
-				local toDecal = (partPosition - pos).Unit
-				local dot = clamp(dir:Dot(toDecal), 0, 1)
-				local angleFade = math.sqrt(1 - dot) -- different equation since it's a smaller part
-				local baseTransparency = (dot <= 0.1) and 1 or
-					(distFade * 0.3 + angleFade * 0.7)
-
-				local proximityFactor = (dist < hybridMinDistance) and (dist /  hybridMinDistance) or 1
-
-				local dotClamped = clamp((dot - maxDot) / (1 - maxDot), 0, 1)
-				local angleContribution = 1 - dotClamped
-				local distContribution = baseTransparency
-
-				local weightedTransparency = (baseTransparency * proximityFactor * angleContribution)
-
-				weightedTransparency += (1 - weightedTransparency) * distFade
-
-				finalTransparency = math.min(finalTransparency, weightedTransparency)
-			end
+		if rawDot <= 0 then
+			wedgeFactor = 0
+		else
+			local dotClamped = clamp(rawDot, 0, 1)
+			wedgeFactor = clamp(
+				(dotClamped - config.ReflectorConfig.wedgeFacingDotThreshold) /
+					(1 - config.ReflectorConfig.wedgeFacingDotThreshold), -- Usually near 0
+				0, 1
+			)
 		end
+	end
+
+	if face then
+		if not utils.validFaces[face] then
+			debugger.warn("Warning", `Invalid Enum.NormalID face; got {face}.`)
+			--	continue
+			return false, false
+		end
+
+		local facedot = math.max(0, state.faceNormalWorld:Dot(-toPart)) -- clamping seems to bug
+
+		--	part:SetAttribute("DOT", facedot) -- Kept as reference for debugging
+
+		if facedot <= config.ReflectorConfig.hybridFacingDotThreshold then -- Usually near 0
+			--continue
+			return false, false
+		end
+	end
+
+	local proximityFactor = (dist < config.ReflectorConfig.minDistance) and (dist / config.ReflectorConfig.minDistance) or 1
+
+	intensity += dot * distFactor * wedgeFactor * proximityFactor * (lightIntensity or 1)
+
+	if state.isHybrid then
+		if canHybridKeepColors == false then intensity = .5 end
+
+		local distFade = clamp(dist / hybridFadeRange, 0, 1)
+
+		if distFade <= 0 then
+			return false, false
+		end
+
+		local distanceFactor = clamp(1 - (dist / hybridFadeRange), 0, 1)
+
+		local angleFade = math.sqrt(1 - dot) -- different equation since it's a smaller part
+		local baseTransparency = (dot <= 0.1) and 1 or
+			(distFade * 0.3 + angleFade * 0.7)
+
+		local proximityFactor = (dist < hybridMinDistance) and (dist /  hybridMinDistance) or 1
+
+		local dotClamped = clamp((dot - maxDot) / (1 - maxDot), 0, 1)
+		local angleContribution = 1 - dotClamped
+		local distContribution = baseTransparency
+
+		local weightedTransparency = (baseTransparency * proximityFactor * angleContribution)
+
+		weightedTransparency += (1 - weightedTransparency) * distFade
+
+		finalTransparency = math.min(finalTransparency, weightedTransparency)
 	end
 
 	return clamp(intensity * baseIntensity, 0, 1), if intensity > 0 then clamp(finalTransparency*hybridTransparencyMultiplier, 0.5, 1) else 1
 end
 
 -- Public: Computes sign intensity
-local function computeSignIntensity(part : BasePart, decal : Decal, rangeType: types.RangeType, sources: types.SourceList)
+local function computeSignIntensity(state, part : BasePart, decal : Decal, rangeType: types.RangeType, activeSources: types.SourceList)
 
 	--[[
 			              			 ______________________________________________________________
@@ -214,9 +204,9 @@ local function computeSignIntensity(part : BasePart, decal : Decal, rangeType: t
 	local FadeDistance:number = config.SignConfig.maxFadeDistance
 	local MinFadeDistance:number = config.SignConfig.minFadeDistance
 
-	local partCFrame:CFrame = part.CFrame
-	local partPosition:Vector3 = part.Position
-	local partSize:Vector3 = part.Size -- probably offers a bit of optimization?
+	local partCFrame:CFrame = state.CFrame
+	local partPosition:Vector3 = partCFrame.Position
+	local partSize:Vector3 = state.Size -- probably offers a bit of optimization?
 
 	-- INFO OF VARIABLES:
 	--   	Transparency affects the ImageLabel with the sign (SurfaceGui.ImageLabel)
@@ -227,29 +217,19 @@ local function computeSignIntensity(part : BasePart, decal : Decal, rangeType: t
 	local finalBrightness:number = 0
 	local finalLightInfluence:number = 1
 
-	local partVeryReflective:boolean? = part:GetAttribute("VeryReflective")
+	local partVeryReflective:boolean? = state.partVeryReflective
 
 	local count:number = 0
 
-	local enabledLights = {}
-
-	local nearbySources = getNearbySources(partPosition, sources, config.SignConfig.maxFadeDistance + 500)
+	local nearbySources = getNearbySources(partPosition, activeSources, config.SignConfig.maxFadeDistance + 500)
 	if #nearbySources == 0 then
 		return { transparency = 1, brightness = 0, lightInfluence = 0 }
 	end
 
-	for _, light in nearbySources do
-		if light.isActive() then
-			enabledLights[#enabledLights + 1] = light
-		end
-	end
-
-	table.clear(nearbySources)
-
 	local hasActiveLight =false
 	local maxDot = math.cos(config.General.lightHalfAngle)
 
-	for _, light in enabledLights do
+	for _, light in nearbySources do
 		count += 1
 
 		local seatPos = light.getPosition()
@@ -266,12 +246,13 @@ local function computeSignIntensity(part : BasePart, decal : Decal, rangeType: t
 			or (isReflective and FadeDistance * 2 or FadeDistance)
 
 		local distFade = clamp(dist / fadeRange, 0, 1)
+
 		local distanceFactor = clamp(1 - (dist / fadeRange), 0, 1)
 
 		local toDecal = (partPosition - seatPos).Unit
 
 		local dot = clamp(carLook:Dot(toDecal), 0, 1)
-		local angleFade = clamp(((1 - dot) ^ 2) * (distanceFactor * 2 + 0.7), 0, 1)
+		local angleFade = clamp(((1 - dot) ^ 2.5) * (distanceFactor * 2 + 0.7), 0, 1)
 		local baseTransparency = (dot <= 0.1) and 1 or (distFade * 0.2 + angleFade * 0.8)
 		local proximityFactor = (dist < MinFadeDistance) and (dist / MinFadeDistance) or 1
 

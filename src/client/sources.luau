@@ -61,11 +61,22 @@ local function anyActive(): boolean
 	return false
 end
 
+local function getAllActive(): {types.LightSource}
+	local activeSources = {}
+	for _, source in list do
+		if source.isActive() then
+			table.insert(activeSources, source)
+		end
+	end
+	return activeSources
+end
+
 return table.freeze({
 	Name = "sources",
 	list = list,
 	create = create,
 	add = add,
 	anyActive = anyActive,
-	register = register
+	register = register,
+	getAllActive = getAllActive,
 })

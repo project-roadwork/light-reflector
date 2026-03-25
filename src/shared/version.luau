@@ -9,7 +9,7 @@
 
 ]]
 
-local version = table.freeze({major = 1, minor = 1, patch = 1, pre_release = "beta", build = -1, metadata = ""})
+local version = table.freeze({major = 1, minor = 2, patch = 0, pre_release = "alpha", build = 0, metadata = ""})
 
 -- Private: Converts version to string
 local function _versionToString(v)

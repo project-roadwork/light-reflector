@@ -1,5 +1,5 @@
 # Light Reflector 
-**Version: 1.1.1-beta**
+**Version: 1.2.0-alpha.0**
 
  **A vehicle-based light reflector system that reflects `Decals` and `BasePart` reflectors at long distances on roads.**
 

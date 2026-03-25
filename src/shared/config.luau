@@ -88,11 +88,11 @@ return {
 
 		-- [PERFORMANCE]
 		BOUNDARY_MIN_FPS = 1, -- (recommended -> 1)
-		BOUNDARY_MAX_FPS = 3, -- (recommended -> 3)
+		BOUNDARY_MAX_FPS = 3, -- (recommended -> 5)
 		-- ^ FPS of the Boundary function
 
 		RENDER_MIN_FPS = 45, -- (recommended -> 45)
-		RENDER_MAX_FPS = 55, -- (recommended -> 55)
+		RENDER_MAX_FPS = 59, -- (recommended -> 55)
 		-- ^ FPS of the Render function
 
 		-- [POOLING]
@@ -133,7 +133,10 @@ return {
 		vehicleSeatOffset = Vector3.new(0,2,0), -- (recommended -> Vector3.new(0,2,0))
 		-- ^ Offset of the vehicle seat
 
-		GetPartsInBox = workspace.GetPartBoundsInBox
+		GetPartsInBox = workspace.GetPartBoundsInBox,
+
+		movingPartAttribute = "LRMoving",
+		-- ^ attribute name to identify moving reflectors or signs
 
 	},
 
@@ -186,7 +189,7 @@ return {
 		-- ^ DebugBox positioning
 
 		noFadeOutFactor = 3, -- (recommended -> 3)
-		lerpSpeed = 5, -- (recommended -> 5)
+		lerpSpeed = 12, -- (recommended -> 9)
 		-- ^ Fade out and lerp speed of signage
 
 		decalFacingDotThreshold = 0,
@@ -250,7 +253,7 @@ return {
 		neonActivationIntensity = 0.12, -- (recommended -> 0.12)
 		-- ^ Reflector light logic
 
-		lerpSpeed = 10, -- (recommended -> 10)
+		lerpSpeed = 12, -- (recommended -> 10)
 		-- ^ Lerp speed of reflectors
 
 		activeMaterial = Enum.Material.Neon, -- (recommended -> Enum.Material.Neon)
@@ -262,6 +265,7 @@ return {
 		maxBrightness = 400, -- (recommended -> 400)
 		-- ^ Brightness of reflectors
 
+
 		--[HYBRID SUBSYSTEM]
 		isHybridEnabled = true,
 		-- ^ Enables or disables hybrid functionality (SurfaceGui transparency logic PLUS BasePart logic)
@@ -270,8 +274,8 @@ return {
 		isHybridFaceOffsetEnabled = true, -- (recommended -> true)
 		-- ^ enabling this offsets the hybrid reflector clone away from the selected face attribute if there is one
 
-		hybridFaceAttributeName = "LRFace",
-		-- ^ attribute to identify the selected face of the hybrid reflectors (Top, Bottom, Right, etc.)
+		faceAttributeName = "LRFace",
+		-- ^ attribute to identify the selected face of reflectors (Top, Bottom, Right, etc.)
 
 		hybridOffset = 0.003, -- (recommended -> 0.003)
 		-- ^ CFrame offset increment should `isHybridFaceOffsetEnabled` be set to true

@@ -20,6 +20,9 @@ local types = require("../shared/types")
 -- Debugger
 local debugger = require("../shared/debugger")
 
+-- Sources
+local sources = require("./sources")
+
 -- Configuration
 local config: types.Configuration = require("../shared/config")
 
@@ -36,6 +39,14 @@ local validFaces: { [string]: boolean }  =  {
 	Back = true
 }
 
+-- Variables
+local INV_30 = 1 / 50
+local MPH_SCALE = config.Constraints.MPH_SCALE
+
+local sourcesCheckEnabled = false
+local lastSources = sources.getAllActive()
+local currentSources = lastSources
+
 -- Public: Waits via RunService.PreRender rather than RunService.Heartbeat
 local function renderWait(waitTime: number?): number
 	if waitTime ~= nil then
@@ -49,6 +60,26 @@ local function renderWait(waitTime: number?): number
 	else
 		return PreRender.Wait(PreRender)
 	end
+end
+
+-- Public: Tracks a part and calls a callback if it leaves workspace
+local function trackAnsestryRemoval(instance: Instance, callback: (Instance) -> ()): RBXScriptConnection
+	debugger.assert(typeof(instance) == "Instance", "onRemovedFromWorkspace: 'instance' must be a Roblox Instance")
+	debugger.assert(typeof(callback) == "function", "onRemovedFromWorkspace: 'callback' must be a function")
+
+	if not instance:IsDescendantOf(workspace) then
+		pcall(callback, instance) -- no yield
+	end
+
+	local conn: RBXScriptConnection
+	conn = instance.AncestryChanged:Connect(function(_, parent)
+		if not instance:IsDescendantOf(workspace) then
+			pcall(callback, instance)
+			conn:Disconnect()
+		end
+	end)
+
+	return conn
 end
 
 -- Public: Deep merges two dictionaries
@@ -92,20 +123,24 @@ end
 
 -- Public: Gets speed in MPH via respective MPH scale
 local function getSpeedMPH(DriveSeat: VehicleSeat): number
+	local v = DriveSeat.AssemblyLinearVelocity
 	-- converts studs to MPH based on the mphScale config
-	return DriveSeat.AssemblyLinearVelocity.Magnitude * config.Constraints.MPH_SCALE
+
+	return (v.X*v.X + v.Y*v.Y + v.Z*v.Z)^0.5 * MPH_SCALE -- maybe faster than .Magnitude?
 end
 
 -- Public: Adaptive wait time based on vehicle speed
-local function adaptiveWait(waitFunction: (number?) -> number, minFPS: number, maxFPS: number, DriveSeat: VehicleSeat?): number
+local function adaptiveWait(waitFunction: (number?) -> number, minFPS: number, maxFPS: number, DriveSeat: VehicleSeat?): (number, number)
 	-- faster VehicleSeat velocity = more FPS and vice versa
 	if not DriveSeat then
-		return waitFunction(1 / maxFPS)
+		return waitFunction(1 / maxFPS), 50
 	end
 
 	local speedMph = getSpeedMPH(DriveSeat)
-	local targetFPS = math.clamp((speedMph / 80) * maxFPS, minFPS, maxFPS)
-	return waitFunction(1 / targetFPS)
+
+	local targetFPS = math.clamp(speedMph * INV_30 * maxFPS, minFPS, maxFPS)
+
+	return waitFunction(1 / targetFPS), speedMph
 end
 
 -- Public: Gets the fastest VehicleSeat in a vehicle map table
@@ -127,6 +162,74 @@ local function getFastestDriveSeat(Vehicles: types.VehicleMap)
 	end
 
 	return fastestSeat
+end
+
+local function startSeparateSourcesCheck()
+
+	if sourcesCheckEnabled then
+		return
+	end
+
+	sourcesCheckEnabled = true
+
+	while true do
+			local updatedSources = sources.getAllActive()
+			local changed = false
+
+			if #updatedSources ~= #currentSources then
+				changed = true
+			else
+				for i = 1, #updatedSources do
+					if updatedSources[i] ~= currentSources[i] then
+						changed = true
+						break
+					end
+				end
+			end
+
+			if changed then
+				currentSources = updatedSources
+			end
+
+			task.wait(1/15)
+	end
+
+end
+
+-- Public: Adaptive wait with override if sources change
+local function adaptiveWaitWithSourcesOverride(
+	waitFunction: (number?) -> number,
+	minFPS: number,
+	maxFPS: number,
+	DriveSeat: VehicleSeat
+	--onSourcesChanged: (types.SourceList) -> ()
+): (number, number)
+
+	task.defer(startSeparateSourcesCheck)
+
+	local elapsed, speedMph = task.wait(1/59), 0
+
+	local changed = false
+	if #currentSources ~= #lastSources then
+		changed = true
+	else
+		for i = 1, #currentSources do
+			if currentSources[i] ~= lastSources[i] then
+				changed = true
+				break
+			end
+		end
+	end
+
+	if changed then
+		--elapsed = waitFunction(0)
+		speedMph = if DriveSeat then getSpeedMPH(DriveSeat) else 50
+		lastSources = currentSources
+	else
+		elapsed, speedMph = adaptiveWait(waitFunction, minFPS, maxFPS, DriveSeat)
+	end
+
+	return elapsed, speedMph
 end
 
 -- Public: Fixes the orientation of a sign part
@@ -233,9 +336,11 @@ end
 return table.freeze({
 	Name = "utils",
 	deepMerge = deepMerge,
+	trackAnsestryRemoval = trackAnsestryRemoval,
 	configure = configure,
 	getSpeedMPH = getSpeedMPH,
 	adaptiveWait = adaptiveWait,
+	adaptiveWaitWithSourcesOverride = adaptiveWaitWithSourcesOverride,
 	getFastestDriveSeat = getFastestDriveSeat,
 	fixPartOrientation = fixPartOrientation,
 	normalizeBaseColor = normalizeBaseColor,
