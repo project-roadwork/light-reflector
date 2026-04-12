@@ -14,7 +14,7 @@ includes but is not limited to:**
 
 ## Standards of Communication
 
-**We expect all individuals to stay on-topic whilst using development channels, and respect moderation decisions.**
+**We expect all individuals to stay on-topic while using development channels, and respect moderation decisions.**
 
 **We will not accept the following:**
 
