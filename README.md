@@ -128,11 +128,12 @@ end)
 > ### Mozilla Public License 2.0 Summary
 > **Warning: This summary does NOT act as a subsitute for the entire legal text. This is also not legal advice**
 > 
-> **The Mozilla Public License 2.0 (MPL-2.0) is a weak copyleft license**
+> **The Mozilla Public License 2.0 (MPL-2.0) is a weak copyleft license.**
 > 
 > **You are free to:**
 > * Use, modify, and distribute the code
 > * Use the code commercially (including games and/or proprietary software)
+>
 > **Under the following conditions:**
 > * Any files originally from MPL that you modify must remain licensed under MPL
 > * You must make the source code of MPL-licensed files publicly available
