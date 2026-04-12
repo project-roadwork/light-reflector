@@ -11,10 +11,12 @@
 > 
 > **The main repository is in Codeberg; however, I provided a *push* mirror on GitHub (pulls are not supported). Open an issue in Codeberg if you have concerns with this.**
 
-
+> [!NOTE]
+> ### Codeberg Releases (.rbxm download)
+> ***https://codeberg.org/project-roadwork/light-reflector/releases***
 
 > [!WARNING]
-> **This script is under `alpha` and some functions may not work correctly or be unstable. Additionally, there are no *external* documentation for this module at the moment.**
+> **This script is under `alpha` and some functions may not work correctly or be unstable. Additionally, there is no *external* documentation for this module at the moment.**
 
 ### Wally / Pesde Notice
 **Older versions in Pesde AND Wally are not accurate! Accurate older releases are in Codeberg (not GitHub).**
