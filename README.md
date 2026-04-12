@@ -12,7 +12,7 @@
 > **The main repository is in Codeberg; however, I provided a *push* mirror on GitHub (pulls are not supported). Open an issue in Codeberg if you have concerns with this.**
 
 > [!NOTE]
-> ### Codeberg Releases (.rbxm download)
+> ### Codeberg Releases (`.rbxm` download)
 > ***https://codeberg.org/project-roadwork/light-reflector/releases***
 
 > [!WARNING]
@@ -128,12 +128,22 @@ end)
 > ### Mozilla Public License 2.0 Summary
 > **Warning: This summary does NOT act as a subsitute for the entire legal text. This is also not legal advice**
 > 
-> * **The Mozilla Public License 2.0 (MPL-2.0) is a weak copyleft license**
+> **The Mozilla Public License 2.0 (MPL-2.0) is a weak copyleft license**
 > 
-> * **You must make any changes you made to the MPL covered files available under the MPL**
-> * ***You can use the code in your games as long as you keep the MPL covered files open sourced under MPL in separate files***
->   * *You do **NOT** have to disclose the source of your entire game unlike the GPL/GNU license, **only the MPL covered files ITSELF***
-
+> **You are free to:**
+> * Use, modify, and distribute the code
+> * Use the code commercially (including games and/or proprietary software)
+> **Under the following conditions:**
+> * Any files originally from MPL that you modify must remain licensed under MPL
+> * You must make the source code of MPL-licensed files publicly available
+> * MPL-covered code must remain in separate files
+> 
+> **In short:** You can use MPL code in closed-source and/or commercial projects; however, any changes to MPL-covered files must stay open under MPL.
+>
+> **Compared to GPL/GNU licenses:**
+> * **GPL:** May require the entire project (like games) to be fully open-sourced under GPL if GPL code is included
+> * **LGPL:** Allows use in proprietary projects, but requires that users can modify and swap out LGPL-covered code and still run the project with it, which is not very feasible with games and closed-source binary platforms such as ROBLOX. Additionally, this license allows users to reverse engineer entire projects
+> * **MPL:** Only requires open-sourcing the specific modified files
 
 ### License Comparison (not legal advice)
 
