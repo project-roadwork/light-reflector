@@ -7,7 +7,7 @@
 
 
 > [!NOTE]
-> ****Please use the main repository especially with contributions or commits!*** *Additionally, please **DO NOT** make any changes in the mirrored repository as it cannot be pulled into the main repo.**
+> ****Please use the [main repository](https://codeberg.org/project-roadwork/light-reflector.git) especially with contributions or commits!*** *Additionally, please **DO NOT** make any changes in the mirrored repository as it cannot be pulled into the main repo.**
 > 
 > **The main repository is in Codeberg; however, I provided a *push* mirror on GitHub (pulls are not supported). Open an issue in Codeberg if you have concerns with this.**
 
