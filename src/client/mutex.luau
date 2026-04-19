@@ -14,24 +14,59 @@
 
 ]]
 
-local RunService = game:GetService("RunService")
+-- IMPORTANT: Services
+const RunService: RunService = game:GetService("RunService")
 
-local debugger = require("../shared/debugger")
+-- IMPORTANT: Modules
+const debugger: typeof(require("../shared/debugger")) = require("../shared/debugger")
 
-local Mutex = {}
+-- Types
+export type Mutex = {
+	locked: boolean,
+	lockingThread: thread?,
+	lockCount: number,
+	lock: (self: Mutex, timeout: number?) -> (),
+	unlock: (self: Mutex) -> (),
+	isLocked: (self: Mutex) -> boolean,
+	new: () -> Mutex,
+}
+
+type MutexClass = {
+	__index: MutexClass,
+	new: () -> Mutex,
+
+
+	lock: (self: Mutex, timeout: number?) -> (),
+	unlock: (self: Mutex) -> (),
+	isLocked: (self: Mutex) -> boolean,
+}
+
+-- Variables and Class
+local Mutex: MutexClass = {} :: MutexClass
 Mutex.__index = Mutex
 
-function Mutex.new()
-	local self = setmetatable({}, Mutex)
-	self.locked = false
-	self.lockingThread = nil
-	self.lockCount = 0
+--[=[
+	Public: Constructor for creating a new mutex object
+
+	[Git Repository](https://github.com/notqaltx/ObjectPool.git)
+]=]
+function Mutex.new(): setmetatable<{}, MutexClass>
+	const self: setmetatable<{}, MutexClass> = setmetatable({
+		locked = false,
+		lockingThread = nil,
+		lockCount = 0,
+	}, Mutex)
 	return self
 end
 
-function Mutex:lock(timeout)
-	local startTime = tick()
-	local currentThread = coroutine.running()
+--[=[
+	Public: Locks the mutex, blocking if it is already locked
+
+	[Git Repository](https://github.com/notqaltx/ObjectPool.git)
+]=]
+function Mutex:lock(timeout: number?): ()
+	const startTime: number = tick()
+	const currentThread: thread? = coroutine.running()
 
 	while self.locked and self.lockingThread ~= currentThread do
 		if timeout and (tick() - startTime) >= timeout then
@@ -39,16 +74,23 @@ function Mutex:lock(timeout)
 		end
 		RunService.Heartbeat:Wait()
 	end
+
 	self.locked = true
 	self.lockingThread = currentThread
 	self.lockCount += 1
 end
 
-function Mutex:unlock()
-	local currentThread = coroutine.running()
+--[=[
+	Public: Unlocks the mutex
+
+	[Git Repository](https://github.com/notqaltx/ObjectPool.git)
+]=]
+function Mutex:unlock(): ()
+	const currentThread: thread? = coroutine.running()
 	if not self.locked or self.lockingThread ~= currentThread then
 		debugger.fatal("Fatal","Mutex unlock attempt by non-locking thread or when mutex is not locked")
 	end
+
 	self.lockCount -= 1
 	if self.lockCount == 0 then
 		self.locked = false
@@ -56,8 +98,14 @@ function Mutex:unlock()
 	end
 end
 
-function Mutex:isLocked()
+--[=[
+	Public: Checks if the mutex is locked
+
+	[Git Repository](https://github.com/notqaltx/ObjectPool.git)
+]=]
+function Mutex:isLocked(): boolean
 	return self.locked
 end
 
-return table.freeze(Mutex)
+-- Return public API
+return table.freeze(Mutex) :: Mutex

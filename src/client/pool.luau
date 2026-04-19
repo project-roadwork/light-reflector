@@ -14,8 +14,6 @@
 
 ]]
 
-
-
 --[[
 	# ObjectPool Module
 
@@ -76,7 +74,7 @@
 local ObjectPool = {}
 ObjectPool.__index = ObjectPool
 
-local leakLogged = false
+local leakLogged: boolean = false
 
 export type Object = Instance
 export type Pool = {
@@ -87,7 +85,7 @@ export type Pool = {
 	CreateObject: (Object) -> Object,
 	ResetObject: (Object) -> (),
 	MinSize: number, MaxSize: number,
-	UsageMetrics: {ActiveCount: number, AvailableCount: number, PeakActive: number},
+	UsageMetrics: UsageMetrics,
 	Logger: any, Mutex: any,
 	ObjectTaken: any, ObjectReturned: any,
 	GetObject: (Pool) -> Object,
@@ -96,9 +94,32 @@ export type Pool = {
 	CreateLog: (Pool, string, string) -> (),
 }
 
-local debugger = require("../shared/debugger")
 
-local mutex = require("./mutex")
+
+export type Mutex = {
+	locked: boolean,
+	lockingThread: thread?,
+	lockCount: number,
+	lock: (self: Mutex, timeout: number?) -> (),
+	unlock: (self: Mutex) -> (),
+	isLocked: (self: Mutex) -> boolean,
+	new: () -> Mutex,
+}
+
+type ObjectPoolClass = typeof(ObjectPool)
+
+type ObjectPoolInstance = Pool & {
+	__index: ObjectPoolClass,
+}
+
+type UsageMetrics = {
+	ActiveCount: number,
+	AvailableCount: number,
+	PeakActive: number,
+}
+const debugger: typeof(require("../shared/debugger")) = require("../shared/debugger")
+
+const mutex: Mutex = require("./mutex")
 
 --- Creates a new object pool.
 ---@param objectTemplate Object  The template object used to create new objects in the pool.
@@ -108,7 +129,26 @@ local mutex = require("./mutex")
 ---@param maxSize number  Maximum size limit of the pool (optional, default 50).
 ---@return Pool New instance of ObjectPool.
 function ObjectPool.new(objectTemplate: Object, createObject: (Object) -> Object, resetObject: (Object) -> (), minSize: number, maxSize: number): Pool
-	local self = setmetatable({}, ObjectPool)
+	local self = setmetatable({
+		Objects = {} :: {Object},
+		ActiveObjects = {} :: {Object},
+		HierarchicalPools = {} :: {[Object]: Pool},
+
+		ObjectTemplate = objectTemplate,
+		CreateObject = createObject,
+		ResetObject = resetObject,
+
+		Mutex = mutex.new(),
+
+		MinSize = minSize or 10,
+		MaxSize = maxSize or 50,
+		UsageMetrics = {
+			ActiveCount = 0,
+			AvailableCount = 0,
+			PeakActive = 0,
+		} :: UsageMetrics,
+	}, ObjectPool) :: Pool -- these type errors are making me go insane :D
+
 	self.Objects = {}
 	self.ActiveObjects = {}
 	self.HierarchicalPools = {}
@@ -121,7 +161,7 @@ function ObjectPool.new(objectTemplate: Object, createObject: (Object) -> Object
 
 	self.MinSize = minSize or 10
 	self.MaxSize = maxSize or 50
-	self.UsageMetrics = {ActiveCount = 0, AvailableCount = 0, PeakActive = 0}
+	self.UsageMetrics = {ActiveCount = 0, AvailableCount = 0, PeakActive = 0} :: UsageMetrics
 
 	self:Prewarm(self.MinSize)
 	return setmetatable(self, {
@@ -141,24 +181,36 @@ end
 
 --- Prewarms the object pool with a specified number of objects.
 ---@param count number  Number of objects to prewarm the pool with.
-function ObjectPool:Prewarm(count: number)
+function ObjectPool:Prewarm(count: number): ()
 --	debugger.print("Info", "Prewarming the pool with " .. count .. " objects.")
 	for i = 1, count do
-		local obj = self.CreateObject(self.ObjectTemplate)
+		const obj: Object = self.CreateObject(self.ObjectTemplate)
 		table.insert(self.Objects, obj)
 	end
 	self.UsageMetrics.AvailableCount = #self.Objects
 --	debugger.print("Info", "Prewarming completed.")
 end
-local Returned = 0
+
+local Returned: number = 0
 --- Retrieves an object from the pool, creating a new one if necessary.
 ---@return Object  Object retrieved from the pool.
 function ObjectPool:GetObject(): Object
 	self.Mutex:lock()
-	local obj: Object
+	local obj: Object?
 	if #self.Objects > 0 then
-		obj = table.remove(self.Objects)
-		self.UsageMetrics.AvailableCount -= 1
+		const removed: Object? | any? = table.remove(self.Objects)
+
+		if removed == nil then
+			warn("ObjectPool: Object is nil")
+		else
+			obj = removed :: Object
+
+			const UsageMetrics: UsageMetrics = self.UsageMetrics
+
+			UsageMetrics.AvailableCount -= 1
+		end
+
+
 	else
 		if self.UsageMetrics.ActiveCount < self.MaxSize then
 			obj = self.CreateObject(self.ObjectTemplate)
@@ -189,24 +241,32 @@ function ObjectPool:GetObject(): Object
 	--	self.ObjectTaken:Fire(obj)
 	end
 	self.Mutex:unlock()
-	return obj
+
+	return obj :: Object
 end
 
 -- Returns an object to the pool, resetting it for future use.
 --@param obj Object  Object to return to the pool.
-function ObjectPool:ReturnObject(obj: Object)
+function ObjectPool:ReturnObject(obj: Object): (boolean, string?)
 
 	if obj.Parent ~= nil then
 		obj.Parent = nil
 	end
 
 	self.Mutex:lock()
-	local index = table.find(self.ActiveObjects, obj)
+	const index: number? = table.find(self.ActiveObjects :: {Instance}, obj)
 	if index then
 		table.remove(self.ActiveObjects, index)
+
+		const UsageMetrics: UsageMetrics = self.UsageMetrics
+
+
 		self.UsageMetrics.ActiveCount -= 1
 		self.ResetObject(obj)
 		Returned += 1
+
+		const MaxSize: number = self.MaxSize
+
 		if #self.Objects < self.MaxSize then
 			table.insert(self.Objects, obj)
 			self.UsageMetrics.AvailableCount += 1
@@ -223,7 +283,7 @@ function ObjectPool:ReturnObject(obj: Object)
 		--	self.ObjectReturned:Fire(obj)
 		end
 		if self.HierarchicalPools[obj] then
-			local childPool = self.HierarchicalPools[obj]
+			local childPool: Pool = self.HierarchicalPools[obj]
 			for _, child in ipairs(childPool.ActiveObjects) do
 				childPool:ReturnObject(child)
 			end
@@ -239,4 +299,6 @@ function ObjectPool:ReturnObject(obj: Object)
 
 end
 
-return table.freeze(ObjectPool)
+export type ObjectPool = typeof(ObjectPool)
+
+return table.freeze(ObjectPool) :: ObjectPool

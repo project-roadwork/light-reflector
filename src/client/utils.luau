@@ -12,25 +12,26 @@
 ]]
 
 -- Services
-local RunService:RunService = game:GetService("RunService")
+const RunService:RunService = game:GetService("RunService")
+const ReplicatedStorage: ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Types module
-local types = require("../shared/types")
+const types: {} = require("../shared/types")
 
 -- Debugger
-local debugger = require("../shared/debugger")
+const debugger: types.Debugger = require("../shared/debugger")
 
 -- Sources
-local sources = require("./sources")
+const sources: types.SourcesModule = require("./sources")
 
 -- Configuration
-local config: types.Configuration = require("../shared/config")
+const config: types.Configuration = require("../shared/config")
 
--- Variables
-local PreRender: RBXScriptSignal = RunService.PreRender
+-- Pool
+const pool: types.PoolModule = require("./pool")
 
 -- Valid faces for Enum.NormalId
-local validFaces: { [string]: boolean }  =  {
+const validFaces: { [string]: boolean }  =  {
 	Top = true,
 	Bottom = true,
 	Left = true,
@@ -39,40 +40,56 @@ local validFaces: { [string]: boolean }  =  {
 	Back = true
 }
 
--- Variables
-local INV_30 = 1 / 50
-local MPH_SCALE = config.Constraints.MPH_SCALE
+-- Private Variables
+const _PreRender: RBXScriptSignal = RunService.PreRender
+const _INV_50: number = 1 / 50
+const _MPH_SCALE: number = config.getConfig().Constraints.MPH_SCALE
 
-local sourcesCheckEnabled = false
-local lastSources = sources.getAllActive()
-local currentSources = lastSources
+local _lastSources: {types.LightSource} = sources.getAllActive()
+local _sourcesCheckEnabled: boolean = false
+local _currentSources: {types.LightSource} = _lastSources
 
--- Public: Waits via RunService.PreRender rather than RunService.Heartbeat
-local function renderWait(waitTime: number?): number
+-- Functions
+--[=[
+	Public: Waits via RunService._PreRender rather than RunService.Heartbeat
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function renderWait(waitTime: number?): number
 	if waitTime ~= nil then
 		local total:number = 0
 
 		while total < waitTime do
-			total += PreRender.Wait(PreRender) -- I think .Function(self) (explicit) is faster than :Function() (implicit)?
+			total += _PreRender.Wait(_PreRender) -- I think .Function(self) (explicit) is faster than :Function() (implicit)?
 		end
 
 		return total
 	else
-		return PreRender.Wait(PreRender)
+		return _PreRender.Wait(_PreRender)
 	end
 end
 
--- Public: Tracks a part and calls a callback if it leaves workspace
-local function trackAnsestryRemoval(instance: Instance, callback: (Instance) -> ()): RBXScriptConnection
+--[=[
+	Public: Tracks a part and calls a callback if it leaves workspace
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function trackAnsestryRemoval(instance: Instance, callback: (Instance) -> ()): RBXScriptConnection
 	debugger.assert(typeof(instance) == "Instance", "onRemovedFromWorkspace: 'instance' must be a Roblox Instance")
 	debugger.assert(typeof(callback) == "function", "onRemovedFromWorkspace: 'callback' must be a function")
 
-	if not instance:IsDescendantOf(workspace) then
+	if instance.Parent == nil or not instance:IsDescendantOf(workspace) then
 		pcall(callback, instance) -- no yield
 	end
 
 	local conn: RBXScriptConnection
 	conn = instance.AncestryChanged:Connect(function(_, parent)
+		if parent == nil then
+			conn:Disconnect()
+			pcall(callback, instance)
+			return
+		end
+
 		if not instance:IsDescendantOf(workspace) then
 			pcall(callback, instance)
 			conn:Disconnect()
@@ -82,78 +99,54 @@ local function trackAnsestryRemoval(instance: Instance, callback: (Instance) -> 
 	return conn
 end
 
--- Public: Deep merges two dictionaries
-local function deepMerge(defaults: types.Dict, overrides: types.Dict, path: string?): ()
-	path = path or ""
+--[=[
+	Public: Gets speed in MPH via respective MPH scale
 
-	for key, value in next, overrides do
-		if typeof(key) == "string" and defaults[key] == nil then
-			local fullPath = path ~= "" and (`{path}.{key}`) or tostring(key)
-			debugger.warn(
-				"Warning",
-				`Unknown configuration key: -> {fullPath} <-; are you sure it is spelled or capitalized correctly?`
-			)
-		end
-
-		if typeof(value) == "table" and typeof(defaults[key]) == "table" then
-			local nextPath = path ~= "" and (`{path}.{key}`) or tostring(key)
-			deepMerge(defaults[key], value, nextPath)
-		else
-			defaults[key] = value
-		end
-	end
-end
-
-
--- Public: Assigns config via deep merge
-local function configure(userConfig): types.Configuration
-	if typeof(userConfig) ~= "table" then
-		return config
-	end
-
-	if userConfig["Constraints"] and config.Constraints.LOCKED then
-		debugger.warn("Warning", "CONSTRAINTS is locked; cannot update configuration. Please remove CONSTRAINTS and try again.")
-		return config
-	end
-
-	deepMerge(config :: types.Dict, userConfig)
-
-	return config
-end
-
--- Public: Gets speed in MPH via respective MPH scale
-local function getSpeedMPH(DriveSeat: VehicleSeat): number
-	local v = DriveSeat.AssemblyLinearVelocity
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function getSpeedMPH(DriveSeat: VehicleSeat): number
+	const v: Vector3 = DriveSeat.AssemblyLinearVelocity
 	-- converts studs to MPH based on the mphScale config
 
-	return (v.X*v.X + v.Y*v.Y + v.Z*v.Z)^0.5 * MPH_SCALE -- maybe faster than .Magnitude?
+	return (v.X*v.X + v.Y*v.Y + v.Z*v.Z)^0.5 * _MPH_SCALE -- maybe faster than .Magnitude?
 end
 
--- Public: Adaptive wait time based on vehicle speed
-local function adaptiveWait(waitFunction: (number?) -> number, minFPS: number, maxFPS: number, DriveSeat: VehicleSeat?): (number, number)
+--[=[
+	Public: Adaptive wait time based on vehicle speed
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function adaptiveWait(waitFunction: (number?) -> number, minFPS: number, maxFPS: number, DriveSeat: VehicleSeat?): (number, number)
 	-- faster VehicleSeat velocity = more FPS and vice versa
 	if not DriveSeat then
 		return waitFunction(1 / maxFPS), 50
 	end
 
-	local speedMph = getSpeedMPH(DriveSeat)
+	const speedMph: number = getSpeedMPH(DriveSeat)
 
-	local targetFPS = math.clamp(speedMph * INV_30 * maxFPS, minFPS, maxFPS)
+	const targetFPS: number = math.clamp(speedMph * _INV_50 * maxFPS, minFPS, maxFPS)
 
 	return waitFunction(1 / targetFPS), speedMph
 end
 
--- Public: Gets the fastest VehicleSeat in a vehicle map table
-local function getFastestDriveSeat(Vehicles: types.VehicleMap)
+--[=[
+	Public: Gets the fastest VehicleSeat in a vehicle map table
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function getFastestDriveSeat(Vehicles: types.VehicleMap): VehicleSeat?
 	-- ^ since the package is no longer tailored towards one vehicle, it needs to get the fastest drive seat out of all of the
 	--    vehicles
-	local fastestSeat = nil
-	local maxSpeed = 0
+	local fastestSeat: VehicleSeat? = nil
+	local maxSpeed: number = 0
 
-	for car in Vehicles do
-		local seat = car:FindFirstChildOfClass("VehicleSeat")
+	for car: Instance?, _ in Vehicles do
+
+		if not car then continue end
+
+		const seat: VehicleSeat? = car:FindFirstChildOfClass("VehicleSeat")
 		if seat then
-			local speed = seat.AssemblyLinearVelocity.Magnitude
+			const speed: number = seat.AssemblyLinearVelocity.Magnitude
 			if speed > maxSpeed then
 				maxSpeed = speed
 				fastestSeat = seat
@@ -164,57 +157,66 @@ local function getFastestDriveSeat(Vehicles: types.VehicleMap)
 	return fastestSeat
 end
 
-local function startSeparateSourcesCheck()
+--[=[
+	Private: Starts separate sources check in 1/15 seconds
 
-	if sourcesCheckEnabled then
+	@private
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function _startSeparateSourcesCheck(): ()
+	if _sourcesCheckEnabled then
 		return
 	end
 
-	sourcesCheckEnabled = true
+	_sourcesCheckEnabled = true
 
 	while true do
-			local updatedSources = sources.getAllActive()
-			local changed = false
+		const updatedSources: {types.LightSource} = sources.getAllActive()
+		local changed: boolean = false
 
-			if #updatedSources ~= #currentSources then
-				changed = true
-			else
-				for i = 1, #updatedSources do
-					if updatedSources[i] ~= currentSources[i] then
-						changed = true
-						break
-					end
+		if #updatedSources ~= #_currentSources then
+			changed = true
+		else
+			for i = 1, #updatedSources do
+				if updatedSources[i] ~= _currentSources[i] then
+					changed = true
+					break
 				end
 			end
+		end
 
-			if changed then
-				currentSources = updatedSources
-			end
+		if changed then
+			_currentSources = updatedSources
+		end
 
-			task.wait(1/15)
+		task.wait(1/15)
 	end
 
 end
 
--- Public: Adaptive wait with override if sources change
-local function adaptiveWaitWithSourcesOverride(
+--[=[
+	Public: Adaptive wait with override if sources change
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function adaptiveWaitWithSourcesOverride(
 	waitFunction: (number?) -> number,
 	minFPS: number,
 	maxFPS: number,
-	DriveSeat: VehicleSeat
+	DriveSeat: VehicleSeat?
 	--onSourcesChanged: (types.SourceList) -> ()
 ): (number, number)
 
-	task.defer(startSeparateSourcesCheck)
+	task.defer(_startSeparateSourcesCheck)
 
-	local elapsed, speedMph = task.wait(1/59), 0
+	local elapsed: number, speedMph: number = task.wait(1/59), 0
 
-	local changed = false
-	if #currentSources ~= #lastSources then
+	local changed: boolean = false
+	if #_currentSources ~= #_lastSources then
 		changed = true
 	else
-		for i = 1, #currentSources do
-			if currentSources[i] ~= lastSources[i] then
+		for i = 1, #_currentSources do
+			if _currentSources[i] ~= _lastSources[i] then
 				changed = true
 				break
 			end
@@ -224,7 +226,7 @@ local function adaptiveWaitWithSourcesOverride(
 	if changed then
 		--elapsed = waitFunction(0)
 		speedMph = if DriveSeat then getSpeedMPH(DriveSeat) else 50
-		lastSources = currentSources
+		_lastSources = _currentSources
 	else
 		elapsed, speedMph = adaptiveWait(waitFunction, minFPS, maxFPS, DriveSeat)
 	end
@@ -232,17 +234,21 @@ local function adaptiveWaitWithSourcesOverride(
 	return elapsed, speedMph
 end
 
--- Public: Fixes the orientation of a sign part
-local function fixPartOrientation(part: BasePart, decal: Decal): ()
+--[=[
+	Public: Fixes the orientation of a sign part
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function fixPartOrientation(part: BasePart, decal: Decal): ()
 	-- ^ this function is needed since the top face in Decals and SurfaceGuis are NOT in the same orientation
-	local isFixed: boolean? = part:GetAttribute("IsFixed")
+	const isFixed: boolean? = part:GetAttribute("IsFixed")
 	if isFixed == true then return end
 
 	if decal.Face == Enum.NormalId.Top then
 
 		part.CFrame *= CFrame.Angles(0, math.rad(-90), math.rad(-90))
 
-		local size = part.Size
+		const size = part.Size
 		part.Size = Vector3.new(size.Y, size.Z, size.X)
 		decal.Face = Enum.NormalId.Left
 
@@ -255,10 +261,15 @@ local function fixPartOrientation(part: BasePart, decal: Decal): ()
 	end
 end
 
--- Public: Normalizes the base color of a part if it is too low or too high
-local function normalizeBaseColor(part: BasePart, isNormalizeEnabled: boolean): Color3
+--[=[
+	Public: Normalizes the base color of a part if it is too low or too high
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function normalizeBaseColor(part: BasePart, isNormalizeEnabled: boolean): Color3
 	-- if a reflector color is too low, it would barely light up at all. If it is too high, it would blind one's eyes
-	local color = part.Color
+	local color: Color3 = part.Color
+
 	if part:GetAttribute("BaseColor") then return color end
 
 	if isNormalizeEnabled == false then
@@ -266,19 +277,19 @@ local function normalizeBaseColor(part: BasePart, isNormalizeEnabled: boolean): 
 		return color
 	end
 
-	local maxComponent = math.max(color.R, color.G, color.B)
-	local minTarget = 0.78
-	local maxTarget = 0.8
+	const maxComponent: number = math.max(color.R, color.G, color.B)
+	const minTarget: number = 0.78
+	const maxTarget: number = 0.8
 
 	if maxComponent < minTarget then
-		local scale = minTarget / maxComponent
+		const scale: number = minTarget / maxComponent
 		color = Color3.new(
 			math.clamp(color.R * scale, 0, 1),
 			math.clamp(color.G * scale, 0, 1),
 			math.clamp(color.B * scale, 0, 1)
 		)
 	elseif maxComponent > maxTarget then
-		local scale = maxTarget / maxComponent
+		const scale: number = maxTarget / maxComponent
 		color = Color3.new(
 			math.clamp(color.R * scale, 0, 1),
 			math.clamp(color.G * scale, 0, 1),
@@ -290,12 +301,17 @@ local function normalizeBaseColor(part: BasePart, isNormalizeEnabled: boolean): 
 	return color
 end
 
--- Public: pcall retry function
-local function pcallRetry(func: (...any) -> (...any), maxRetries: number, ...): (boolean, string?)
+--[=[
+	Public: Pcall retry function
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function pcallRetry(func: (...any) -> (...any), maxRetries: number, ...): (boolean, string?)
 	-- mainly due to pool errors, better to try again instead of erroring the entire function
-	local args = {...}
-	local attempt = 0
-	local success, result
+	const args: {any} = {...}
+
+	local attempt: number = 0
+	local success: boolean, result: string?
 
 	repeat
 		attempt += 1
@@ -312,10 +328,14 @@ local function pcallRetry(func: (...any) -> (...any), maxRetries: number, ...): 
 	return success, result
 end
 
--- Public: determines if the provided Color3's are equal
-local function areColorsEqual(colorA:Color3, colorB:Color3, epsilon: number)
+--[=[
+	Public: Determines if the provided Color3's are equal
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function areColorsEqual(colorA: Color3, colorB: Color3, epsilon: number): boolean
 	-- ^ needed since Color3's have floating points
-	local epsilon = epsilon or 0.001
+	epsilon = if epsilon then epsilon else 0.001
 
 	if math.abs(colorA.R - colorB.R) > epsilon then
 		return false
@@ -332,12 +352,93 @@ local function areColorsEqual(colorA:Color3, colorB:Color3, epsilon: number)
 	return true
 end
 
+--[=[
+	Public: Resets and returns SurfaceGui with pool check
 
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function resetSurfaceGui(SurfaceGuiPool: types.Pool, gui: types.SurfaceGuiTemplate): ()
+	if not gui then return end
+
+	--if gui:GetAttribute("InPool") == true then return end
+
+	if gui.Parent == nil and gui.Enabled == false then
+		return
+	end
+
+	gui.Enabled = false
+	gui.Adornee = nil
+	gui.Parent = nil
+
+	gui.Brightness = 0
+	gui.LightInfluence = 1
+	gui.ImageLabel.ImageTransparency = 1
+	-- ^ reset the template so that signs do not flicker once indexed
+
+	--gui:SetAttribute("InPool", true) -- InPool attribute is unreliable
+
+	const success:boolean, response:string? = SurfaceGuiPool:ReturnObject(gui)
+	-- in the pool module, I made it so that :ReturnObject has similar returns as a pcall
+
+	if not success then
+		gui:Destroy() -- destroy the gui instead
+		debugger.warn("Warning", response)
+	end
+end
+
+--[=[
+	Public: Initializes and returns the SurfaceGui pool
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function initPool(): types.Pool
+	const config = config.getConfig()
+
+	local surfaceGuiTemplate:Instance? = ReplicatedStorage:FindFirstChild("ReflectorTemplate")
+
+	if not surfaceGuiTemplate then
+		debugger.warn("InitWarning","SurfaceGui template does not exist! Using safety net and creating SurfaceGui template...")
+		surfaceGuiTemplate = Instance.new("Folder")
+		surfaceGuiTemplate.Name = "ReflectorTemplate"
+		surfaceGuiTemplate.Parent = ReplicatedStorage
+	end
+
+	local templateGui: SurfaceGui? = if surfaceGuiTemplate then surfaceGuiTemplate:FindFirstChildOfClass("SurfaceGui") else nil -- forced to do this or else the type solver would get into a panick attack
+
+	if not templateGui then
+		debugger.warn("InitWarning","SurfaceGui does not exist in the template! Using safety net and creating SurfaceGui...")
+
+		const surfaceGui:SurfaceGui = Instance.new("SurfaceGui")
+		surfaceGui.Name = "SurfaceGui"
+		surfaceGui.Brightness = 0
+		surfaceGui.LightInfluence = 1
+		surfaceGui.ZOffset = 3
+
+		const imageLabel:ImageLabel = Instance.new("ImageLabel")
+		imageLabel.Size = UDim2.fromScale(1,1)
+		imageLabel.BackgroundTransparency = 1
+		imageLabel.ImageTransparency = 1
+		imageLabel.Parent = surfaceGui
+
+		surfaceGui.Parent = surfaceGuiTemplate
+		templateGui = surfaceGui
+	end
+
+	return pool.new(templateGui::SurfaceGui,
+		function(template: Instance): Instance
+			const clone = template:Clone()
+			return clone
+		end,
+
+		function(template: Instance)
+
+		end, config.Constraints.SURFACE_GUI_MIN_POOL_SIZE, config.Constraints.SURFACE_GUI_MAX_POOL_SIZE) -- pool will warn ONCE if active parts exceed 350
+end
+
+-- Return public variables and API
 return table.freeze({
 	Name = "utils",
-	deepMerge = deepMerge,
 	trackAnsestryRemoval = trackAnsestryRemoval,
-	configure = configure,
 	getSpeedMPH = getSpeedMPH,
 	adaptiveWait = adaptiveWait,
 	adaptiveWaitWithSourcesOverride = adaptiveWaitWithSourcesOverride,
@@ -347,5 +448,7 @@ return table.freeze({
 	pcallRetry = pcallRetry,
 	areColorsEqual = areColorsEqual,
 	validFaces = validFaces,
-	renderWait = renderWait
-})
+	renderWait = renderWait,
+	resetSurfaceGui = resetSurfaceGui,
+	initPool = initPool,
+}) :: types.Utils

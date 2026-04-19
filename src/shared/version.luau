@@ -1,3 +1,5 @@
+--!strict
+--!native
 -- USAGE: lightreflector/shared/version.luau
 -- Version for Light Reflector
 
@@ -9,11 +11,26 @@
 
 ]]
 
-local version = table.freeze({major = 1, minor = 2, patch = 0, pre_release = "alpha", build = 0, metadata = ""})
+--[=[
+	Private: Converts version to string
 
--- Private: Converts version to string
-local function _versionToString(v)
-	local str = `{v.major}.{v.minor}.{v.patch}`
+	@private
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+
+const HttpService: HttpService = game:GetService("HttpService")
+const RunService: RunService = game:GetService("RunService")
+const CodebergTags: string = "https://codeberg.org/api/v1/repos/project-roadwork/light-reflector/tags"
+const version: Version = table.freeze({major = 2, minor = 0, patch = 0, pre_release = "alpha", build = 0, metadata = "NONECS"}) :: Version
+
+--[=[
+	Private: Converts version to string
+
+	@private
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function _versionToString(v: Version): string
+	local str: string = `{v.major}.{v.minor}.{v.patch}`
 	if v.pre_release and v.pre_release ~= "" then
 		str = str .. `-{v.pre_release}`
 	end
@@ -26,4 +43,78 @@ local function _versionToString(v)
 	return str
 end
 
-return _versionToString(version)
+--[=[
+	Public: Checks for the latest version
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function checkVersion()
+	if not RunService:IsServer() then
+		warn("You must run checkVersion from the server! Aborting...")
+		return
+	end
+
+	task.spawn(function()
+		const function fetch(url: string)
+			const success, result = pcall(HttpService.GetAsync, HttpService, url)
+
+			if not success then
+				return nil
+			end
+
+			const ok, data = pcall(HttpService.JSONDecode, HttpService, result)
+
+			return ok and data or nil
+		end
+
+		const function normalizeVersion(v: string): string
+			v = string.gsub(v, "^%s+", "")
+			v = string.gsub(v, "%s+$", "")
+
+			if string.match(v, "^[vV]%d") then
+				v = string.sub(v, 2)
+			end
+
+			return v
+		end
+
+		const tags: {any}? = fetch(CodebergTags)
+		if not tags or not tags[1] then
+			return
+		end
+
+		const rawLatest = tags[1].name
+		if typeof(rawLatest) ~= "string" then
+			return
+		end
+
+		const latestVersion = normalizeVersion(rawLatest)
+		const currentVersion = normalizeVersion(_versionToString(version))
+
+		if latestVersion ~= currentVersion then
+			warn(
+				("LightReflector: New version available! Current: %s | Latest: %s"):format(
+					currentVersion,
+					latestVersion
+				)
+			)
+		end
+	end)
+end
+
+-- Types
+export type Version = {
+	major: number,
+	minor: number,
+	patch: number,
+	pre_release: string,
+	build: number,
+	metadata: string,
+}
+
+-- Return variables and API
+return table.freeze({
+	name = "version",
+	_VERSION = _versionToString(version),
+	checkVersion = checkVersion,
+})

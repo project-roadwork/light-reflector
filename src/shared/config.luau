@@ -1,4 +1,5 @@
 --!native
+--!strict
 -- USAGE: lightreflector/shared/config.luau
 -- Configuration file for Light Reflector
 
@@ -10,7 +11,15 @@
 
 ]]
 
-return {
+const WAITING: {[number]: (any)} = {}
+
+local LOCKED = false
+
+const FLAGS = {
+	["TEST_FLAG"] = true
+}
+
+const BASE_CONFIG = {
 
 	--[[
 
@@ -66,6 +75,14 @@ return {
 	Constraints = { -- This table will be frozen once the module starts
 		LOCKED = false, -- (recommended -> false) DO NOT CHANGE
 
+		-- [VERSION]
+		VERSION = require("./version")._VERSION,
+
+		-- [REPOSITORIES]
+		CODEBERG = "https://codeberg.org/project-roadwork/light-reflector.git",
+		GITHUB = "https://github.com/project-roadwork/light-reflector.git",
+		-- ^ Codeberg and GitHub repositories for Light Reflector
+
 		-- [GENERAL]
 		IS_STREAMING_ENABLED = true,
 		-- ^ Set this to true if you have a custom streaming system or have instance streaming enabled.
@@ -108,6 +125,7 @@ return {
 		IS_RAYCAST_ENABLED = false, -- (recommended -> false)
 		-- ^ Only set this to true if you actually need raycasting which is unneccesary (lots of lag).
 		-- 	 Otherwise, leaving this as false processes all of the signs
+
 	},
 
 	General = {
@@ -233,7 +251,7 @@ return {
 		-- ^ Folders where your reflectors are, seperated by a comma. This will not be used if you have tags enabled.
 
 		isReflector = function(p)
-			return p:IsA("BasePart") and p.Parent and p.Parent.Name == "P" and not p:IsA("MeshPart")
+			return p:IsA("BasePart") and p.Parent and typeof(p.Parent) == "Instance" and p.Parent.Name == "P" and not p:IsA("MeshPart")
 		end,
 		-- ^ Condition of what makes a BasePart a "reflector"
 
@@ -328,3 +346,162 @@ return {
 
 	}
 }
+
+--[=[
+	Private: Custom warnings
+
+	@private
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function _warn(message: string)
+	if BASE_CONFIG.General.showWarnings then
+		warn(`[Light Reflector {BASE_CONFIG.Constraints.VERSION} -> Config] Warning: {message}`)
+	end
+end
+
+
+--[=[
+	Public: Deep merges two dictionaries
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function _deepMerge(defaults: Dict, overrides: Dict, path: string?): ()
+
+	path = if path then path else ""
+
+	for key, value in next, overrides do
+		if typeof(key) == "string" and defaults[key] == nil then
+			const fullPath = if path ~= "" then (`{path}.{key}`) else tostring(key)
+				_warn(`Unknown configuration key: -> {fullPath} <-; are you sure it is spelled or capitalized correctly?`)
+
+			if typeof(value) == "table" and typeof(defaults[key]) == "table" then
+				const nextPath = if path ~= "" then (`{path}.{key}`) else tostring(key)
+				_deepMerge(defaults[key] :: Dict, value :: Dict, nextPath)
+			else
+				defaults[key] = value
+			end
+		end
+	end
+end
+
+--[=[
+	Public: Assigns config via deep merge
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function applyOverrides(userConfig: any): BASE_CONFIG
+	if typeof(userConfig) ~= "table" then
+		return BASE_CONFIG
+	end
+
+	if userConfig["Constraints"] and LOCKED then
+			_warn( "CONSTRAINTS is locked; cannot update configuration. Please remove CONSTRAINTS and try again.")
+
+		return BASE_CONFIG
+	end
+
+	_deepMerge(BASE_CONFIG :: Dict, userConfig :: Dict)
+
+	return BASE_CONFIG
+end
+
+--[=[
+	Public: Locks the congig and calls any calbacks
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function lock()
+	LOCKED = true
+	BASE_CONFIG.Constraints.LOCKED = true
+
+	table.freeze(BASE_CONFIG.Constraints)
+
+	for _, callback in WAITING do
+		callback()
+	end
+end
+
+--[=[
+	Public: Unlocks the config
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function unlock()
+	const clone = table.clone(BASE_CONFIG.Constraints)
+	BASE_CONFIG.Constraints = clone
+
+	LOCKED = false
+	BASE_CONFIG.Constraints.LOCKED = false
+end
+
+--[=[
+	Public: Waits for the config to be locked with a callback
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function waitForLock(callback: () -> ())
+	if LOCKED then
+		callback()
+	else
+		table.insert(WAITING, callback)
+	end
+end
+
+--[=[
+	Public: Returns a section of the config
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function getSection(section: string): Dict
+	return (BASE_CONFIG :: BASE_CONFIG)[section]
+end
+
+--[=[
+	Public: Returns a key from the config
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function getKey(section: string, key: string): any
+	return (BASE_CONFIG :: BASE_CONFIG)[section][key]
+end
+
+--[=[
+	Public: Overrides a key in the config
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function overrideKey(section: string, key: string, value: any): ()
+	if section == "Constraints" and LOCKED then
+			_warn( "CONSTRAINTS is locked; cannot update configuration.")
+		return
+	end
+
+	BASE_CONFIG[section][key] = value
+end
+
+--[=[
+	Public: Returns the entire config with typing
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function getConfig(): BASE_CONFIG
+	return BASE_CONFIG
+end
+
+-- Types
+export type BASE_CONFIG = typeof(BASE_CONFIG)
+export type Dict = { [string | number]: any }
+
+-- Return public variables and API
+return table.freeze({
+	name = "config",
+	FLAGS,
+	applyOverrides = applyOverrides,
+	lock = lock,
+	unlock = unlock,
+	waitForLock = waitForLock,
+	getKey = getKey,
+	getSection = getSection,
+	overrideKey = overrideKey,
+	getConfig = getConfig,
+})

@@ -22,9 +22,9 @@ return [[
 		  LANGUAGE:         Luau
 
 		  GROUP:            Project Roadwork
-		  VERSION:          1.2.0-alpha.0
+		  VERSION:          2.0.0-alpha.0-NONECS
 		  CREATED:          2025-10-26 2:03 PM CDT
-		  LAST UPDATED:     2026-03-25 5:46 PM CDT
+		  LAST UPDATED:     2026-04-19 2:12 AM CDT
 
 		  SPDX-LICENSE-IDENTIFIER:   MPL-2.0
 
@@ -36,7 +36,7 @@ return [[
 		  links.
 
 		  LICENSE HEADER:
-			Copyright 2024-2026 Project Roadwork
+			Copyright 2025-2026 Project Roadwork
 
 			This Source Code Form is subject to the terms of the Mozilla Public
 			License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -65,6 +65,15 @@ return [[
 			https://discord.gg/sd4XfAqNF9
 
 	D. Changelog [MM/DD/YYYY]
+
+		[04/19/2026 : Light-Reflector, Version 2.0.0-alpha.0+NONECS] [Pre-release]
+			Author: Illinois_Roadbuff "Rogue Jr"
+
+			THIS IS AN ARCHIVE AND PRE-RELEASE, NOT TO BE USED IN PRODUCTION UNLESS PURELY NECESSARY.
+
+			[Other Notes]
+				- The last copy of Light Reflector WITHOUT Jecs
+				- Fully typed
 
 		[03/20/2026 : Light-Reflector, Version 1.2.0-alpha.0] [Pre-release]
 			Author: Illinois_Roadbuff "Rogue Jr"
