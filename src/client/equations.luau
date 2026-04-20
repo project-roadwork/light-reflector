@@ -12,7 +12,7 @@
 ]]
 
 -- Types Module
-const types: {} = require("../shared/types")
+const types = require("../shared/types")
 
 -- Configuration
 const config: types.Configuration = require("../shared/config")

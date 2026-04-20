@@ -16,7 +16,10 @@ const RunService:RunService = game:GetService("RunService")
 const ReplicatedStorage: ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Types module
-const types: {} = require("../shared/types")
+const types = require("../shared/types")
+
+-- Jecs
+const jecs: types.JecsModule = require("../shared/jecs")
 
 -- Debugger
 const debugger: types.Debugger = require("../shared/debugger")
@@ -42,7 +45,7 @@ const validFaces: { [string]: boolean }  =  {
 
 -- Private Variables
 const _PreRender: RBXScriptSignal = RunService.PreRender
-const _INV_50: number = 1 / 50
+const _INV: number = 1 / config.getConfig().Constraints.MAX_MPH
 const _MPH_SCALE: number = config.getConfig().Constraints.MPH_SCALE
 
 local _lastSources: {types.LightSource} = sources.getAllActive()
@@ -69,12 +72,18 @@ const function renderWait(waitTime: number?): number
 	end
 end
 
+const function _trackAncestryRemovalPrint(message: string): ()
+	if config.FLAGS.TRACK_ANCESTRY_CONNECTIONS then
+		print(`:: TrackAncestryRemoval :: {message}`) -- using luau print
+	end
+end
+
 --[=[
 	Public: Tracks a part and calls a callback if it leaves workspace
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function trackAnsestryRemoval(instance: Instance, callback: (Instance) -> ()): RBXScriptConnection
+const function trackAncestryRemoval(instance: Instance, callback: (Instance) -> ()): RBXScriptConnection
 	debugger.assert(typeof(instance) == "Instance", "onRemovedFromWorkspace: 'instance' must be a Roblox Instance")
 	debugger.assert(typeof(callback) == "function", "onRemovedFromWorkspace: 'callback' must be a function")
 
@@ -87,14 +96,19 @@ const function trackAnsestryRemoval(instance: Instance, callback: (Instance) -> 
 		if parent == nil then
 			conn:Disconnect()
 			pcall(callback, instance)
+			_trackAncestryRemovalPrint("[🔴 REMOVE] Disconnected via AncestryChanged connection")
 			return
 		end
 
 		if not instance:IsDescendantOf(workspace) then
 			pcall(callback, instance)
 			conn:Disconnect()
+			_trackAncestryRemovalPrint("[🔴 REMOVE] Disconnected via IsDescendantOf check")
+			return
 		end
 	end)
+
+	_trackAncestryRemovalPrint("[🟢 ADD] New connection added!")
 
 	return conn
 end
@@ -124,7 +138,7 @@ const function adaptiveWait(waitFunction: (number?) -> number, minFPS: number, m
 
 	const speedMph: number = getSpeedMPH(DriveSeat)
 
-	const targetFPS: number = math.clamp(speedMph * _INV_50 * maxFPS, minFPS, maxFPS)
+	const targetFPS: number = math.clamp(speedMph * _INV * maxFPS, minFPS, maxFPS)
 
 	return waitFunction(1 / targetFPS), speedMph
 end
@@ -134,13 +148,13 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function getFastestDriveSeat(Vehicles: types.VehicleMap): VehicleSeat?
+const function getFastestDriveSeat(Vehicles: jecs.Cached_Query<Instance>): VehicleSeat?
 	-- ^ since the package is no longer tailored towards one vehicle, it needs to get the fastest drive seat out of all of the
 	--    vehicles
 	local fastestSeat: VehicleSeat? = nil
 	local maxSpeed: number = 0
 
-	for car: Instance?, _ in Vehicles do
+	for entity, car:Instance in Vehicles do
 
 		if not car then continue end
 
@@ -313,19 +327,25 @@ const function pcallRetry(func: (...any) -> (...any), maxRetries: number, ...): 
 	local attempt: number = 0
 	local success: boolean, result: string?
 
-	repeat
-		attempt += 1
-		success, result = pcall(func, table.unpack(args))
+	if config.FLAGS.PCALL then
+		repeat
+			attempt += 1
+			success, result = pcall(func, table.unpack(args))
+			if not success then
+				debugger.warn("Warning", `pcallRetry: {result} | {maxRetries - attempt} attemps remaining`)
+			end
+		until success or attempt >= maxRetries
+
 		if not success then
-			debugger.warn("Warning", `pcallRetry: {result} | {maxRetries - attempt} attemps remaining`)
+			debugger.warn("Warning", `pcallRetry: {result} All attempts exhausted.`)
 		end
-	until success or attempt >= maxRetries
 
-	if not success then
-		debugger.warn("Warning", `pcallRetry: {result} All attempts exhausted.`)
+		return success, result
+	else
+		local result = func(table.unpack(args))
+
+		return true, result
 	end
-
-	return success, result
 end
 
 --[=[
@@ -333,21 +353,20 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function areColorsEqual(colorA: Color3, colorB: Color3, epsilon: number): boolean
-	-- ^ needed since Color3's have floating points
-	epsilon = if epsilon then epsilon else 0.001
+const function areColorsEqual(colorA: Color3, colorB: Color3, epsilon: number?): boolean
+	epsilon = epsilon or 0.005
 
-	if math.abs(colorA.R - colorB.R) > epsilon then
-		return false
-	end
+	const aR, aG, aB = colorA.R, colorA.G, colorA.B
+	const bR, bG, bB = colorB.R, colorB.G, colorB.B
 
-	if math.abs(colorA.G - colorB.G) > epsilon then
-		return false
-	end
+	local d = aR - bR
+	if d > epsilon or d < -epsilon then return false end
 
-	if math.abs(colorA.B - colorB.B) > epsilon then
-		return false
-	end
+	d = aG - bG
+	if d > epsilon or d < -epsilon then return false end
+
+	d = aB - bB
+	if d > epsilon or d < -epsilon then return false end
 
 	return true
 end
@@ -438,7 +457,7 @@ end
 -- Return public variables and API
 return table.freeze({
 	Name = "utils",
-	trackAnsestryRemoval = trackAnsestryRemoval,
+	trackAncestryRemoval = trackAncestryRemoval,
 	getSpeedMPH = getSpeedMPH,
 	adaptiveWait = adaptiveWait,
 	adaptiveWaitWithSourcesOverride = adaptiveWaitWithSourcesOverride,

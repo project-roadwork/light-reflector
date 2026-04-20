@@ -21,7 +21,7 @@
 const HttpService: HttpService = game:GetService("HttpService")
 const RunService: RunService = game:GetService("RunService")
 const CodebergTags: string = "https://codeberg.org/api/v1/repos/project-roadwork/light-reflector/tags"
-const version: Version = table.freeze({major = 2, minor = 0, patch = 0, pre_release = "alpha", build = 0, metadata = "NONECS"}) :: Version
+const version: Version = table.freeze({major = 2, minor = 1, patch = 0, pre_release = "beta", build = 0, metadata = ""}) :: Version
 
 --[=[
 	Private: Converts version to string
@@ -54,15 +54,15 @@ const function checkVersion()
 		return
 	end
 
-	task.spawn(function()
+	task.defer(function()
 		const function fetch(url: string)
-			const success, result = pcall(HttpService.GetAsync, HttpService, url)
+			const success: boolean, result: string = pcall(HttpService.GetAsync, HttpService, url)
 
 			if not success then
 				return nil
 			end
 
-			const ok, data = pcall(HttpService.JSONDecode, HttpService, result)
+			const ok: boolean, data: any = pcall(HttpService.JSONDecode, HttpService, result)
 
 			return ok and data or nil
 		end
@@ -83,7 +83,7 @@ const function checkVersion()
 			return
 		end
 
-		const rawLatest = tags[1].name
+		const rawLatest: any = tags[1].name
 		if typeof(rawLatest) ~= "string" then
 			return
 		end

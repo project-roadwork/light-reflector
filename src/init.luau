@@ -2,7 +2,6 @@
 --!strict
 -- USAGE: lightreflector.luau
 -- Init module for Light Reflector.
--- Typing has been attempted but not complete
 
 --[[
 	Copyright (c) 2024-2026 Project Roadwork and Contributors
@@ -24,7 +23,7 @@
 const RunService: RunService = game:GetService("RunService")
 
 -- IMPORTANT: Types, Debugger and Setup
-const types: {} = require("@self/shared/types")
+const types = require("@self/shared/types")
 const debugger: types.Debugger = require("@self/shared/debugger")
 const logs: types.DebuggerLogs  = require("@self/shared/logs")
 const version: string = require("@self/shared/version")._VERSION
@@ -56,9 +55,13 @@ local isRunning: boolean = false
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function start() : ()
+	debug.profilebegin(`Start Light Reflector {version}`)
+
 	debugger.assert(not isRunning, "AlreadyStarting")
 
 	isRunning = true
+
+	debugger.print("Info","🟡 Starting!")
 
 	config.lock()
 
@@ -67,7 +70,9 @@ const function start() : ()
 	detect.start()
 	render.start()
 	-- ^ two separate loops since both are in different frequencies
-	debugger.print("Info","Successfully loaded!")
+	debugger.print("Info","🟢 Successfully loaded!")
+
+	debug.profileend()
 end
 
 --[=[
@@ -80,7 +85,7 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function cleanup(): ()
-	const constraints = config.getConfig().Constraints
+	const constraints: types.Constraints = config.getConfig().Constraints
 
 	debugger.assert(isRunning, "Warning", "Cleanup called before Start().")
 
@@ -107,4 +112,4 @@ return table.freeze({
 	config = config,
 	register = register,
 	utils = utils,
-})
+}) :: types.LightReflector

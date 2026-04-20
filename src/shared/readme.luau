@@ -22,11 +22,12 @@ return [[
 		  LANGUAGE:         Luau
 
 		  GROUP:            Project Roadwork
-		  VERSION:          2.0.0-alpha.0-NONECS
+		  VERSION:          2.1.0
 		  CREATED:          2025-10-26 2:03 PM CDT
-		  LAST UPDATED:     2026-04-19 2:12 AM CDT
+		  LAST UPDATED:     2026-04-19 8:11 PM CDT
 
-		  SPDX-LICENSE-IDENTIFIER:   MPL-2.0
+		  SPDX-License-Identifier:   MPL-2.0
+		  SPDX-FileCopyrightText:   Copyright 2025-2026 Project Roadwork
 
  		  CODEBERG REPO:    https://codeberg.org/project-roadwork/light-reflector.git (MAIN)
 		  GITHUB REPO:      https://github.com/project-roadwork/light-reflector.git (BACKUP/MIRROR)
@@ -65,6 +66,41 @@ return [[
 			https://discord.gg/sd4XfAqNF9
 
 	D. Changelog [MM/DD/YYYY]
+
+		[04/20/2026 : Light-Reflector, Version 2.1.0]
+			Author: Illinois_Roadbuff "Rogue Jr"
+
+			[Fixes]
+				- Resolved an issue where .DescedantRemoved on sign folders would "register" the sign again instead of "unregister"
+				- Resolved an issue where `trackAncestryRemoval` connections would duplicate itself although the connection already
+				 exists for the respective part
+				- Fixed a spelling error ('trackAnsestryRemoval') in the `trackAncestryRemoval` function
+
+			[Features]
+				- Light Reflector now runs as an Entity Component System via [Jecs](https://github.com/Ukendio/jecs/)!
+				- This module is now nearly or fully typed
+				- Added an ability to check for updates (must be called on the server without requiring the main module)
+				- Decentrialized the init module, and added three new modules: `detect`, `render`, and `register`
+				- Config has the new functions: `lock`, `unlock`, `waitForLock`, `getKey`, `getSection`, `overrideKey`, and `getConfig`
+				- Reduced the number of calls of `areColorsEqual`
+				- Added FLAGS in the config. The current functional FLAGS are `PCALL`, and `TRACK_ANCESTRY_REMOVAL_CONNECTIONS`.
+				- Organized the types module
+				- New module `jecs` in `shared` (since Types must access it)
+				- Added an ability to track connections for `TrackAncestryRemoval` which can be enabled via the FLAG `TRACK_ANCESTRY_REMOVAL_CONNECTIONS`
+				- Added the new Luau variable `const` to wherever possible except in Jecs
+
+			[Other Notes]
+				- Added `MAX_MPH` in the config that would determine the maximum speed for the renderer and detector to run at.
+				- Updated the spatial grid module to support the main ECS Entity Ids instead of creating new ones.
+
+			[API CHANGES]
+				- `lightreflector.Configure()` is now `lightreflector.config.applyOverrides()`
+				- `lightreflector.RegisterVehicle()` is now `lightreflector.register.registerVehicle()`
+				- `lightreflector.UnregisterVehicle()` is now `lightreflector.register.unregisterVehicle()`
+				- 'lightreflector.RegisterReflector()' is now `lightreflector.register.registerReflector()`
+				- 'lightreflector.UnregisterReflector()' is now `lightreflector.register.unregisterReflector()`
+				- 'lightreflector.Cleanup()' is now `lightreflector.cleanup()`
+				- 'config' (by itself) is now `config.getConfig()`
 
 		[04/19/2026 : Light-Reflector, Version 2.0.0-alpha.0+NONECS] [Pre-release]
 			Author: Illinois_Roadbuff "Rogue Jr"

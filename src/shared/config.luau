@@ -11,14 +11,18 @@
 
 ]]
 
+-- Variables
 const WAITING: {[number]: (any)} = {}
+local LOCKED: boolean = false
 
-local LOCKED = false
-
+-- Flags
 const FLAGS = {
-	["TEST_FLAG"] = true
+	["TEST_FLAG"] = false, -- This does nothing
+	["PCALL"] = true, -- Enable pcalls or not. Useful for debugging.
+	["TRACK_ANCESTRY_CONNECTIONS"] = true, -- Enable to track ancestry connections
 }
 
+-- Base Config
 const BASE_CONFIG = {
 
 	--[[
@@ -91,7 +95,7 @@ const BASE_CONFIG = {
 		-- ^ (stud/sec) → mph (CHANGE THIS IF YOU HAVE A DIFFERENT SCALE)
 
 		KEYS = { __mode = "k" }, -- (recommended -> { __mode = "k" } )
-		-- ^ Keys to use on weak tables
+		-- ^ Keys to use on weak tables. (This may no longer be used in 2.1.0)
 
 		MAX_PCALL_RETRIES = 5,  -- (recommended -> 5)
 		-- ^ Amount of times to retry a pcall
@@ -105,12 +109,15 @@ const BASE_CONFIG = {
 
 		-- [PERFORMANCE]
 		BOUNDARY_MIN_FPS = 1, -- (recommended -> 1)
-		BOUNDARY_MAX_FPS = 3, -- (recommended -> 5)
+		BOUNDARY_MAX_FPS = 3, -- (recommended -> 3)
 		-- ^ FPS of the Boundary function
 
 		RENDER_MIN_FPS = 45, -- (recommended -> 45)
 		RENDER_MAX_FPS = 59, -- (recommended -> 55)
 		-- ^ FPS of the Render function
+
+		MAX_MPH = 12, -- (recommended -> 10)
+		-- ^ Maximum speed in which the Boundary/Detect and Render system would run its fastest
 
 		-- [POOLING]
 		SURFACE_GUI_MIN_POOL_SIZE = 20, -- (recommended -> 20)
@@ -191,7 +198,7 @@ const BASE_CONFIG = {
 		signsFolders = { workspace.Signs },
 		-- ^ Set this to your own signs folders separated by a comma
 
-		isDebugBoxEnabled = false, -- Shows the debug box
+		isDebugBoxEnabled = false, -- Shows the debug box. THIS ONLY WORKS FOR RAYCASTING.
 		debugBoxColor = Color3.fromRGB(0,255,0),
 		debugBoxTransparency = 0.8,
 		debugBoxName = "RaycastDebugBox",
@@ -371,11 +378,11 @@ const function _deepMerge(defaults: Dict, overrides: Dict, path: string?): ()
 
 	for key, value in next, overrides do
 		if typeof(key) == "string" and defaults[key] == nil then
-			const fullPath = if path ~= "" then (`{path}.{key}`) else tostring(key)
+			const fullPath: string = if path ~= "" then (`{path}.{key}`) else tostring(key)
 				_warn(`Unknown configuration key: -> {fullPath} <-; are you sure it is spelled or capitalized correctly?`)
 
 			if typeof(value) == "table" and typeof(defaults[key]) == "table" then
-				const nextPath = if path ~= "" then (`{path}.{key}`) else tostring(key)
+				const nextPath: string = if path ~= "" then (`{path}.{key}`) else tostring(key)
 				_deepMerge(defaults[key] :: Dict, value :: Dict, nextPath)
 			else
 				defaults[key] = value
@@ -495,7 +502,7 @@ export type Dict = { [string | number]: any }
 -- Return public variables and API
 return table.freeze({
 	name = "config",
-	FLAGS,
+	FLAGS = FLAGS,
 	applyOverrides = applyOverrides,
 	lock = lock,
 	unlock = unlock,

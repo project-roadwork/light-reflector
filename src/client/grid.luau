@@ -53,45 +53,55 @@
 
 ]]
 
---!strict
---!native
-
 -- Types
-export type EntityId = number
+
+type Key = string | number
 
 export type Grid = {
 	CellSize: number,
 
-	Position: {[EntityId]: Vector3},
-	Part: {[EntityId]: BasePart},
-	CellCoords: {[EntityId]: Vector2},
+	Position: {[Key]: Vector3},
+	Part: {[Key]: BasePart}?,
 
-	Cells: {[number]: {[number]: {EntityId}}},
-
+	CellCoords: {[Key]: Vector2},
+	Cells: {[number]: {[number]: {Key}}},
 	Coarse: {[number]: {[number]: {x: number, z: number}}},
 
-	CellIndex: {[EntityId]: {x: number, z: number, i: number}},
+	CellIndex: {[Key]: {x: number, z: number, i: number}},
+	Dirty: {[Key]: boolean},
 
-	PartToId: {[BasePart]: EntityId},
+	CellCache: {[number]: {Key}?},
+	EntityMap: {[Key]: EntityId},
 
-	NextEntityId: EntityId,
-
-	Dirty: {[EntityId]: boolean},
-
-	CellCache: {[number]: {EntityId}?},
-
-	_ReconciledThisQuery: {[EntityId]: boolean},
+	_ReconciledThisQuery: {[Key]: boolean},
 	_QueryLock: boolean,
 
 	_scratchParts: {BasePart},
 	_scratchIds: {EntityId},
 }
 
+const jecs = require("../shared/jecs")
+
+export type EntityId = number | vector | jecs.Entity
+
 -- Constants
 const floor = math.floor
 const ceil = math.ceil
 const clear = table.clear
-const COARSE_FACTOR = 4
+const COARSE_FACTOR: number = 4
+
+local function getIdKey(entityId: EntityId): number | string
+	if typeof(entityId) == "number" then
+		return entityId
+	elseif typeof(entityId) == "vector" then
+		-- combine id + generation into a unique key
+		return entityId.x .. ":" .. entityId.y
+	elseif typeof(entityId) == "Vector3" then
+		-- combine id + generation into a unique key
+		return entityId.X .. ":" .. entityId.Y
+	end
+	error("Invalid EntityId type: ".. typeof(entityId))
+end
 
 -- Public: Create a new grid
 const function newGrid(cellSize: number?): Grid
@@ -100,16 +110,14 @@ const function newGrid(cellSize: number?): Grid
 
 		Position = {},
 		Part = {},
+
 		CellCoords = {},
 		Cells = {},
-
 		Coarse = {},
 
 		CellIndex = {},
-		PartToId = {},
-		NextEntityId = 1,
-
 		Dirty = {},
+		EntityMap = {},
 
 		CellCache = {},
 
@@ -120,7 +128,6 @@ const function newGrid(cellSize: number?): Grid
 		_scratchIds = {},
 	}
 end
-
 -- Public: Get cell coordinates
 const function getCellCoords(grid: Grid, pos: Vector3): (number, number)
 	return floor(pos.X / grid.CellSize), floor(pos.Z / grid.CellSize)
@@ -132,22 +139,26 @@ const function _coarseKey(x: number, z: number): number
 end
 
 -- Public: Spawn a new entity into the grid
-const function spawn(grid: Grid, part: BasePart, pos: Vector3): EntityId
-	const id = grid.NextEntityId
-	grid.NextEntityId += 1
+const function spawn(grid: Grid, entityId: EntityId, pos: Vector3): ()
+	local key = getIdKey(entityId)
 
-	grid.Position[id] = pos
-	grid.Part[id] = part
-	grid.PartToId[part] = id
+	if grid.Position[key] then
+		return
+	end
+
+	-- store original ECS entity
+	grid.EntityMap[key] = entityId
+	grid.Position[key] = pos
 
 	const x, z = getCellCoords(grid, pos)
-	grid.CellCoords[id] = Vector2.new(x, z)
+	grid.CellCoords[key] = Vector2.new(x, z)
 
 	local column = grid.Cells[x]
 	if not column then
-		column = {}
+		column = {} :: {[number]: {Key}}
 		grid.Cells[x] = column
 	end
+	grid.Cells[x] = column
 
 	local cell = column[z]
 	if not cell then
@@ -160,58 +171,58 @@ const function spawn(grid: Grid, part: BasePart, pos: Vector3): EntityId
 
 		local coarse = grid.Coarse[ck]
 		if not coarse then
-			coarse = {}
+			coarse = {} :: {[number]: {x: number, z: number}}
 			grid.Coarse[ck] = coarse
 		end
+		grid.Coarse[ck] = coarse
 
 		coarse[x * 10000 + z] = { x = x, z = z }
 	end
 
-	const idx = #cell + 1
-	cell[idx] = id
+	local idx = #cell + 1
+	cell[idx] = key
 
-	grid.CellIndex[id] = {
+	grid.CellIndex[key] = {
 		x = x,
 		z = z,
 		i = idx,
 	}
 
-	grid.Dirty[id] = false
-
-	return id
+	grid.Dirty[key] = false
 end
-
 -- Public: Update an entity's position
 const function updatePosition(grid: Grid, entityId: EntityId, pos: Vector3): ()
-	if not grid.Part[entityId] then return end
-	grid.Position[entityId] = pos
-	grid.Dirty[entityId] = true
-end
+	local key = getIdKey(entityId)
 
+	if not grid.Position[key] then return end
+	grid.Position[key] = pos
+	grid.Dirty[key] = true
+end
 -- Private: Remove entity from a cell
-const function _removeFromCell(grid: Grid, entityId: EntityId, x: number, z: number): ()
+const function _removeFromCell(grid: Grid, key: Key, x: number, z: number): ()
+
 	const column = grid.Cells[x]
 	if not column then return end
 
 	const cell = column[z]
 	if not cell then return end
 
-	const indexData = grid.CellIndex[entityId]
+	const indexData = grid.CellIndex[key]
 	if not indexData then return end
 
 	const idx = indexData.i
-	const lastId = cell[#cell]
+	const lastKey = cell[#cell]
 
-	cell[idx] = lastId
+	cell[idx] = lastKey
 
-	grid.CellIndex[lastId] = {
+	grid.CellIndex[lastKey] = {
 		x = x,
 		z = z,
 		i = idx,
 	}
 
 	cell[#cell] = nil
-	grid.CellIndex[entityId] = nil
+	grid.CellIndex[key] = nil
 
 	if #cell == 0 then
 		column[z] = nil
@@ -235,20 +246,21 @@ const function _removeFromCell(grid: Grid, entityId: EntityId, x: number, z: num
 end
 
 -- Private: Move entity from one cell to another
-const function _reconcile(grid: Grid, entityId: EntityId): ()
-	const pos = grid.Position[entityId]
+const function _reconcile(grid: Grid, key: Key): ()
+
+	const pos = grid.Position[key]
 	if not pos then return end
 
-	const old = grid.CellCoords[entityId]
+	const old = grid.CellCoords[key]
 	const x, z = getCellCoords(grid, pos)
 
 	if old and old.X == x and old.Y == z then
-		grid.Dirty[entityId] = false
+		grid.Dirty[key] = false
 		return
 	end
 
 	if old then
-		_removeFromCell(grid, entityId, old.X, old.Y)
+		_removeFromCell(grid, key, old.X, old.Y)
 	end
 
 	local column = grid.Cells[x]
@@ -276,9 +288,9 @@ const function _reconcile(grid: Grid, entityId: EntityId): ()
 	end
 
 	const idx = #cell + 1
-	cell[idx] = entityId
+	cell[idx] = key
 
-	grid.CellIndex[entityId] = {
+	grid.CellIndex[key] = {
 		x = x,
 		z = z,
 		i = idx,
@@ -288,37 +300,29 @@ const function _reconcile(grid: Grid, entityId: EntityId): ()
 		old.X = x
 		old.Y = z
 	else
-		grid.CellCoords[entityId] = Vector2.new(x, z)
+		grid.CellCoords[key] = Vector2.new(x, z)
 	end
 
-	grid.Dirty[entityId] = false
+	grid.Dirty[key] = false
 end
 
 -- Public: Remove an entity from the grid (by entityId or BasePart)
-const function remove(grid: Grid, entityOrPart: EntityId | BasePart): ()
-	const id = typeof(entityOrPart) == "number" and entityOrPart or grid.PartToId[entityOrPart]
-	if not id then return end
+const function remove(grid: Grid, entityId: EntityId): ()
+	local key = getIdKey(entityId)
 
-	const indexData = grid.CellIndex[id]
+	const indexData = grid.CellIndex[key]
 	if indexData then
-		_removeFromCell(grid, id, indexData.x, indexData.z)
+		_removeFromCell(grid, key, indexData.x, indexData.z)
 	end
 
-	const part = grid.Part[id]
-	if part then
-		grid.PartToId[part] = nil
-	end
-
-	grid.Position[id] = nil
-	grid.Part[id] = nil
-	grid.CellCoords[id] = nil
-	grid.Dirty[id] = nil
+	grid.Position[key] = nil
+	grid.CellCoords[key] = nil
+	grid.Dirty[key] = nil
+	grid.EntityMap[key] = nil
 end
-
 -- Public: Query nearby entities
-const function query(grid: Grid, pos: Vector3, radius: number?): {BasePart}?
-
-	const results = grid._scratchParts
+const function query(grid: Grid, pos: Vector3, radius: number?): {EntityId}
+	const results = grid._scratchIds
 	clear(results)
 
 	clear(grid._ReconciledThisQuery)
@@ -340,6 +344,7 @@ const function query(grid: Grid, pos: Vector3, radius: number?): {BasePart}?
 					for i = 1, #cell do
 						const id = cell[i]
 
+						-- reconcile if dirty
 						if grid.Dirty[id] and not grid._ReconciledThisQuery[id] then
 							grid._ReconciledThisQuery[id] = true
 							_reconcile(grid, id)
@@ -351,10 +356,7 @@ const function query(grid: Grid, pos: Vector3, radius: number?): {BasePart}?
 							const dz = p.Z - pz
 
 							if not r2 or (dx * dx + dz * dz) <= r2 then
-								const part = grid.Part[id]
-								if part then
-									results[#results + 1] = part
-								end
+								results[#results + 1] = grid.EntityMap[id]
 							end
 						end
 					end
@@ -367,8 +369,7 @@ const function query(grid: Grid, pos: Vector3, radius: number?): {BasePart}?
 end
 
 -- Public: Query all entities in a given radius
-const function queryAllInRadius(grid: Grid, pos: Vector3, radius: number): {EntityId}?
-
+const function queryAllInRadius(grid: Grid, pos: Vector3, radius: number): {EntityId}
 	const results = grid._scratchIds
 	clear(results)
 
@@ -391,6 +392,7 @@ const function queryAllInRadius(grid: Grid, pos: Vector3, radius: number): {Enti
 					for i = 1, #cell do
 						const id = cell[i]
 
+						-- reconcile dirty entities once per query
 						if grid.Dirty[id] and not grid._ReconciledThisQuery[id] then
 							grid._ReconciledThisQuery[id] = true
 							_reconcile(grid, id)
@@ -402,7 +404,7 @@ const function queryAllInRadius(grid: Grid, pos: Vector3, radius: number): {Enti
 							const dz = p.Z - pz
 
 							if (dx * dx + dz * dz) <= r2 then
-								results[#results + 1] = id
+								results[#results + 1] = grid.EntityMap[id]
 							end
 						end
 					end
@@ -416,34 +418,34 @@ end
 
 
 -- Public: Returns the cell coordinates for an entity or a Vector3
-const function getCellKey(grid: Grid, entityIdOrPos: EntityId | Vector3): (number?, number?)
+local function getCellKey(grid: Grid, entityIdOrPos: EntityId | Vector3): (number?, number?)
 	if typeof(entityIdOrPos) == "Vector3" then
 		return getCellCoords(grid, entityIdOrPos)
-	elseif typeof(entityIdOrPos) == "number" then
-		const coords = grid.CellCoords[entityIdOrPos]
+
+	elseif typeof(entityIdOrPos) == "number" or typeof(entityIdOrPos) == "vector" then
+		local key = getIdKey(entityIdOrPos)
+		local coords = grid.CellCoords[key]
+
 		if coords then
 			return coords.X, coords.Y
 		end
 	end
+
 	return nil, nil
 end
 
 -- Public: Empty the grid
 const function empty(grid: Grid): ()
 	clear(grid.Position)
-	clear(grid.Part)
 	clear(grid.CellCoords)
 	clear(grid.Cells)
 	clear(grid.CellIndex)
-	clear(grid.PartToId)
 	clear(grid.Dirty)
 	clear(grid.Coarse)
 	clear(grid._ReconciledThisQuery)
 
 	clear(grid._scratchParts)
 	clear(grid._scratchIds)
-
-	grid.NextEntityId = 1
 end
 
 -- Public: Destroy the grid

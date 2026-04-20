@@ -1,7 +1,7 @@
 --!strict
 --!native
--- USAGE: lightreflector/shared/version.luau
--- Version for Light Reflector
+-- USAGE: lightreflector/shared/types.luau
+-- Types for Light Reflector.
 
 --[[
 
@@ -11,110 +11,315 @@
 
 ]]
 
---[=[
-	Private: Converts version to string
+-- Modules
+const config = require("../shared/config")
+const baseConfig = config.getConfig()
+const debugger = require("../shared/debugger")
+const jecs = require("../shared/jecs")
+const pool = require("../client/pool")
 
-	@private
-	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
-]=]
+-- Jecs Types
+export type JecsModule = typeof(jecs)
 
-const HttpService: HttpService = game:GetService("HttpService")
-const RunService: RunService = game:GetService("RunService")
-const CodebergTags: string = "https://codeberg.org/api/v1/repos/project-roadwork/light-reflector/tags"
-const version: Version = table.freeze({major = 2, minor = 0, patch = 0, pre_release = "alpha", build = 0, metadata = "NONECS"}) :: Version
-
---[=[
-	Private: Converts version to string
-
-	@private
-	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
-]=]
-const function _versionToString(v: Version): string
-	local str: string = `{v.major}.{v.minor}.{v.patch}`
-	if v.pre_release and v.pre_release ~= "" then
-		str = str .. `-{v.pre_release}`
-	end
-	if v.build and v.build >= 0 then
-		str = str .. `.{v.build}`
-	end
-	if v.metadata and v.metadata ~= "" then
-		str = str .. `+{v.metadata}`
-	end
-	return str
-end
-
---[=[
-	Public: Checks for the latest version
-
-	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
-]=]
-const function checkVersion()
-	if not RunService:IsServer() then
-		warn("You must run checkVersion from the server! Aborting...")
-		return
-	end
-
-	task.spawn(function()
-		const function fetch(url: string)
-			const success, result = pcall(HttpService.GetAsync, HttpService, url)
-
-			if not success then
-				return nil
-			end
-
-			const ok, data = pcall(HttpService.JSONDecode, HttpService, result)
-
-			return ok and data or nil
-		end
-
-		const function normalizeVersion(v: string): string
-			v = string.gsub(v, "^%s+", "")
-			v = string.gsub(v, "%s+$", "")
-
-			if string.match(v, "^[vV]%d") then
-				v = string.sub(v, 2)
-			end
-
-			return v
-		end
-
-		const tags: {any}? = fetch(CodebergTags)
-		if not tags or not tags[1] then
-			return
-		end
-
-		const rawLatest = tags[1].name
-		if typeof(rawLatest) ~= "string" then
-			return
-		end
-
-		const latestVersion = normalizeVersion(rawLatest)
-		const currentVersion = normalizeVersion(_versionToString(version))
-
-		if latestVersion ~= currentVersion then
-			warn(
-				("LightReflector: New version available! Current: %s | Latest: %s"):format(
-					currentVersion,
-					latestVersion
-				)
-			)
-		end
-	end)
-end
-
--- Types
-export type Version = {
-	major: number,
-	minor: number,
-	patch: number,
-	pre_release: string,
-	build: number,
-	metadata: string,
+-- Pool Types
+export type PoolModule = typeof(pool)
+export type Object = Instance
+export type Pool = {
+	Objects: {Object},
+	ActiveObjects: {Object},
+	HierarchicalPools: { [Object]: Pool },
+	ObjectTemplate: Object,
+	CreateObject: (Object) -> Object,
+	ResetObject: (Object) -> (),
+	MinSize: number, MaxSize: number,
+	UsageMetrics: {ActiveCount: number, AvailableCount: number, PeakActive: number},
+	Logger: any, Mutex: any,
+	ObjectTaken: any, ObjectReturned: any,
+	GetObject: (Pool) -> Object,
+	ReturnObject: (Pool, Object) -> (boolean, string?),
+	Prewarm: (Pool, number) -> (),
+	CreateLog: (Pool, string, string) -> (),
 }
 
--- Return variables and API
-return table.freeze({
-	name = "version",
-	_VERSION = _versionToString(version),
-	checkVersion = checkVersion,
-})
+-- Debugger Types
+export type Debugger = typeof(debugger)
+export type DebuggerLogs = typeof(require("../shared/logs"))
+
+-- Configuration Types
+export type Configuration = typeof(config)
+export type BaseConfig = typeof(baseConfig)
+export type Constraints = typeof(baseConfig.Constraints)
+export type GeneralConfig = typeof(baseConfig.General)
+export type ReflectorConfig = typeof(baseConfig.ReflectorConfig)
+export type SignConfig = typeof(baseConfig.SignConfig)
+export type ConfigKeys = typeof(baseConfig.Constraints.KEYS)
+export type BASE_CONFIG = typeof(baseConfig)
+
+-- Grid Types
+export type GridModule = typeof(require("../client/grid"))
+
+export type EntityId = number | vector | jecs.Entity
+type Key = string | number
+
+export type Grid = {
+	CellSize: number,
+
+	Position: {[Key]: Vector3},
+	Part: {[Key]: BasePart}?,
+
+	CellCoords: {[Key]: Vector2},
+	Cells: {[number]: {[number]: {Key}}},
+	Coarse: {[number]: {[number]: {x: number, z: number}}},
+
+	CellIndex: {[Key]: {x: number, z: number, i: number}},
+	Dirty: {[Key]: boolean},
+
+	CellCache: {[number]: {Key}?},
+	EntityMap: {[Key]: EntityId},
+
+	_ReconciledThisQuery: {[Key]: boolean},
+	_QueryLock: boolean,
+
+	_scratchParts: {BasePart},
+	_scratchIds: {EntityId},
+}
+
+-- Sources Types
+export type LightSource = {
+	Owner: Instance,
+	getPosition: () -> Vector3,
+	getDirection: () -> Vector3,
+	isActive: () -> boolean | () -> number,
+	getIntensity: (Instance) -> number,
+}
+
+export type SourceList = { LightSource }
+export type IntensityData = {
+	transparency: number,
+	brightness: number,
+	light: number,
+}
+
+export type SourcesModule = {
+	Name: string,
+	list: SourceList,
+
+	create: (...any) -> LightSource,
+	add: (...any) -> LightSource,
+	register: (...any) -> LightSource,
+
+	anyActive: (...any) -> boolean,
+	getAllActive: (...any) -> {LightSource},
+}
+
+-- Utilities Types
+export type Utils = {
+	Name: string,
+
+	deepMerge: (defaults: Dict, overrides: Dict, path: string?) -> (),
+	trackAncestryRemoval: (instance: Instance, callback: (Instance) -> ()) -> RBXScriptConnection,
+	configure: (userConfig: Dict) -> Configuration,
+
+	getSpeedMPH: (DriveSeat: VehicleSeat) -> number,
+	adaptiveWait: ((number?) -> number, minFPS: number, maxFPS: number, DriveSeat: VehicleSeat?) -> (number, number),
+	adaptiveWaitWithSourcesOverride: ((number?) -> number, minFPS: number, maxFPS: number, DriveSeat: VehicleSeat?) -> (number, number),
+	getFastestDriveSeat: (Vehicles: jecs.Cached_Query<Instance>) -> VehicleSeat?,
+
+	fixPartOrientation: (part: BasePart, decal: Decal) -> (),
+	normalizeBaseColor: (part: BasePart, isNormalizeEnabled: boolean) -> Color3,
+	resetSurfaceGui: (SurfaceGuiPool: Pool, gui: SurfaceGuiTemplate) -> (),
+	initPool: () -> Pool,
+
+	pcallRetry: ((...any) -> (...any), maxRetries: number, ...any) -> (boolean, string?),
+	areColorsEqual: (colorA: Color3, colorB: Color3, epsilon: number?) -> boolean,
+	renderWait: (waitTime: number?) -> number,
+
+	validFaces: { [string]: boolean },
+}
+
+-- Register Types
+export type VehicleMap = {[Instance & Vehicle]: any}
+
+export type CachedQueries = {
+	VehicleInstances: jecs.Cached_Query<Instance>,
+	Signs: jecs.Cached_Query<Instance, RangeType>,
+	Reflectors: jecs.Cached_Query<BasePart, ReflectorState>,
+	SignStates: jecs.Cached_Query<SignEntity>,
+	SignsPartsStates: jecs.Cached_Query<Instance, SignEntity>,
+	ReflectorStates: jecs.Cached_Query<ReflectorState>,
+	Vehicles: jecs.Cached_Query<Instance>,
+}
+
+export type Components = {
+	VehicleInstance: jecs.Id<Instance>,
+	VehicleDebugBox: jecs.Id<BasePart>,
+	Reflector: jecs.Id<BasePart>,
+	Sign: jecs.Id<Instance>,
+	ReflectorState: jecs.Id<ReflectorState>,
+	SignState: jecs.Id<SignEntity>,
+	SignInRange: jecs.Id<RangeType>,
+}
+
+export type Register = {
+	Name: string,
+
+	getPartsByRaycast: () -> {[BasePart]: RangeType},
+
+	start: () -> (),
+
+	reflectorGrid: Grid,
+	surfaceGuiPool: Pool,
+	debugBoxTemplate: BasePart,
+
+	getWorldUtils: () -> (jecs.World, Components, {[Instance]: jecs.Entity}, CachedQueries),
+
+	scriptConnections: {[RBXScriptConnection]: boolean},
+
+	registerVehicle: (car: Instance & Vehicle, isEnabled: (Instance) -> boolean, getIntensity: (Instance) -> number) -> (),
+	unregisterVehicle: (car: Vehicle & Instance) -> (),
+	registerReflector: (part: Instance) -> (),
+	unregisterReflector: (part: BasePart) -> (),
+	clearConnections: () -> (),
+	reset: () -> (),
+}
+
+-- Equations Types
+export type Equations = {
+	Name: string,
+
+	computeReflectorIntensity: (
+		part: BasePart,
+		state: ReflectorState,
+		source: LightSource,
+		MPH: number
+	) -> (boolean | number, boolean | number),
+
+	computeSignIntensity: (
+		entity: SignEntity,
+		part: BasePart,
+		decal: Decal,
+		rangeType: RangeType,
+		activeSources: SourceList
+	) -> {
+		transparency: number,
+		brightness: number,
+		lightInfluence: number,
+	}
+}
+
+-- Detector Types
+export type Detect = {
+	Name: string,
+	currentDetectedParts: {[BasePart]: boolean},
+	activeReflectorEntities: {[jecs.Entity]: boolean },
+	start: () -> (),
+	reset: () -> (),
+	safeCancelThread: () -> (boolean, string?),
+	getDetectedParts: () -> { [Instance]: boolean },
+}
+
+-- Renderer Types
+export type Render = {
+	Name: string,
+	start: () -> (),
+	reset: () -> (),
+	safeCancelThread: () -> (boolean, string?),
+}
+
+-- Misc Types
+export type Dict = { [string | number]: any }
+export type RangeType = "near" | "far"
+
+-- Dark Types
+export type DarkClockConfig = {
+	DarkClockTimeStart: number,
+	DarkClockTimeEnd: number,
+}
+
+export type DarkWeathers = { [string]: boolean }
+
+export type IsDarkEnvironmentFn = () -> boolean
+
+export type Vehicle = {
+	DriveSeat: VehicleSeat,
+	Body: Model
+}
+
+-- States
+export type SurfaceGuiState = {
+	gui: SurfaceGuiTemplate?,
+	currentTransparency: number,
+	currentBrightness: number,
+	currentLightInfluence: number,
+	targetTransparency: number,
+	targetBrightness: number,
+	targetLightInfluence: number,
+	isPendingRemoval: boolean,
+	isActive: boolean,
+	lastTransparency: number,
+	lastBrightness: number,
+	lastLightInfluence: number,
+}
+
+export type DecalState = {
+	baseColor: Color3,
+	currentBrightness: number,
+	targetBrightness: number,
+}
+
+export type SurfaceGuiTemplate = SurfaceGui & {
+	ImageLabel: ImageLabel
+}
+
+export type SurfaceGuiStates = { [BasePart]: SurfaceGuiState }
+
+export type DecalStates = { [BasePart]: DecalState }
+
+export type ReflectorState = {
+	currentIntensity: number,
+	targetIntensity: number,
+	lastIntensity: number,
+
+	baseColor: Color3,
+	isActive: boolean?,
+
+	lastMaterial: Enum.Material,
+	lastColor: Color3,
+
+	isHybrid: boolean?,
+	targetTransparency: number,
+	currentTransparency: number,
+	lastTransparency: number,
+
+	doesReflectorMove: boolean,
+	cellKey: { [number]: number },
+	CFrame: CFrame,
+	isWedge: boolean,
+	faceAttributeName: string?,
+	slopeNormalWorld: Vector3?,
+	faceNormalWorld: Vector3?,
+}
+
+
+export type SignEntity = {
+	partRenderMode: "SurfaceGui" | "Decal",
+	surfaceGuiState: SurfaceGuiState?,
+	decalState: DecalState?,
+	mainDecal: Decal?,
+	part: BasePart?,
+	doesSignMove:boolean,
+	CFrame: CFrame,
+	Size: Vector3,
+	partVeryReflective: boolean?,
+}
+
+export type LightReflector = {
+	start: () -> (),
+	cleanup: () -> (),
+	config: Configuration,
+	register: Register,
+	utils: Utils,
+}
+
+-- Return
+return {}

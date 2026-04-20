@@ -19,11 +19,12 @@ const RunService: RunService = game:GetService("RunService")
 const debugger: types.Debugger = require("../shared/debugger")
 
 -- IMPORTANT: Modules
-const types: {} = require("../shared/types")
+const types = require("../shared/types")
+const jecs: types.JecsModule = require("../shared/jecs")
 const config: types.Configuration = require("../shared/config")
-const utils: types.Utils = require("../client/utils")
-const sources: types.SourcesModule = require("../client/sources")
-const grid: types.GridModule = require("../client/grid")
+const utils: types.Utils = require("./utils")
+const sources: types.SourcesModule = require("./sources")
+const grid: types.GridModule = require("./grid")
 
 -- Reflector Grid
 const reflectorGrid: types.Grid = grid.newGrid(1900)
@@ -31,22 +32,12 @@ const reflectorGrid: types.Grid = grid.newGrid(1900)
 -- SurfaceGui Object Pool
 const surfaceGuiPool: types.Pool = utils.initPool()
 
--- Tables
-const vehicleDebugBoxes: { [any]: BasePart } = {}
-const registeredVehicles: types.VehicleMap = {}
-const registeredReflectors: { [BasePart]: boolean } = {}
-const signEntitiesByPart: types.SignEntitiesByPart = {}
+-- Configuration
+const baseConfig: types.BaseConfig = config.getConfig()
+const constraints: types.Constraints = baseConfig.Constraints
+const signConfig: types.SignConfig = baseConfig.SignConfig
 
-const baseConfig = config.getConfig()
-const constraints = baseConfig.Constraints
-const signConfig = baseConfig.SignConfig
-
-const reflectorStatesByPart: setmetatable<{ [BasePart]: types.ReflectorState }, typeof(constraints.KEYS)>
-	= setmetatable({}, constraints.KEYS)
-
-const registeredSigns: setmetatable<{ [BasePart]: types.RangeType }, typeof(constraints.KEYS)>
-	= setmetatable({}, constraints.KEYS)
-
+-- Variables
 const scriptConnections: { [RBXScriptConnection]: boolean } = {}
 const trackedAnsestryInstances: { [Instance]: boolean } = {}
 
@@ -56,42 +47,77 @@ local debugFolder: Folder?
 
 -- Miscellaneous
 const abs: (number) -> number = math.abs
+const world: jecs.World = jecs.world()
+const instanceToEntityId: {[Instance]: jecs.Entity} = {}
 
+-- Components
+const components: types.Components = {
+	VehicleInstance = world:component() :: jecs.Id<Instance>,
+	VehicleDebugBox = world:component() :: jecs.Id<BasePart>,
+	Reflector = world:component() :: jecs.Id<BasePart>,
+	Sign = world:component() :: jecs.Id<Instance>,
+	ReflectorState = world:component() :: jecs.Id<types.ReflectorState>,
+	SignState = world:component() :: jecs.Id<types.SignEntity>,
+	SignInRange = world:component() :: jecs.Id<types.RangeType> ,
+}
 
+const cachedQueries: types.CachedQueries = {
+	VehicleInstances = world:query(components.VehicleInstance):cached(),
+	Signs = world:query(components.Sign, components.SignInRange):cached(),
+	Reflectors = world:query(components.Reflector, components.ReflectorState):cached(),
+	SignStates = world:query(components.SignState):cached(),
+	SignsPartsStates = world:query(components.Sign, components.SignState):cached(),
+	ReflectorStates = world:query(components.ReflectorState):cached(),
+	Vehicles = world:query(components.VehicleInstance):cached(),
+}
 -- Raycast Setup
 const overlapDetectionParams: OverlapParams = OverlapParams.new()
 
 overlapDetectionParams.FilterType = Enum.RaycastFilterType.Include
-overlapDetectionParams.FilterDescendantsInstances = signConfig.signsFolders :: any
+overlapDetectionParams.FilterDescendantsInstances = signConfig.signsFolders :: {Instance}
 
 --[=[
 	Public: Removes a vehicle
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function unregisterVehicle(car: types.Vehicle & Instance): ()
-	if not registeredVehicles[car] then
+const function unregisterVehicle(car: (types.Vehicle & Instance)): ()
+	const entityId: jecs.Entity<nil>? = instanceToEntityId[car]
+
+	if not entityId then
+		debugger.warn("Warning", "Cannot find vehicle in vehicle map.")
+		return
+	end
+
+	const vehicle: Instance? = world:get(entityId, components.VehicleInstance)
+--	local instance = world:get(entityId, components.Instance)
+
+	if car and typeof(car) == "Instance" and car ~= vehicle then
 		debugger.warn("Warning", "Cannot find vehicle in vehicle map.")
 		return
 	end
 
 	const sourcesList: types.SourceList = sources.list
-	registeredVehicles[car] = nil
+	--registeredVehicles[car] = nil
 
 	for i = #sourcesList, 1, -1 do
-		if sourcesList[i].Owner == car then
+		if sourcesList[i].Owner == vehicle then
 			debugger.print("Info", "Found car")
 			table.remove(sourcesList, i)
 			break
 		end
 	end
 
-	const box: BasePart = vehicleDebugBoxes[car]
+	const box: BasePart? = world:get(entityId, components.VehicleDebugBox)
 	if box then
 		box:Destroy()
-		vehicleDebugBoxes[car] = nil
+		--vehicleDebugBoxes[car] = nil
 	end
 
+	world:delete(entityId)
 
+	if typeof(car) == "Instance" then
+		instanceToEntityId[car] = nil
+	end
 end
 
 --[=[
@@ -99,7 +125,7 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function registerVehicle(car: Instance & types.Vehicle, isEnabled: (Instance) -> boolean, getIntensity: (Instance) -> number): ()
-	const config = config.getConfig()
+	const config: types.BaseConfig = config.getConfig()
 	-- could have asserted but would flood the output with errors
 
 	if car == nil then
@@ -107,10 +133,10 @@ const function registerVehicle(car: Instance & types.Vehicle, isEnabled: (Instan
 		return
 	end
 
-	if registeredVehicles[car] then
-		debugger.warn("Warning", "Vehicle already indexed in vehicle map.")
-		return
-	end
+	--if registeredVehicles[car] then
+	--	debugger.warn("Warning", "Vehicle already indexed in vehicle map.")
+	--	return
+--	end
 
 	const seat: VehicleSeat? = car:FindFirstChildOfClass("VehicleSeat")
 
@@ -132,7 +158,11 @@ const function registerVehicle(car: Instance & types.Vehicle, isEnabled: (Instan
 		return
 	end
 
-	registeredVehicles[car] = true
+	--registeredVehicles[car] = true
+	const entity: jecs.Entity<nil> = world:entity()
+
+	world:set(entity, components.VehicleInstance, car)
+	instanceToEntityId[car] = entity
 
 	sources.register(
 		car,
@@ -149,7 +179,7 @@ const function registerVehicle(car: Instance & types.Vehicle, isEnabled: (Instan
 	)
 
 	if not trackedAnsestryInstances[car] then
-		const connection: RBXScriptConnection = utils.trackAnsestryRemoval(car, function()
+		const connection: RBXScriptConnection = utils.trackAncestryRemoval(car, function()
 			trackedAnsestryInstances[car] = nil
 			unregisterVehicle(car)
 		end)
@@ -164,8 +194,8 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function registerReflector(part: Instance)
-	const config = config.getConfig()
-	const reflectorConfig: typeof(config.ReflectorConfig) = config.ReflectorConfig
+	const config: types.BaseConfig = config.getConfig()
+	const reflectorConfig: types.ReflectorConfig = config.ReflectorConfig
 
 	if part:GetAttribute(reflectorConfig.hybridCloneAttributeName) then
 		return
@@ -241,45 +271,56 @@ const function registerReflector(part: Instance)
 			clone.CanTouch = false
 			clone.CanQuery = false
 			clone.Parent = part.Parent
-			registeredReflectors[clone] = true
+
+			const entity: jecs.Entity<nil> = world:entity()
+
+			world:set(entity, components.Reflector, clone)
+			instanceToEntityId[clone] = entity
+			--registeredReflectors[clone] = true
 			utils.normalizeBaseColor(clone, false) -- setting the second argument to false just sets the baseColor attribute
 
 			if not trackedAnsestryInstances[clone] then
-				const connection: RBXScriptConnection = utils.trackAnsestryRemoval(clone, function()
-					--grid.remove(part, lastPosition)
-					trackedAnsestryInstances[clone] = nil
-					registeredReflectors[clone] = nil
-					const state: types.ReflectorState = reflectorStatesByPart[part]
+				const connection: RBXScriptConnection = utils.trackAncestryRemoval(clone, function()
+					const state: types.ReflectorState? = world:get(entity, components.ReflectorState)
+
 					if state then
-						grid.remove(reflectorGrid, part, state.CFrame.Position)
-						reflectorStatesByPart[part] = nil
+						grid.remove(reflectorGrid,entity, state.CFrame.Position)
 					else
-						grid.remove(reflectorGrid, part, part.Position)
+						grid.remove(reflectorGrid,entity, part.Position)
 					end
+
+					instanceToEntityId[part] = nil
+					trackedAnsestryInstances[part] = nil
+					world:delete(entity)
 				end)
 
 				scriptConnections[connection] = true
 				trackedAnsestryInstances[clone] = true
 			end
 
-			grid.spawn(reflectorGrid, clone, clone.Position)
+			grid.spawn(reflectorGrid, entity, clone.Position)
 		else
-			registeredReflectors[part] = true
+			const entity: jecs.Entity<nil> = world:entity()
+
+			world:set(entity, components.Reflector, part)
+			instanceToEntityId[part] = entity
+
+			--registeredReflectors[part] = true
 			utils.normalizeBaseColor(part, true)
 
 			if not trackedAnsestryInstances[part] then
-				const connection = utils.trackAnsestryRemoval(part, function()
-
-					trackedAnsestryInstances[part] = nil
-					registeredReflectors[part] = nil
-					const state: types.ReflectorState = reflectorStatesByPart[part]
+				const connection: RBXScriptConnection = utils.trackAncestryRemoval(part, function()
+					const state: types.ReflectorState? = world:get(entity, components.ReflectorState)
 
 					if state then
-						grid.remove(reflectorGrid,part, state.CFrame.Position)
-						reflectorStatesByPart[part] = nil
+						grid.remove(reflectorGrid,entity, state.CFrame.Position)
 					else
-						grid.remove(reflectorGrid,part, part.Position)
+						grid.remove(reflectorGrid,entity, part.Position)
 					end
+
+					instanceToEntityId[part] = nil
+					trackedAnsestryInstances[part] = nil
+					world:delete(entity)
 
 				end)
 
@@ -287,7 +328,8 @@ const function registerReflector(part: Instance)
 				trackedAnsestryInstances[part] = true
 			end
 
-			grid.spawn(reflectorGrid, part, part.Position)
+
+			grid.spawn(reflectorGrid, entity, part.Position)
 		end
 	end
 end
@@ -298,11 +340,33 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function unregisterReflector(part:BasePart): ()
-	const config = config.getConfig()
-	const reflectorConfig: typeof(config.ReflectorConfig) = config.ReflectorConfig
+	const config: types.BaseConfig = config.getConfig()
+	const reflectorConfig: types.ReflectorConfig = config.ReflectorConfig
 
 	if reflectorConfig.isReflector(part) or part:HasTag(reflectorConfig.tagName) then
-		registeredReflectors[part] = nil
+		if instanceToEntityId[part] then
+			const entity: jecs.Entity<nil> = instanceToEntityId[part]
+
+			if world:contains(entity) then
+				const state: types.ReflectorState? = world:get(entity, components.ReflectorState)
+
+				if state then
+					grid.remove(reflectorGrid,entity, state.CFrame.Position)
+				else
+					grid.remove(reflectorGrid,entity, part.Position)
+				end
+
+				world:delete(entity)
+			end
+
+			if trackedAnsestryInstances[part] then
+				trackedAnsestryInstances[part] = nil
+			end
+
+			instanceToEntityId[part] = nil
+		end
+
+		--registeredReflectors[part] = nil
 
 		if part:GetAttribute(reflectorConfig.hybridCloneAttributeName) then
 			part:Destroy()
@@ -311,21 +375,24 @@ const function unregisterReflector(part:BasePart): ()
 end
 
 const function registerSign(part:Instance, rangeType: string?): ()
-	registeredSigns[part::any] = if rangeType ~= nil then rangeType else "near" -- near and far range types does not really make a difference
+	--registeredSigns[part::any] = if rangeType ~= nil then rangeType else "near" -- near and far range types does not really make a difference
+	if instanceToEntityId[part] then
+		return
+	end
+
+	const entity: jecs.Entity<nil> = world:entity()
+
+	world:set(entity, components.Sign, part)
+	world:set(entity, components.SignInRange, (if rangeType ~= nil then rangeType else "near"):: types.RangeType)
+	instanceToEntityId[part] = entity
 
 	if part:IsA("BasePart") then
-
 		if not trackedAnsestryInstances[part] then
-			const connection: RBXScriptConnection = utils.trackAnsestryRemoval(part, function()
+			const connection: RBXScriptConnection = utils.trackAncestryRemoval(part, function()
 				trackedAnsestryInstances[part] = nil
 
-				const entity: types.SignEntity = signEntitiesByPart[part]
-
-				if entity then
-					signEntitiesByPart[part] = nil
-				end
-
-				registeredSigns[part] = nil
+				world:delete(entity)
+				instanceToEntityId[part] = nil
 			end)
 
 			scriptConnections[connection] = true
@@ -335,9 +402,13 @@ const function registerSign(part:Instance, rangeType: string?): ()
 
 end
 
-const function unregisterSign(part:BasePart): ()
-	if registeredSigns[part::any] then
-		registeredSigns[part::any] = nil
+const function unregisterSign(part:Instance): ()
+	if instanceToEntityId[part] then
+		const entity: jecs.Entity<nil>? = instanceToEntityId[part]
+		if entity and world:contains(entity) then
+			world:delete(entity)
+		end
+		instanceToEntityId[part] = nil
 	end
 end
 
@@ -348,7 +419,7 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function _cacheSigns():  ()
-	const config = config.getConfig()
+	const config: types.BaseConfig = config.getConfig()
 
 	const isTagsEnabled: boolean = config.SignConfig.isTagsEnabled
 	const tagName: string = config.SignConfig.tagName
@@ -368,8 +439,8 @@ const function _cacheSigns():  ()
 		end
 
 	else
-		for _, folder in config.SignConfig.signsFolders do
-			for _, part:BasePart in folder:GetDescendants() do
+		for _: number, folder: Folder in config.SignConfig.signsFolders :: {Folder} do
+			for _: number, part:BasePart in folder:GetDescendants() do
 				registerSign(part)
 			end
 
@@ -379,7 +450,7 @@ const function _cacheSigns():  ()
 				end)
 
 				const descendantRemovingSignal:RBXScriptConnection = folder.DescendantRemoving:Connect(function(part)
-					registerSign(part)
+					unregisterSign(part)
 				end)
 
 				scriptConnections[descendantAddedSignal] = true
@@ -396,10 +467,10 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function getPartsByRaycast(): {[BasePart]: types.RangeType}
-	const config = config.getConfig()
+	const config: types.BaseConfig = config.getConfig()
 	const partsDictionary: {[BasePart]: types.RangeType} = {}
 
-	for car: Instance, _: boolean in registeredVehicles do
+	for entity: jecs.Entity<nil>, car:Instance in cachedQueries.VehicleInstances do
 		const DriveSeat: VehicleSeat? = car:FindFirstChildOfClass("VehicleSeat")
 
 		if not DriveSeat then continue end
@@ -408,57 +479,28 @@ const function getPartsByRaycast(): {[BasePart]: types.RangeType}
 		const boxCF: CFrame = seatCF * config.SignConfig.raycastBoxOffset
 
 		if config.SignConfig.isDebugBoxEnabled then
-			local vehicleDebugBox: BasePart = vehicleDebugBoxes[car]
+			local vehicleDebugBox: BasePart? = world:get(entity, components.VehicleDebugBox)
 
 			if not vehicleDebugBox then
 				vehicleDebugBox = debugBoxTemplate:Clone()
-				vehicleDebugBoxes[car] = vehicleDebugBox
+				world:set(entity, components.VehicleDebugBox, vehicleDebugBox)
 			end
+
+			if not vehicleDebugBox then continue end -- have to add this because of type checker
 
 			vehicleDebugBox.CFrame = boxCF
 			vehicleDebugBox.Transparency = config.SignConfig.debugBoxTransparency
 			vehicleDebugBox.Parent = debugFolder
-		end
-
-		for _, part in config.General.GetPartsInBox(workspace, seatCF * config.SignConfig.raycastBoxOffsetNear, config.SignConfig.raycastBoxSizeNear, overlapDetectionParams) do
-			partsDictionary[part] = "near"
-
-			if not trackedAnsestryInstances[part] then
-
-				const connection: RBXScriptConnection = utils.trackAnsestryRemoval(part, function()
-					trackedAnsestryInstances[part] = nil
-					const entity: types.SignEntity = signEntitiesByPart[part]
-
-					if entity then
-						signEntitiesByPart[part] = nil
-					end
-				end)
-
-				scriptConnections[connection] = true
-				trackedAnsestryInstances[part] = true
-			end
-
 
 		end
-		for _, part in config.General.GetPartsInBox(workspace, seatCF * config.SignConfig.raycastBoxOffsetFar, config.SignConfig.raycastBoxSizeFar, overlapDetectionParams) do
+
+		for _: number, part: BasePart in config.General.GetPartsInBox(workspace, seatCF * config.SignConfig.raycastBoxOffsetNear, config.SignConfig.raycastBoxSizeNear, overlapDetectionParams) do
+			registerSign(part, "near")
+		end
+
+		for _: number, part: BasePart in config.General.GetPartsInBox(workspace, seatCF * config.SignConfig.raycastBoxOffsetFar, config.SignConfig.raycastBoxSizeFar, overlapDetectionParams) do
 			--if not partsDictionary[part] then partsDictionary[part] = "far" end
-
-			partsDictionary[part] = "far"
-
-			if not trackedAnsestryInstances[part] then
-
-				const connection: RBXScriptConnection = utils.trackAnsestryRemoval(part, function()
-					trackedAnsestryInstances[part] = nil
-					const entity: types.SignEntity = signEntitiesByPart[part]
-
-					if entity then
-						signEntitiesByPart[part] = nil
-					end
-				end)
-
-				scriptConnections[connection] = true
-				trackedAnsestryInstances[part] = true
-			end
+			registerSign(part, "far")
 		end
 	end
 
@@ -472,11 +514,11 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function _cacheReflectors(): ()
-	const config = config.getConfig()
-	const reflectorConfig: typeof(config.ReflectorConfig) = config.ReflectorConfig
+	const config: types.BaseConfig = config.getConfig()
+	const reflectorConfig: types.ReflectorConfig = config.ReflectorConfig
 
 	if reflectorConfig.isTagsEnabled then
-		for _, part:Instance in CollectionService:GetTagged(reflectorConfig.tagName) do
+		for _: number, part:Instance in CollectionService:GetTagged(reflectorConfig.tagName) do
 			registerReflector(part)
 		end
 
@@ -486,8 +528,8 @@ const function _cacheReflectors(): ()
 		scriptConnections[instanceAddedSignal] = true
 		scriptConnections[instanceRemovedSignal] = true
 	else
-		for _, Folder in reflectorConfig.reflectorsFolder do
-			for _, part:Instance in Folder:GetDescendants() do
+		for _: number, Folder: any in reflectorConfig.reflectorsFolder do
+			for _: number, part:Instance in Folder:GetDescendants() do
 				registerReflector(part)
 			end
 
@@ -505,7 +547,7 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function _initDebugBox(): ()
-	const config = config.getConfig()
+	const config: types.BaseConfig = config.getConfig()
 
 	if config.SignConfig.isDebugBoxEnabled then
 		debugFolder = config.SignConfig.debugBoxFolder
@@ -525,12 +567,19 @@ const function _initDebugBox(): ()
 		debugBoxTemplate.Parent = debugFolder
 	end
 end
+--[=[
+	Public: Gets the world, components, and instanceToEntityId table
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
 
+const function getWorldUtils(): (jecs.World, types.Components, {[Instance]: jecs.Entity}, types.CachedQueries)
+	return world, components, instanceToEntityId, cachedQueries
+end
 --[=[
 	Public: Disconnects the connections in the table 'scriptConnections'
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function clearConnections()
+const function clearConnections(): ()
 	for scriptSignal:RBXScriptSignal, boolean:boolean in scriptConnections do
 		if not scriptSignal then
 			continue
@@ -543,8 +592,8 @@ const function clearConnections()
 	table.clear(scriptConnections)
 end
 
-const function start()
-	const config = config.getConfig()
+const function start(): ()
+	const config: types.BaseConfig = config.getConfig()
 
 	_initDebugBox()
 
@@ -559,14 +608,14 @@ end
 	Public: Resets the reflectors and signs
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function reset()
-	const config = config.getConfig()
-	const reflectorConfig: typeof(config.ReflectorConfig) = config.ReflectorConfig
+const function reset(): ()
+	const config: types.BaseConfig = config.getConfig()
+	const reflectorConfig: types.ReflectorConfig = config.ReflectorConfig
 
-	for part:BasePart, entity: types.SignEntity in signEntitiesByPart do
-		const surfaceGuiState: types.SurfaceGuiState? = entity.surfaceGuiState
-		const decalState: types.DecalState? = entity.decalState
-		const mainDecal: Decal? = entity.mainDecal
+	for entity: jecs.Entity<nil>, signEntity: types.SignEntity in cachedQueries.SignStates do
+		const surfaceGuiState: types.SurfaceGuiState? = signEntity.surfaceGuiState
+		const decalState: types.DecalState? =signEntity.decalState
+		const mainDecal: Decal? = signEntity.mainDecal
 
 		if surfaceGuiState and surfaceGuiState.gui then
 			utils.resetSurfaceGui(surfaceGuiPool, surfaceGuiState.gui)
@@ -577,7 +626,7 @@ const function reset()
 		end
 	end
 
-	for part:BasePart, state: types.ReflectorState in reflectorStatesByPart do
+	for entity: jecs.Entity<nil>, part: BasePart, state: types.ReflectorState in cachedQueries.Reflectors do
 		const Material: Enum.Material = part.Material
 		const Color: Color3 = part.Color
 
@@ -597,33 +646,32 @@ const function reset()
 		if part:GetAttribute(reflectorConfig.hybridCloneAttributeName) then
 			part:Destroy()
 		end
-
-		registeredReflectors[part] = nil
-		reflectorStatesByPart[part] = nil
 	end
 
 	if not config.SignConfig.debugBoxFolder and debugFolder then
 		debugFolder:Destroy()
 	else
-		for vehicle, boolean in registeredVehicles do
-			const vehicleDebugBox = vehicleDebugBoxes[vehicle]
-
+		for entity: jecs.Entity<nil>, vehicleDebugBox: BasePart in world:query(components.VehicleDebugBox) do
 			if vehicleDebugBox then
 				vehicleDebugBox:Destroy()
 			end
-
-			vehicleDebugBoxes[vehicle] = nil
 		end
 	end
 
 	grid.empty(reflectorGrid)
 
-	table.clear(registeredVehicles)
-	table.clear(registeredReflectors)
-	table.clear(reflectorStatesByPart)
-	table.clear(vehicleDebugBoxes)
-	table.clear(signEntitiesByPart)
+	local toDelete: {jecs.Entity} = {}
+
+	for entity: jecs.Entity in world:query() do
+		table.insert(toDelete, entity)
+	end
+
+	for _: number, entity: jecs.Entity in toDelete do
+		world:delete(entity)
+	end
+
 	table.clear(trackedAnsestryInstances)
+	table.clear(instanceToEntityId)
 end
 
 -- Return API and variables
@@ -633,13 +681,11 @@ return table.freeze({
 	start = start,
 
 	reflectorGrid = reflectorGrid,
-	registeredVehicles = registeredVehicles,
-	registeredReflectors = registeredReflectors,
-	registeredSigns = registeredSigns,
-	signEntitiesByPart = signEntitiesByPart,
-	reflectorStatesByPart = reflectorStatesByPart,
+
 	debugBoxTemplate = debugBoxTemplate,
 	surfaceGuiPool = surfaceGuiPool,
+
+	getWorldUtils = getWorldUtils,
 
 	registerVehicle = registerVehicle,
 	unregisterVehicle = unregisterVehicle,
