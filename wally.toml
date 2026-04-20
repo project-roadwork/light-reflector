@@ -1,6 +1,6 @@
 [package]
 name = "illinois-roadbuff/light-reflector"
-version = "2.0.0-alpha.0"
+version = "2.1.0"
 description = "A vehicle-based light reflector that reflects decals and basepart reflectors at long distances on a road."
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
