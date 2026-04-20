@@ -3,8 +3,11 @@
 -- USAGE: tag-reflector.server.luau
 -- Reflector pre-tagger for Light Reflector
 
--- Copyright (c) 2024-2026 Project Roadwork
--- Licensed under the Apache License, Version 2.0
+--[[
+    SPDX-FileCopyrightText: NONE
+
+    SPDX-License-Identifier: CC0-1.0 OR Unlicense
+]]
 
 -- Variables
 local CollectionService = game:GetService("CollectionService")

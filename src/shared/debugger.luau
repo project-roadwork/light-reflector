@@ -10,8 +10,12 @@
 	Original Notice: MIT License (https://opensource.org/licenses/MIT), Copyright (c) 2025 Axiom & Contributors
 
 	 Used in Project Roadwork - Light Reflector
- 	 Overall project licensed under Mozilla Public License 2.0 (https://mozilla.org/MPL/2.0/)
- 	 Copyright (c) 2025 Project Roadwork
+
+  SPDX-FileCopyrightText: 2025-2026 Illinois_Roadbuff <illinois_roadbuff@proton.me>
+  SPDX-FileCopyrightText: 2025-2026 Project Roadwork and Contributors
+  SPDX-FileCopyrightText: 2025 Axiom & Contributors
+
+  SPDX-License-Identifier: MIT
 
 ]]
 

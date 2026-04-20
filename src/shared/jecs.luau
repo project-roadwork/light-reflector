@@ -3,6 +3,13 @@
 --!strict
 --draft 4
 
+--[[
+    SPDX-FileCopyrightText: 2024 jecs authors
+
+	SPDX-License-Identifier: MIT
+
+]]
+
 type i53 = number
 type i24 = number
 

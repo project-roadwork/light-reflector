@@ -1,0 +1,44 @@
+version = 1
+
+[[annotations]]
+path = [
+    ".gitignore",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "default.project.json",
+    "roblox-test.project.json",
+    ".forgejo/ISSUE_TEMPLATE/bug_report.md",
+    ".forgejo/ISSUE_TEMPLATE/feature_request.md",
+    ".forgejo/PULL_REQUEST_TEMPLATE.md",
+    ".github/ISSUE_TEMPLATE/notice.md",
+    ".github/pull_request_template.md",
+    "pesde.toml",
+    "pesde.lock",
+    "wally.lock",
+    "wally.toml",
+]
+SPDX-FileCopyrightText = "NONE"
+SPDX-License-Identifier = "CC0-1.0 OR Unlicense"
+
+[[annotations]]
+path = [
+
+    "README.md",
+    "assets/images/**"
+]
+SPDX-FileCopyrightText = [
+"2025-2026 Illinois_Roadbuff <illinois_roadbuff@proton.me>",
+"2025-2026 Project Roadwork and Contributors"]
+
+SPDX-License-Identifier = "MPL-2.0 OR CC-BY-SA-4.0"
+
+[[annotations]]
+path = [
+    "NOTICE"
+]
+SPDX-FileCopyrightText = [
+"2025-2026 Illinois_Roadbuff <illinois_roadbuff@proton.me>",
+"2025-2026 Project Roadwork and Contributors"]
+
+SPDX-License-Identifier = "MPL-2.0"

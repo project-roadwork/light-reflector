@@ -3,6 +3,10 @@
 -- README for Light Reflector.
 
 --[[
+    SPDX-FileCopyrightText: 2025-2026 Illinois_Roadbuff <illinois_roadbuff@proton.me>
+	SPDX-FileCopyrightText: 2025-2026 Project Roadwork and Contributors
+
+	SPDX-License-Identifier: MPL-2.0
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -24,10 +28,11 @@ return [[
 		  GROUP:            Project Roadwork
 		  VERSION:          2.1.0
 		  CREATED:          2025-10-26 2:03 PM CDT
-		  LAST UPDATED:     2026-04-19 8:11 PM CDT
+		  LAST UPDATED:     2026-04-19 8:35 PM CDT
 
 		  SPDX-License-Identifier:   MPL-2.0
-		  SPDX-FileCopyrightText:   Copyright 2025-2026 Project Roadwork
+		  SPDX-FileCopyrightText:   2025-2026 Illinois_Roadbuff <illinois_roadbuff@proton.me>
+		  SPDX-FileCopyrightText:   2025-2026 Project Roadwork and Contributors
 
  		  CODEBERG REPO:    https://codeberg.org/project-roadwork/light-reflector.git (MAIN)
 		  GITHUB REPO:      https://github.com/project-roadwork/light-reflector.git (BACKUP/MIRROR)
@@ -37,7 +42,7 @@ return [[
 		  links.
 
 		  LICENSE HEADER:
-			Copyright 2025-2026 Project Roadwork
+			Copyright 2025-2026 Illinois_Roadbuff, Project Roadwork and Contributors
 
 			This Source Code Form is subject to the terms of the Mozilla Public
 			License, v. 2.0. If a copy of the MPL was not distributed with this
