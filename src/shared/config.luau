@@ -24,7 +24,7 @@ local LOCKED: boolean = false
 const FLAGS = {
 	["TEST_FLAG"] = false, -- This does nothing
 	["PCALL"] = true, -- Enable pcalls or not. Useful for debugging.
-	["TRACK_ANCESTRY_CONNECTIONS"] = true, -- Enable to track ancestry connections
+	["TRACK_ANCESTRY_CONNECTIONS"] = false, -- Enable to track ancestry connections
 }
 
 -- Base Config
@@ -384,7 +384,7 @@ const function _deepMerge(defaults: Dict, overrides: Dict, path: string?): ()
 	for key, value in next, overrides do
 		if typeof(key) == "string" and defaults[key] == nil then
 			const fullPath: string = if path ~= "" then (`{path}.{key}`) else tostring(key)
-				_warn(`Unknown configuration key: -> {fullPath} <-; are you sure it is spelled or capitalized correctly?`)
+			_warn(`Unknown configuration key: -> {fullPath} <-; are you sure it is spelled or capitalized correctly?`)
 
 			if typeof(value) == "table" and typeof(defaults[key]) == "table" then
 				const nextPath: string = if path ~= "" then (`{path}.{key}`) else tostring(key)
@@ -407,7 +407,7 @@ const function applyOverrides(userConfig: any): BASE_CONFIG
 	end
 
 	if userConfig["Constraints"] and LOCKED then
-			_warn( "CONSTRAINTS is locked; cannot update configuration. Please remove CONSTRAINTS and try again.")
+		_warn( "CONSTRAINTS is locked; cannot update configuration. Please remove CONSTRAINTS and try again.")
 
 		return BASE_CONFIG
 	end
@@ -484,7 +484,7 @@ end
 ]=]
 const function overrideKey(section: string, key: string, value: any): ()
 	if section == "Constraints" and LOCKED then
-			_warn( "CONSTRAINTS is locked; cannot update configuration.")
+		_warn( "CONSTRAINTS is locked; cannot update configuration.")
 		return
 	end
 

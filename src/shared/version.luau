@@ -25,7 +25,7 @@
 const HttpService: HttpService = game:GetService("HttpService")
 const RunService: RunService = game:GetService("RunService")
 const CodebergTags: string = "https://codeberg.org/api/v1/repos/project-roadwork/light-reflector/tags"
-const version: Version = table.freeze({major = 2, minor = 1, patch = 0, pre_release = "", build = 0, metadata = ""}) :: Version
+const version: Version = table.freeze({major = 2, minor = 1, patch = 1, pre_release = "", build = -1, metadata = ""}) :: Version
 
 --[=[
 	Private: Converts version to string
