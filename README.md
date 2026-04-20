@@ -27,10 +27,9 @@
 
 ### Issues
 1. **Broken Wally and Pesde packages, with mismatched versioning**
-   * The Pesde package has version issues as well due to my custom pre-release tag `infdev`
 2. **Rojo may not work correctly?**
 3. **Possible BasePart memory leak on games with Instance Streaming**
-4. **Many `:GetAttribute` calls popping up in the Microprofiler**
+4. ~~**Many `:GetAttribute` calls popping up in the Microprofiler**~~
 5. **No external documentation**
 6. **Some signs and reflectors may not work at all in very rare occasions**
 
@@ -41,6 +40,7 @@
 4. Multi-vehicle support
 5. Non-tweened fading/transitions for gradual brightness
 6. Option to use `Tags` with `CollectionService`
+7. Uses Entity Component System via [Jecs](https://github.com/Ukendio/jecs.git)
 
 ## Sign/Gantry System Features
 1. Utilizes `SurfaceGuis` and `ImageLabel` OR `Decals` by itself for reflectivity
@@ -67,11 +67,11 @@
 4. Best for reflective traffic light shields, non-decal signs, etc.
 
 ## Essential Public API
-1. `.Start()` - Starts the module
-2. `.Cleanup()` - Resets states and cleans up the module
-3. `.Configure({})` - Parses user configuration before starting (if you cannot do it IN the module first)
-4. `.RegisterVehicle(car: Instance, isHeadlightEnabled: () -> boolean, getIntensity: () -> number)` - Registers vehicles into the module
-5. `.UnregisterVehicle(car: Instance)` - Unregisters vehicles from the module
+1. `.start()` - Starts the module
+2. `.cleanup()` - Resets states and cleans up the module
+3. `.config.applyOverrides({})` - Parses user configuration before starting (if you cannot do it IN the module first)
+4. `.register.registerVehicle(car: Instance, isHeadlightEnabled: () -> boolean, getIntensity: () -> number)` - Registers vehicles into the module
+5. `.register.unregisterVehicle(car: Instance)` - Unregisters vehicles from the module
 
 ## Example Usage
 ```lua
@@ -83,22 +83,22 @@ local function determineIntensity(car)
   return finalIntensity
 end
 
-LightReflector.Configure({
+LightReflector.config.applyOverrides({
   -- make any config changes here
 })
 
-LightReflector.Start()
+LightReflector.start()
 
 workspace.Cars.ChildAdded:Connect(function(car)
 	if car:IsA("Model") and car:FindFirstChildOfClass("VehicleSeat") then
 		print("Indexed Vehicle")
-		LightReflector.RegisterVehicle(car, true, determineIntensity) -- true is the placeholder of what "enables" the light source like a Headlight boolean value
+		LightReflector.register.registerVehicle(car, true, determineIntensity) -- true is the placeholder of what "enables" the light source like a Headlight boolean value
 	end
 end)
 
 workspace.Cars.ChildRemoved:Connect(function(car)
 	if car:IsA("Model") and car:FindFirstChildOfClass("VehicleSeat") then
-		LightReflector.UnregisterVehicle(car)
+		LightReflector.register.unregisterVehicle(car)
 	end
 end)
 ```
