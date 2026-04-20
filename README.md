@@ -1,9 +1,9 @@
 # Light Reflector 
-**Latest Pre-Release Version: 2.0.0-alpha.0+NONECS**
+**Latest Pre-Release Version: N/A**
 
-**Latest Partially Stable Version: 1.2.0-alpha.0**
+**Latest Partially Stable Version: 2.1.0**
 
- **A vehicle-based light reflector system that reflects `Decals` and `BasePart` reflectors at long distances on roads.**
+ **A vehicle-based light reflector system that reflects `Decals` and `BasePart` reflectors at long distances on roads, built using [Jecs](https://github.com/Ukendio/jecs.git).**
 
 [![License: MPL 2.0](https://img.shields.io/badge/MPL_2.0-License-gray.svg?logo=mozilla&labelColor=28733f)](https://opensource.org/licenses/MPL-2.0) [![Codeberg](https://img.shields.io/badge/Codeberg-Main%20Repository-white?logo=codeberg)](https://codeberg.org/project-roadwork/light-reflector.git) [![GitHub](https://img.shields.io/badge/GitHub-Mirror/Backup%20Repository-darkgrey?logo=github)](https://github.com/project-roadwork/light-reflector.git) 
 
