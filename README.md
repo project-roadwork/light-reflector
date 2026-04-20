@@ -21,9 +21,7 @@
 > **This script is under `alpha` and some functions may not work correctly or be unstable. Additionally, there is no *external* documentation for this module at the moment.**
 
 ### Wally / Pesde Notice
-**Older versions in Pesde AND Wally are not accurate! Accurate older releases are in Codeberg (not GitHub).**
-
-**Additionally, the published packages are broken with version mismatching.**
+**The Wally and Pesde packages are outdated! Unfortunately I cannot publish Pesde packages due to `const` usage.**
 
 *Additionally, this is my first time using Pesde AND Wally - apologies if something is not formatted correctly.*
 
