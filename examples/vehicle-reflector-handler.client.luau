@@ -47,25 +47,25 @@ local function CheckForRegLightValue(car:Model)
 	end
 end
 
-LightReflector.Configure({
+LightReflector.config.applyOverrides({
 	SignConfig = {
 		SignsFolders = {workspace.Signs}
 	}
 })
 
-LightReflector.Start()
+LightReflector.start()
 
 workspace.Cars.ChildAdded:Connect(function(car)
 	task.wait() -- a-chassis init reasons
 	if car:IsA("Model") and (car:FindFirstChildOfClass("VehicleSeat") or car:WaitForChild("DriveSeat",5)) then
 		print("Indexed Vehicle")
-		LightReflector.RegisterVehicle(car, CheckForRegLightValue(car), determineIntensity)
+		LightReflector.register.registerVehicle(car, CheckForRegLightValue(car), determineIntensity)
 	end
 end)
 
 workspace.Cars.ChildRemoved:Connect(function(car)
 	if car:IsA("Model") and (car:FindFirstChildOfClass("VehicleSeat") or car:WaitForChild("DriveSeat",5)) then
-		LightReflector.UnregisterVehicle(car)
+		LightReflector.register.unregisterVehicle(car)
 	end
 end)
 

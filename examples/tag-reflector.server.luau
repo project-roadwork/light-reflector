@@ -15,7 +15,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local LightReflector = ReplicatedStorage.lightreflector
 
-local config = require(LightReflector.shared.config)
+local config = require(LightReflector.shared.config).getConfig()
 
 local signFolders = config.SignConfig.signsFolders
 local reflectorFolders = config.ReflectorConfig.reflectorsFolder
