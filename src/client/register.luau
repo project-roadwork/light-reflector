@@ -31,20 +31,24 @@ const utils: types.Utils = require("./utils")
 const sources: types.SourcesModule = require("./sources")
 const grid: types.GridModule = require("./grid")
 
+-- IMPORTANT: Configuration Variables
+local baseConfig: types.BaseConfig = config.getConfig()
+local constraints: types.Constraints = baseConfig.Constraints
+local reflectorConfig: types.ReflectorConfig = baseConfig.ReflectorConfig
+local generalConfig: types.GeneralConfig = baseConfig.General
+local signConfig: types.SignConfig = baseConfig.SignConfig
+local isConfigTracked: boolean = false
+
 -- Reflector Grid
 const reflectorGrid: types.Grid = grid.newGrid(1900)
 
 -- SurfaceGui Object Pool
 const surfaceGuiPool: types.Pool = utils.initPool()
 
--- Configuration
-const baseConfig: types.BaseConfig = config.getConfig()
-const constraints: types.Constraints = baseConfig.Constraints
-const signConfig: types.SignConfig = baseConfig.SignConfig
-
 -- Variables
 const scriptConnections: { [RBXScriptConnection]: boolean } = {}
-const trackedAnsestryInstances: { [Instance]: boolean } = {}
+const trackedAncestryInstances: { [Instance]: boolean } = {}
+const instanceToEntityId: {[Instance]: jecs.Entity} = {}
 
 -- Debug Box Setup
 const debugBoxTemplate:BasePart = Instance.new("Part") -- forced to do instance.new instead of nil or else the type solver is going into a panic attack
@@ -53,7 +57,6 @@ local debugFolder: Folder?
 -- Miscellaneous
 const abs: (number) -> number = math.abs
 const world: jecs.World = jecs.world()
-const instanceToEntityId: {[Instance]: jecs.Entity} = {}
 
 -- Components
 const components: types.Components = {
@@ -72,8 +75,7 @@ const cachedQueries: types.CachedQueries = {
 	Reflectors = world:query(components.Reflector, components.ReflectorState):cached(),
 	SignStates = world:query(components.SignState):cached(),
 	SignsPartsStates = world:query(components.Sign, components.SignState):cached(),
-	ReflectorStates = world:query(components.ReflectorState):cached(),
-	Vehicles = world:query(components.VehicleInstance):cached(),
+	ReflectorStates = world:query(components.ReflectorState):cached()
 }
 -- Raycast Setup
 const overlapDetectionParams: OverlapParams = OverlapParams.new()
@@ -94,7 +96,7 @@ const function unregisterVehicle(car: (types.Vehicle & Instance)): ()
 	end
 
 	const vehicle: Instance? = world:get(entityId, components.VehicleInstance)
---	local instance = world:get(entityId, components.Instance)
+	--	local instance = world:get(entityId, components.Instance)
 
 	if car and typeof(car) == "Instance" and car ~= vehicle then
 		debugger.warn("Warning", "Cannot find vehicle in vehicle map.")
@@ -130,7 +132,6 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function registerVehicle(car: Instance & types.Vehicle, isEnabled: (Instance) -> boolean, getIntensity: (Instance) -> number): ()
-	const config: types.BaseConfig = config.getConfig()
 	-- could have asserted but would flood the output with errors
 
 	if car == nil then
@@ -141,7 +142,7 @@ const function registerVehicle(car: Instance & types.Vehicle, isEnabled: (Instan
 	--if registeredVehicles[car] then
 	--	debugger.warn("Warning", "Vehicle already indexed in vehicle map.")
 	--	return
---	end
+	--	end
 
 	const seat: VehicleSeat? = car:FindFirstChildOfClass("VehicleSeat")
 
@@ -171,7 +172,7 @@ const function registerVehicle(car: Instance & types.Vehicle, isEnabled: (Instan
 
 	sources.register(
 		car,
-		function() return seat.Position + config.General.vehicleSeatOffset end,
+		function() return seat.Position + generalConfig.vehicleSeatOffset end,
 		function() return seat.CFrame.LookVector end,
 		function()
 			if typeof(isEnabled) == "Instance" and isEnabled:IsA("ValueBase") then
@@ -183,14 +184,14 @@ const function registerVehicle(car: Instance & types.Vehicle, isEnabled: (Instan
 		end, getIntensity
 	)
 
-	if not trackedAnsestryInstances[car] then
+	if not trackedAncestryInstances[car] then
 		const connection: RBXScriptConnection = utils.trackAncestryRemoval(car, function()
-			trackedAnsestryInstances[car] = nil
+			trackedAncestryInstances[car] = nil
 			unregisterVehicle(car)
 		end)
 
 		scriptConnections[connection] = true
-		trackedAnsestryInstances[car] = true
+		trackedAncestryInstances[car] = true
 	end
 end
 
@@ -199,9 +200,6 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function registerReflector(part: Instance)
-	const config: types.BaseConfig = config.getConfig()
-	const reflectorConfig: types.ReflectorConfig = config.ReflectorConfig
-
 	if part:GetAttribute(reflectorConfig.hybridCloneAttributeName) then
 		return
 	end
@@ -284,7 +282,7 @@ const function registerReflector(part: Instance)
 			--registeredReflectors[clone] = true
 			utils.normalizeBaseColor(clone, false) -- setting the second argument to false just sets the baseColor attribute
 
-			if not trackedAnsestryInstances[clone] then
+			if not trackedAncestryInstances[clone] then
 				const connection: RBXScriptConnection = utils.trackAncestryRemoval(clone, function()
 					const state: types.ReflectorState? = world:get(entity, components.ReflectorState)
 
@@ -295,12 +293,12 @@ const function registerReflector(part: Instance)
 					end
 
 					instanceToEntityId[part] = nil
-					trackedAnsestryInstances[part] = nil
+					trackedAncestryInstances[part] = nil
 					world:delete(entity)
 				end)
 
 				scriptConnections[connection] = true
-				trackedAnsestryInstances[clone] = true
+				trackedAncestryInstances[clone] = true
 			end
 
 			grid.spawn(reflectorGrid, entity, clone.Position)
@@ -313,7 +311,7 @@ const function registerReflector(part: Instance)
 			--registeredReflectors[part] = true
 			utils.normalizeBaseColor(part, true)
 
-			if not trackedAnsestryInstances[part] then
+			if not trackedAncestryInstances[part] then
 				const connection: RBXScriptConnection = utils.trackAncestryRemoval(part, function()
 					const state: types.ReflectorState? = world:get(entity, components.ReflectorState)
 
@@ -324,13 +322,13 @@ const function registerReflector(part: Instance)
 					end
 
 					instanceToEntityId[part] = nil
-					trackedAnsestryInstances[part] = nil
+					trackedAncestryInstances[part] = nil
 					world:delete(entity)
 
 				end)
 
 				scriptConnections[connection] = true
-				trackedAnsestryInstances[part] = true
+				trackedAncestryInstances[part] = true
 			end
 
 
@@ -345,9 +343,6 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function unregisterReflector(part:BasePart): ()
-	const config: types.BaseConfig = config.getConfig()
-	const reflectorConfig: types.ReflectorConfig = config.ReflectorConfig
-
 	if reflectorConfig.isReflector(part) or part:HasTag(reflectorConfig.tagName) then
 		if instanceToEntityId[part] then
 			const entity: jecs.Entity<nil> = instanceToEntityId[part]
@@ -364,8 +359,8 @@ const function unregisterReflector(part:BasePart): ()
 				world:delete(entity)
 			end
 
-			if trackedAnsestryInstances[part] then
-				trackedAnsestryInstances[part] = nil
+			if trackedAncestryInstances[part] then
+				trackedAncestryInstances[part] = nil
 			end
 
 			instanceToEntityId[part] = nil
@@ -392,16 +387,16 @@ const function registerSign(part:Instance, rangeType: string?): ()
 	instanceToEntityId[part] = entity
 
 	if part:IsA("BasePart") then
-		if not trackedAnsestryInstances[part] then
+		if not trackedAncestryInstances[part] then
 			const connection: RBXScriptConnection = utils.trackAncestryRemoval(part, function()
-				trackedAnsestryInstances[part] = nil
+				trackedAncestryInstances[part] = nil
 
 				world:delete(entity)
 				instanceToEntityId[part] = nil
 			end)
 
 			scriptConnections[connection] = true
-			trackedAnsestryInstances[part] = true
+			trackedAncestryInstances[part] = true
 		end
 	end
 
@@ -424,17 +419,15 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function _cacheSigns():  ()
-	const config: types.BaseConfig = config.getConfig()
-
-	const isTagsEnabled: boolean = config.SignConfig.isTagsEnabled
-	const tagName: string = config.SignConfig.tagName
+	const isTagsEnabled: boolean = signConfig.isTagsEnabled
+	const tagName: string = signConfig.tagName
 
 	if isTagsEnabled then
 		for _, part: BasePart in CollectionService:GetTagged(tagName) do
 			registerSign(part)
 		end
 
-		if config.Constraints.IS_STREAMING_ENABLED then
+		if constraints.IS_STREAMING_ENABLED then
 			const instanceAddedSignal:RBXScriptConnection = CollectionService:GetInstanceAddedSignal(tagName):Connect(registerSign)
 
 			const instanceRemovedSignal:RBXScriptConnection = CollectionService:GetInstanceRemovedSignal(tagName):Connect(unregisterSign)
@@ -444,12 +437,12 @@ const function _cacheSigns():  ()
 		end
 
 	else
-		for _: number, folder: Folder in config.SignConfig.signsFolders :: {Folder} do
+		for _: number, folder: Folder in signConfig.signsFolders :: {Folder} do
 			for _: number, part:BasePart in folder:GetDescendants() do
 				registerSign(part)
 			end
 
-			if config.Constraints.IS_STREAMING_ENABLED then
+			if constraints.IS_STREAMING_ENABLED then
 				const descendantAddedSignal:RBXScriptConnection = folder.DescendantAdded:Connect(function(part)
 					registerSign(part) -- cannot do :Connect(registerSign) or else it would cause type issues
 				end)
@@ -472,7 +465,6 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function getPartsByRaycast(): {[BasePart]: types.RangeType}
-	const config: types.BaseConfig = config.getConfig()
 	const partsDictionary: {[BasePart]: types.RangeType} = {}
 
 	for entity: jecs.Entity<nil>, car:Instance in cachedQueries.VehicleInstances do
@@ -481,9 +473,9 @@ const function getPartsByRaycast(): {[BasePart]: types.RangeType}
 		if not DriveSeat then continue end
 
 		const seatCF: CFrame = DriveSeat.CFrame
-		const boxCF: CFrame = seatCF * config.SignConfig.raycastBoxOffset
+		const boxCF: CFrame = seatCF * signConfig.raycastBoxOffset
 
-		if config.SignConfig.isDebugBoxEnabled then
+		if signConfig.isDebugBoxEnabled then
 			local vehicleDebugBox: BasePart? = world:get(entity, components.VehicleDebugBox)
 
 			if not vehicleDebugBox then
@@ -494,16 +486,16 @@ const function getPartsByRaycast(): {[BasePart]: types.RangeType}
 			if not vehicleDebugBox then continue end -- have to add this because of type checker
 
 			vehicleDebugBox.CFrame = boxCF
-			vehicleDebugBox.Transparency = config.SignConfig.debugBoxTransparency
+			vehicleDebugBox.Transparency = signConfig.debugBoxTransparency
 			vehicleDebugBox.Parent = debugFolder
 
 		end
 
-		for _: number, part: BasePart in config.General.GetPartsInBox(workspace, seatCF * config.SignConfig.raycastBoxOffsetNear, config.SignConfig.raycastBoxSizeNear, overlapDetectionParams) do
+		for _: number, part: BasePart in generalConfig.GetPartsInBox(workspace, seatCF * signConfig.raycastBoxOffsetNear, signConfig.raycastBoxSizeNear, overlapDetectionParams) do
 			registerSign(part, "near")
 		end
 
-		for _: number, part: BasePart in config.General.GetPartsInBox(workspace, seatCF * config.SignConfig.raycastBoxOffsetFar, config.SignConfig.raycastBoxSizeFar, overlapDetectionParams) do
+		for _: number, part: BasePart in generalConfig.GetPartsInBox(workspace, seatCF * signConfig.raycastBoxOffsetFar, signConfig.raycastBoxSizeFar, overlapDetectionParams) do
 			--if not partsDictionary[part] then partsDictionary[part] = "far" end
 			registerSign(part, "far")
 		end
@@ -519,9 +511,6 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function _cacheReflectors(): ()
-	const config: types.BaseConfig = config.getConfig()
-	const reflectorConfig: types.ReflectorConfig = config.ReflectorConfig
-
 	if reflectorConfig.isTagsEnabled then
 		for _: number, part:Instance in CollectionService:GetTagged(reflectorConfig.tagName) do
 			registerReflector(part)
@@ -552,23 +541,21 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function _initDebugBox(): ()
-	const config: types.BaseConfig = config.getConfig()
-
-	if config.SignConfig.isDebugBoxEnabled then
-		debugFolder = config.SignConfig.debugBoxFolder
+	if signConfig.isDebugBoxEnabled then
+		debugFolder = signConfig.debugBoxFolder
 			or Instance.new("Folder")
 		debugFolder.Parent = workspace
 
-		if not config.SignConfig.debugBoxFolder then debugFolder.Name = "LR-DebugFolder" end
+		if not signConfig.debugBoxFolder then debugFolder.Name = "LR-DebugFolder" end
 
 		debugBoxTemplate.Anchored = true
 		debugBoxTemplate.CanCollide = false
 		debugBoxTemplate.CastShadow = false
-		debugBoxTemplate.Transparency = config.SignConfig.debugBoxTransparency
-		debugBoxTemplate.Color = config.SignConfig.debugBoxColor
-		debugBoxTemplate.Material = config.SignConfig.debugBoxMaterial
-		debugBoxTemplate.Name = config.SignConfig.debugBoxName
-		debugBoxTemplate.Size = config.SignConfig.raycastBoxSizeNear
+		debugBoxTemplate.Transparency = signConfig.debugBoxTransparency
+		debugBoxTemplate.Color = signConfig.debugBoxColor
+		debugBoxTemplate.Material = signConfig.debugBoxMaterial
+		debugBoxTemplate.Name = signConfig.debugBoxName
+		debugBoxTemplate.Size = signConfig.raycastBoxSizeNear
 		debugBoxTemplate.Parent = debugFolder
 	end
 end
@@ -585,7 +572,7 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function clearConnections(): ()
-	for scriptSignal:RBXScriptSignal, boolean:boolean in scriptConnections do
+	for scriptSignal:RBXScriptConnection, boolean:boolean in scriptConnections do
 		if not scriptSignal then
 			continue
 		end
@@ -598,15 +585,25 @@ const function clearConnections(): ()
 end
 
 const function start(): ()
-	const config: types.BaseConfig = config.getConfig()
+	-- Start config tracking
+	if isConfigTracked == false then
+		config.onChange(function(NEW_CONFIG: types.BASE_CONFIG)
+			baseConfig = NEW_CONFIG
+			constraints = NEW_CONFIG.Constraints
+			reflectorConfig = NEW_CONFIG.ReflectorConfig
+			generalConfig = NEW_CONFIG.General
+			signConfig = NEW_CONFIG.SignConfig
+		end)
+		isConfigTracked = true
+	end
 
 	_initDebugBox()
 
-	if not config.Constraints.IS_RAYCAST_ENABLED then
+	if not constraints.IS_RAYCAST_ENABLED then
 		_cacheSigns()
 	end
 
-    _cacheReflectors()
+	_cacheReflectors()
 end
 
 --[=[
@@ -675,13 +672,13 @@ const function reset(): ()
 		world:delete(entity)
 	end
 
-	table.clear(trackedAnsestryInstances)
+	table.clear(trackedAncestryInstances)
 	table.clear(instanceToEntityId)
 end
 
 -- Return API and variables
 return table.freeze({
-	Name = "register",
+	name = "register",
 
 	start = start,
 
@@ -700,7 +697,6 @@ return table.freeze({
 	clearConnections = clearConnections,
 	reset = reset,
 
-	scriptConnections = scriptConnections,
 	getPartsByRaycast = getPartsByRaycast,
 
 }) :: types.Register

@@ -151,7 +151,6 @@ export type CachedQueries = {
 	SignStates: jecs.Cached_Query<SignEntity>,
 	SignsPartsStates: jecs.Cached_Query<Instance, SignEntity>,
 	ReflectorStates: jecs.Cached_Query<ReflectorState>,
-	Vehicles: jecs.Cached_Query<Instance>,
 }
 
 export type Components = {
@@ -195,7 +194,8 @@ export type Equations = {
 		part: BasePart,
 		state: ReflectorState,
 		source: LightSource,
-		MPH: number
+		MPH: number,
+		config: BASE_CONFIG
 	) -> (boolean | number, boolean | number),
 
 	computeSignIntensity: (
@@ -203,7 +203,8 @@ export type Equations = {
 		part: BasePart,
 		decal: Decal,
 		rangeType: RangeType,
-		activeSources: SourceList
+		activeSources: SourceList,
+		config: BASE_CONFIG
 	) -> {
 		transparency: number,
 		brightness: number,
@@ -214,12 +215,12 @@ export type Equations = {
 -- Detector Types
 export type Detect = {
 	Name: string,
-	currentDetectedParts: {[BasePart]: boolean},
+	currentDetectedEntities: {[jecs.Entity]: boolean},
 	activeReflectorEntities: {[jecs.Entity]: boolean },
 	start: () -> (),
 	reset: () -> (),
 	safeCancelThread: () -> (boolean, string?),
-	getDetectedParts: () -> { [Instance]: boolean },
+	getDetectedEntities: () -> { [jecs.Entity]: boolean },
 }
 
 -- Renderer Types

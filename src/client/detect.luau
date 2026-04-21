@@ -34,18 +34,26 @@ const constraints = config.getConfig().Constraints
 
 -- IMPORTANT: Register Variables
 const world: jecs.World,
-	components: types.Components,
-	instancetoEntityId: {[Instance]: jecs.Entity},
-	cachedQueries: types.CachedQueries = register.getWorldUtils()
+components: types.Components,
+instancetoEntityId: {[Instance]: jecs.Entity},
+cachedQueries: types.CachedQueries = register.getWorldUtils()
 
 const reflectorGrid: types.Grid = register.reflectorGrid
 const surfaceGuiPool: types.Pool = register.surfaceGuiPool
 const scriptConnections: { [RBXScriptConnection]: boolean } = register.scriptConnections
 const activeReflectorEntities: { [jecs.Entity]: boolean } = {}
 
+-- IMPORTANT: Configuration Variables
+local baseConfig: types.BaseConfig = config.getConfig()
+local constraints: types.Constraints = baseConfig.Constraints
+local reflectorConfig: types.ReflectorConfig = baseConfig.ReflectorConfig
+local generalConfig: types.GeneralConfig = baseConfig.General
+local signConfig: types.SignConfig = baseConfig.SignConfig
+local isConfigTracked: boolean = false
+
 -- IMPORTANT: Module Public and Private Variables
-local currentDetectedParts: { [BasePart]: boolean } = {}
-local _detectedPartsThisFrame: { [BasePart]: boolean } = {}
+local currentDetectedEntities: { [jecs.Entity]: boolean } = {}
+local _detectedEntitiesThisFrame: { [jecs.Entity]: boolean } = {}
 local _runnerThread: thread?
 
 --[=[
@@ -54,34 +62,42 @@ local _runnerThread: thread?
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function start() : ()
-	const baseConfig: types.BaseConfig = config.getConfig()
-
-	const constraints: types.Constraints = baseConfig.Constraints
-	const reflectorConfig: types.ReflectorConfig = baseConfig.ReflectorConfig
-	const generalConfig: types.GeneralConfig = baseConfig.General
-	const signConfig: types.SignConfig = baseConfig.SignConfig
-
 	_runnerThread = constraints.SPAWN(utils.pcallRetry, function()
 
-	const debugBoxTemplate: BasePart = register.debugBoxTemplate
+		const debugBoxTemplate: BasePart = register.debugBoxTemplate
 		-- pcall replaced with pcallRetry used in the Start function
 		--	local partsDictionary: {[BasePart]: types.RangeType}
 
-	--	if not constraints.IS_RAYCAST_ENABLED then
+		--	if not constraints.IS_RAYCAST_ENABLED then
 		--	partsDictionary = {} -- no longer rneeded b/c of Jecs
-			-- OLD REFERENCE: partsDictionary = registeredSigns
-			-- ^ Cacheparts is a weak table, so probably better to clone everything to create an interm (temp) strong ref?
+		-- OLD REFERENCE: partsDictionary = registeredSigns
+		-- ^ Cacheparts is a weak table, so probably better to clone everything to create an interm (temp) strong ref?
 		--end
 
+		-- Start config tracking
+		if isConfigTracked == false then
+			config.onChange(function(NEW_CONFIG: types.BASE_CONFIG)
+				baseConfig = NEW_CONFIG
+				constraints = NEW_CONFIG.Constraints
+				reflectorConfig = NEW_CONFIG.ReflectorConfig
+				generalConfig = NEW_CONFIG.General
+				signConfig = NEW_CONFIG.SignConfig
+			end)
+			isConfigTracked = true
+		end
+
 		while true do
+			-- Variables
+
+
 			const deltaTime: number, MPH: number = utils.adaptiveWaitWithSourcesOverride(task.wait, constraints.BOUNDARY_MIN_FPS,
-				constraints.BOUNDARY_MAX_FPS, utils.getFastestDriveSeat(cachedQueries.Vehicles))
+				constraints.BOUNDARY_MAX_FPS, utils.getFastestDriveSeat(cachedQueries.VehicleInstances))
 			-- task.wait uses .Heartbeat if I remember correctly, so I don't need a separate module
 			-- ^ adaptive waiting based on vehicle speed. This only indexes parts in the area rather than renders,
 			--    so the FPS numbers should be low
 
 			-- This loop SHOULD run slower than the `runRenderLoop()`
-			table.clear(_detectedPartsThisFrame)
+			table.clear(_detectedEntitiesThisFrame)
 			table.clear(activeReflectorEntities)
 
 			--for entity in world:query(components.Reflector):with(components.ActiveReflector) do
@@ -124,7 +140,7 @@ const function start() : ()
 				end
 
 				for entity: jecs.Entity<nil>, part:BasePart, state: types.ReflectorState in cachedQueries.Reflectors do
-				--	state.currentIntensity = 0
+					--	state.currentIntensity = 0
 					state.targetIntensity = 0
 					state.isActive = false
 
@@ -135,7 +151,7 @@ const function start() : ()
 				end
 
 				if not isDark then
-				--	task.wait(15)
+					--	task.wait(15)
 				end
 
 				continue
@@ -278,7 +294,7 @@ const function start() : ()
 							state.faceNormalWorld = faceNormalWorld
 						end
 
-						const intensity: number | boolean, transparency: number | boolean = equations.computeReflectorIntensity(part, state, source, MPH)
+						const intensity: number | boolean, transparency: number | boolean = equations.computeReflectorIntensity(part, state, source, MPH, baseConfig)
 
 						if typeof(intensity) == "boolean" or typeof(transparency) == "boolean" then continue end
 
@@ -307,6 +323,7 @@ const function start() : ()
 						debugger.warn(`Sign part is NOT a BasePart for entity: {entity}`)
 						continue
 					end
+
 					--local entity: types.SignEntity = signEntitiesByPart[part]
 					local signState: types.SignEntity? = world:get(entity, components.SignState)
 
@@ -347,7 +364,7 @@ const function start() : ()
 						mainDecal = part:FindFirstChild(signConfig.mainDecalName) :: Decal?
 						-- ^ unfortunately one cannot set instances as attributes
 						if not mainDecal then
-							for _, decal in part:GetChildren() do
+							for _:number, decal:Instance in part:GetChildren() do
 								if decal:IsA("Decal") then
 									const name = decal.Name
 
@@ -365,17 +382,24 @@ const function start() : ()
 
 					if not mainDecal then continue end
 
-					const signData: {brightness: number, lightInfluence: number, transparency: number} = equations.computeSignIntensity(signState, part, mainDecal, "near", activeSources)
+					const isRenderModeSurfaceGui: boolean = signState.partRenderMode == "SurfaceGui"
+
+					-- 2.2.0 patch: add this if-statement immediately before `.computeSignIntensity()` is called, or else it would have the wrong CFrames and size
+					if isRenderModeSurfaceGui then
+						if part:GetAttribute("IsFixed") ~= true then
+							utils.fixPartOrientation(part, mainDecal)
+							signState.CFrame = part.CFrame
+							signState.Size = part.Size
+						end
+					end
+
+					const signData: {brightness: number, lightInfluence: number, transparency: number} = equations.computeSignIntensity(signState, part, mainDecal, "near", activeSources, baseConfig)
 
 					if signData.transparency >= signConfig.inactiveTransparencyThreshold  then
 						continue
 					end
 
-					if signState.partRenderMode == "SurfaceGui" then
-						if part:GetAttribute("IsFixed") ~= true then
-							utils.fixPartOrientation(part, mainDecal)
-						end
-
+					if isRenderModeSurfaceGui then
 						local state: types.SurfaceGuiState? = signState.surfaceGuiState
 
 						if not state then
@@ -429,7 +453,7 @@ const function start() : ()
 						state.targetBrightness = signData.brightness
 						state.targetLightInfluence = signData.lightInfluence
 
-						_detectedPartsThisFrame[part] = true
+						_detectedEntitiesThisFrame[entity] = true
 					end
 
 					if signState.partRenderMode == "Decal" then
@@ -458,7 +482,7 @@ const function start() : ()
 
 						state.targetBrightness = signData.brightness
 
-						_detectedPartsThisFrame[part] = true
+						_detectedEntitiesThisFrame[entity] = true
 					end
 				end
 			end
@@ -484,9 +508,9 @@ const function start() : ()
 				end
 			end
 
-			local temp = currentDetectedParts
-			currentDetectedParts = _detectedPartsThisFrame
-			_detectedPartsThisFrame = temp
+			local temp = currentDetectedEntities
+			currentDetectedEntities = _detectedEntitiesThisFrame
+			_detectedEntitiesThisFrame = temp
 		end
 	end, constraints.MAX_PCALL_RETRIES)
 end
@@ -496,8 +520,8 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function getDetectedParts(): {[BasePart]: boolean}
-	return currentDetectedParts
+const function getDetectedEntities(): {[jecs.Entity]: boolean}
+	return currentDetectedEntities
 end
 
 --[=[
@@ -530,15 +554,15 @@ end
 ]=]
 const function reset(): ()
 	table.clear(activeReflectorEntities)
-	table.clear(currentDetectedParts)
+	table.clear(currentDetectedEntities)
 end
 
 -- Return public API
 return table.freeze({
-	currentDetectedParts = currentDetectedParts,
+	currentDetectedEntities = currentDetectedEntities,
 	activeReflectorEntities = activeReflectorEntities,
 	start = start,
 	reset = reset,
-	getDetectedParts = getDetectedParts,
+	getDetectedEntities = getDetectedEntities,
 	safeCancelThread = safeCancelThread
 }) :: types.Detect

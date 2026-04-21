@@ -47,6 +47,11 @@ const validFaces: { [string]: boolean }  =  {
 	Back = true
 }
 
+-- Configuration Values
+local baseConfig: types.BaseConfig = config.getConfig()
+local constraints: types.Constraints = baseConfig.Constraints
+local isConfigTracked: boolean = false
+
 -- Private Variables
 const _PreRender: RBXScriptSignal = RunService.PreRender
 const _INV: number = 1 / config.getConfig().Constraints.MAX_MPH
@@ -415,8 +420,6 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function initPool(): types.Pool
-	const config = config.getConfig()
-
 	local surfaceGuiTemplate:Instance? = ReplicatedStorage:FindFirstChild("ReflectorTemplate")
 
 	if not surfaceGuiTemplate then
@@ -455,8 +458,19 @@ const function initPool(): types.Pool
 
 		function(template: Instance)
 
-		end, config.Constraints.SURFACE_GUI_MIN_POOL_SIZE, config.Constraints.SURFACE_GUI_MAX_POOL_SIZE) -- pool will warn ONCE if active parts exceed 350
+		end, constraints.SURFACE_GUI_MIN_POOL_SIZE, constraints.SURFACE_GUI_MAX_POOL_SIZE) -- pool will warn ONCE if active parts exceed 350
 end
+
+-- Start config tracking
+config.waitForLock(function(): ()
+	if isConfigTracked == false then
+		config.onChange(function(NEW_CONFIG: types.BASE_CONFIG)
+			baseConfig = NEW_CONFIG
+			constraints = NEW_CONFIG.Constraints
+		end)
+		isConfigTracked = true
+	end
+end)
 
 -- Return public variables and API
 return table.freeze({

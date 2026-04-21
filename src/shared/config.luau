@@ -14,10 +14,13 @@
    License, v. 2.0. If a copy of the MPL was not distributed with this
    file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+   Includes some config components from Chrono 2.0.x (https://github.com/Parihsz/Chrono)
+
 ]]
 
 -- Variables
-const WAITING: {[number]: (any)} = {}
+const WAITING_ON_CHANGE: {[number]: (any)} = {}
+const WAITING_ON_LOCK: {[number]: (any)} = {}
 local LOCKED: boolean = false
 
 -- Flags
@@ -371,6 +374,17 @@ const function _warn(message: string)
 	end
 end
 
+--[=[
+	Private: Invokes callbacks waiting on configuration change
+	@private
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function _invoke_change_signal(): ()
+	for _: number, callback: (BASE_CONFIG) -> () in WAITING_ON_CHANGE do
+		callback(BASE_CONFIG)
+	end
+end
 
 --[=[
 	Public: Deep merges two dictionaries
@@ -414,21 +428,23 @@ const function applyOverrides(userConfig: any): BASE_CONFIG
 
 	_deepMerge(BASE_CONFIG :: Dict, userConfig :: Dict)
 
+	_invoke_change_signal()
+
 	return BASE_CONFIG
 end
 
 --[=[
-	Public: Locks the congig and calls any calbacks
+	Public: Locks the config and calls any calbacks
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function lock()
+const function lock(): ()
 	LOCKED = true
 	BASE_CONFIG.Constraints.LOCKED = true
 
 	table.freeze(BASE_CONFIG.Constraints)
 
-	for _, callback in WAITING do
+	for _: number, callback: () -> () in WAITING_ON_LOCK do
 		callback()
 	end
 end
@@ -438,7 +454,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function unlock()
+const function unlock(): ()
 	const clone = table.clone(BASE_CONFIG.Constraints)
 	BASE_CONFIG.Constraints = clone
 
@@ -451,12 +467,21 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function waitForLock(callback: () -> ())
+const function waitForLock(callback: () -> ()): ()
 	if LOCKED then
 		callback()
 	else
-		table.insert(WAITING, callback)
+		table.insert(WAITING_ON_LOCK, callback)
 	end
+end
+
+--[=[
+	Public: Waits for the config to be changed
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function onChange(callback: (BASE_CONFIG) -> ()): ()
+	table.insert(WAITING_ON_CHANGE, callback)
 end
 
 --[=[
@@ -488,6 +513,8 @@ const function overrideKey(section: string, key: string, value: any): ()
 		return
 	end
 
+	_invoke_change_signal()
+
 	BASE_CONFIG[section][key] = value
 end
 
@@ -512,6 +539,7 @@ return table.freeze({
 	lock = lock,
 	unlock = unlock,
 	waitForLock = waitForLock,
+	onChange = onChange,
 	getKey = getKey,
 	getSection = getSection,
 	overrideKey = overrideKey,

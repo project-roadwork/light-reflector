@@ -18,9 +18,6 @@
 -- Types Module
 const types = require("../shared/types")
 
--- Configuration
-const config: types.Configuration = require("../shared/config")
-
 -- Debugger
 const debugger: types.Debugger = require("../shared/debugger")
 
@@ -58,7 +55,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function computeReflectorIntensity(part: BasePart, state, source: types.LightSource, MPH: number): (boolean | number, boolean | number)
+const function computeReflectorIntensity(part: BasePart, state, source: types.LightSource, MPH: number, config: types.BASE_CONFIG): (boolean | number, boolean | number)
 
 	--[[
 		             __________________________________________________________
@@ -69,8 +66,6 @@ const function computeReflectorIntensity(part: BasePart, state, source: types.Li
 	]]
 
 	--	debugger.assert(part:IsA("BasePart"), "InvalidInstance", "BasePart", part.ClassName)
-
-	const config = config.getConfig()
 
 	const baseIntensity:number = state.baseIntensity
 
@@ -198,7 +193,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function computeSignIntensity(entity: types.SignEntity, part : BasePart, decal : Decal, rangeType: types.RangeType, activeSources: types.SourceList)
+const function computeSignIntensity(entity: types.SignEntity, part : BasePart, decal : Decal, rangeType: types.RangeType, activeSources: types.SourceList, config: types.BASE_CONFIG)
 
 	--[[
 			              			 ______________________________________________________________
@@ -214,9 +209,6 @@ const function computeSignIntensity(entity: types.SignEntity, part : BasePart, d
 		              				 ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
 
 	]]
-
-	const config = config.getConfig()
-
 	--debugger.assert(part:IsA("BasePart"), "InvalidInstance", "BasePart", part.ClassName) Removed since :IsA() calls are expensive
 	debugger.assert(rangeTypes[rangeType], "InvalidType", `either "far" or "near"`, rangeType)
 

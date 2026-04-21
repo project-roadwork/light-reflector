@@ -26,9 +26,9 @@ return [[
 		  LANGUAGE:         Luau
 
 		  GROUP:            Project Roadwork
-		  VERSION:          2.1.0
+		  VERSION:          2.2.0
 		  CREATED:          2025-10-26 2:03 PM CDT
-		  LAST UPDATED:     2026-04-19 10:06 PM CDT
+		  LAST UPDATED:     2026-04-20 9:22 PM CDT
 
 		  SPDX-License-Identifier:   MPL-2.0
 		  SPDX-FileCopyrightText:   2025-2026 Illinois_Roadbuff <illinois_roadbuff@proton.me>
@@ -71,14 +71,23 @@ return [[
 			https://discord.gg/sd4XfAqNF9
 
 	D. Changelog [MM/DD/YYYY]
-		[04/20/2026 : Light-Reflector, Version 2.1.1]
+		[04/20/2026 : Light-Reflector, Version 2.2.0]
+			Author: Illinois_Roadbuff "Rogue Jr"
+
+			[Fixes]
+				- MAJOR: Fixed sign malfunctioning by updating the state's CFrame and Size before computing sign intensity
+			[Features]
+				- Reduced the number of `.getConfig()` calls by adding `onChange()` (like `.Changed:Connect()`, etc) to the config
+				- Removed unused ECS component `Vehicles` (`VehicleInstance` already exists)
+
+		[04/19/2026 : Light-Reflector, Version 2.1.1]
 			Author: Illinois_Roadbuff "Rogue Jr"
 
 			[Fixes]
 				- Disabled a debug FLAG that caused intense lag in certain games
 				- Fixed version mismatch
 
-		[04/20/2026 : Light-Reflector, Version 2.1.0]
+		[04/19/2026 : Light-Reflector, Version 2.1.0]
 			Author: Illinois_Roadbuff "Rogue Jr"
 
 			[Fixes]

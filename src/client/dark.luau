@@ -5,11 +5,6 @@
 
 --[[
 
-    SPDX-FileCopyrightText: 2025-2026 Illinois_Roadbuff <illinois_roadbuff@proton.me>
-    SPDX-FileCopyrightText: 2025-2026 Project Roadwork and Contributors
-
-    SPDX-License-Identifier: MPL-2.0
-
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
    file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -37,23 +32,37 @@ const darkWeathers: types.DarkWeathers = {
 	["Heavy Rain / Snow"] = true
 }
 
+-- Configuration Variables
+local baseConfig: types.BASE_CONFIG = config.getConfig()
+local generalConfig: types.GeneralConfig = baseConfig.General
+
 -- Variables
 local AlreadyPrinted: boolean = false
+local isConfigTracked: boolean = false
+
+-- Start config tracking
+config.waitForLock(function(): ()
+	if isConfigTracked == false then
+		config.onChange(function(NEW_CONFIG: types.BASE_CONFIG)
+			baseConfig = NEW_CONFIG
+			generalConfig = NEW_CONFIG.General
+		end)
+		isConfigTracked = true
+	end
+end)
 
 --[=[
 	Public: Dark conditional function
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-return function(): boolean -- Additionally includes TTP / Redon Tech weather compatibility. Expand should you wish.
+return function(): boolean -- Includes TTP / Redon Tech weather compatibility. Expand should you wish.
 	local canCount: boolean = false
-
-	const General = config.getConfig().General
 
 	const clockTime: number = Lighting.ClockTime
 	const Weather: Folder? = ReplicatedStorage:FindFirstChild("WeatherResources") :: Folder?
-	const DarkClockTimeStart: number = General.darkClockTimeStart
-	const DarkClockTimeEnd: number = General.darkClockTimeEnd
+	const DarkClockTimeStart: number = generalConfig.darkClockTimeStart
+	const DarkClockTimeEnd: number = generalConfig.darkClockTimeEnd
 
 	if Weather then
 		const WeatherFolder: Folder? = Weather:FindFirstChild("Weather") :: Folder?

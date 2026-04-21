@@ -25,7 +25,7 @@
 const HttpService: HttpService = game:GetService("HttpService")
 const RunService: RunService = game:GetService("RunService")
 const CodebergTags: string = "https://codeberg.org/api/v1/repos/project-roadwork/light-reflector/tags"
-const version: Version = table.freeze({major = 2, minor = 1, patch = 1, pre_release = "", build = -1, metadata = ""}) :: Version
+const version: Version = table.freeze({major = 2, minor = 2, patch = 0, pre_release = "", build = -1, metadata = ""}) :: Version
 
 --[=[
 	Private: Converts version to string
@@ -52,9 +52,9 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function checkVersion()
+const function checkVersion(): ()
 	if not RunService:IsServer() then
-		warn("You must run checkVersion from the server! Aborting...")
+		warn(`[Light Reflector {version}] You must run checkVersion() from the server! Aborting...`)
 		return
 	end
 
@@ -96,12 +96,7 @@ const function checkVersion()
 		const currentVersion = normalizeVersion(_versionToString(version))
 
 		if latestVersion ~= currentVersion then
-			warn(
-				("LightReflector: New version available! Current: %s | Latest: %s"):format(
-					currentVersion,
-					latestVersion
-				)
-			)
+			warn(`[Light Reflector] New version available! Current: {currentVersion} | Latest: {latestVersion}`)
 		end
 	end)
 end
