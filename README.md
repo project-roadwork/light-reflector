@@ -122,7 +122,7 @@ end)
 ## License
 **License: [Mozilla Public License 2.0](https://mozilla.org/MPL/2.0/) (open source).** 
 
-*This may be changed to a more permissive license in the future if most people seem uncomfortable with it.*
+*This may be changed to a more permissive license in the future, but unlikely.*
 
 > [!NOTE]
 > ### Mozilla Public License 2.0 Summary
