@@ -55,17 +55,26 @@ LightReflector.config.applyOverrides({
 
 LightReflector.start()
 
+task.wait(2)
+
+for i, car in workspace.Cars:GetChildren() do
+    if car:IsA("Model") and (car:FindFirstChildOfClass("VehicleSeat") or car:WaitForChild("DriveSeat",5)) then
+		print("Indexed Vehicle")
+		LightReflector.register.addVehicle(car, CheckForRegLightValue(car), determineIntensity)
+	end
+end
+
 workspace.Cars.ChildAdded:Connect(function(car)
 	task.wait() -- a-chassis init reasons
 	if car:IsA("Model") and (car:FindFirstChildOfClass("VehicleSeat") or car:WaitForChild("DriveSeat",5)) then
 		print("Indexed Vehicle")
-		LightReflector.register.registerVehicle(car, CheckForRegLightValue(car), determineIntensity)
+		LightReflector.register.addVehicle(car, CheckForRegLightValue(car), determineIntensity)
 	end
 end)
 
 workspace.Cars.ChildRemoved:Connect(function(car)
 	if car:IsA("Model") and (car:FindFirstChildOfClass("VehicleSeat") or car:WaitForChild("DriveSeat",5)) then
-		LightReflector.register.unregisterVehicle(car)
+		LightReflector.register.removeVehicle(car)
 	end
 end)
 
