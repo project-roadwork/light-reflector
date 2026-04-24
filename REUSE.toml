@@ -6,8 +6,6 @@ path = [
     "CODE_OF_CONDUCT.md",
     "CONTRIBUTING.md",
     "SECURITY.md",
-    "default.project.json",
-    "roblox-test.project.json",
     ".forgejo/ISSUE_TEMPLATE/bug_report.md",
     ".forgejo/ISSUE_TEMPLATE/feature_request.md",
     ".forgejo/PULL_REQUEST_TEMPLATE.md",
@@ -36,7 +34,9 @@ SPDX-License-Identifier = "MPL-2.0 OR CC-BY-SA-4.0"
 
 [[annotations]]
 path = [
-    "NOTICE"
+    "NOTICE",
+    "roblox-test.project.json",
+    "standalone.project.json"
 ]
 SPDX-FileCopyrightText = [
 "2025-2026 Illinois_Roadbuff <illinois_roadbuff@proton.me>",
