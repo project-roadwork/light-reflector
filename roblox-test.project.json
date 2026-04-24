@@ -1,5 +1,5 @@
 {
-  "name": "light-reflector-dev",
+  "name": "lightreflector-dev",
 
   "emitLegacyScripts": false,
 
@@ -10,8 +10,8 @@
       "Packages": {
         "$className": "Folder",
 
-        "chrono": {
-          "$path": "default.project.json"
+        "lightreflector": {
+          "$path": "src"
         }
       }
     }

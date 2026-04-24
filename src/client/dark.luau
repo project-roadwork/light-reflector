@@ -16,8 +16,8 @@
 ]]
 
 -- IMPORTANT: Services
-const Lighting:Lighting = game:GetService("Lighting")
-const ReplicatedStorage:ReplicatedStorage = game:GetService("ReplicatedStorage")
+const Lighting: Lighting = game:GetService("Lighting")
+const ReplicatedStorage: ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- IMPORTANT: Modules
 const types = require("../shared/types")
