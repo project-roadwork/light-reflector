@@ -17,6 +17,16 @@
 
 --[[
 
+	NOTE: This is an experimental grid module that includes a large amount of AI-generated
+	code from a LLM. There may be unforseen issues with this module. Use at your own risk.
+
+	More information:
+	https://codeberg.org/project-roadwork/spatial-grid/src/branch/main/README.md
+
+]]
+
+--[[
+
 	- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	-                                                                             -
 	-                 Sparse Uniform Spatial Grid Implementation                  -
@@ -30,9 +40,6 @@
     -  Repositories:                                                              -
     -   https://codeberg.org/project-roadwork/spatial-grid (Main)                 -
     -   https://github.com/project-roadwork/spatial-grid (Backup)                 -
-    -                                                                             -
-    -  Authors:                                                                   -
-    -  Illinois_Roadbuff (Rogue Jr) - April 1, 2026 - Created the file              -
     -                                                                             -
     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
