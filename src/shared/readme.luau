@@ -28,7 +28,7 @@ return [[
 		  GROUP:            Project Roadwork
 		  VERSION:          2.2.0
 		  CREATED:          2025-10-26 2:03 PM CDT
-		  LAST UPDATED:     2026-04-20 9:22 PM CDT
+		  LAST UPDATED:     2026-04-23 10:43 PM CDT
 
 		  SPDX-License-Identifier:   MPL-2.0
 		  SPDX-FileCopyrightText:   2025-2026 Illinois_Roadbuff <illinois_roadbuff@proton.me>
@@ -42,7 +42,8 @@ return [[
 		  links.
 
 		  LICENSE HEADER:
-			Copyright 2025-2026 Illinois_Roadbuff, Project Roadwork and Contributors
+			Copyright 2025-2026 Illinois_Roadbuff
+			Copyright 2025-2026 Project Roadwork and Contributors
 
 			This Source Code Form is subject to the terms of the Mozilla Public
 			License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -71,11 +72,44 @@ return [[
 			https://discord.gg/sd4XfAqNF9
 
 	D. Changelog [MM/DD/YYYY]
+		[04/23/2026 : Light-Reflector, Version 2.3.0]
+			Author: Illinois_Roadbuff "Rogue Jr"
+
+			[Fixes]
+				- MAJOR: Fixed `.cleanup()` not deleting entities properly, causing pooling issues once the module started back up
+				- MAJOR: Fixed signs not following the source's light angle and lighting up even when the source is turned away
+				  by nearly 80 degrees
+				- Fixed signs under the `decal` render mode not fading out properly compared to signs under the `SurfaceGui` mode.
+
+			[Features]
+				- New `states` module: Reflector, SurfaceGui, Decal, and global sign states are now recycled to reduce table creation
+				  (experimental). Should this malfunction, you may enable the flag `NO_STATE_POOLING` in the `config` module.
+				- The `dark` module has been optimized by checking whether the weather folder exists once rather than being called
+				  every render frame.
+				- Added a debug function that shows the light angle of the source. This can be enabled by the `isDebugConeAngleEnabled`
+				  boolean in the `config` module
+				- Added raycasting to detect obstacles between the source and signs. This can be enabled by the `useRaycastForObstacles`
+				  boolean in the reflector and sign `config`. Please note that this may cause lag for multiple entities.
+				- When `useRaycastForObstacles` is enabled, signs can now adjust brightness based on the obstacle's part transparency.
+
+			[API CHANGES]
+				- **Change:** `lightreflector.cleanup()` is now `lightreflector.reset()`
+				- **Change:** `lightreflector.register.registerVehicle()` is now `lightreflector.register.addVehicle()`
+				- **Change:** `lightreflector.register.unregisterVehicle()` is now `lightreflector.register.removeVehicle()`
+				- **Change:** `lightreflector.register.registerReflector()` is now `lightreflector.register.addReflector()`
+				- **Change:** `lightreflector.register.unregisterReflector()` is now `lightreflector.register.removeReflector()`
+				- **New:** `lightreflector.register.addSign()`
+				- **New:** `lightreflector.register.removeSign()`
+
+			Please note that although you can register/unregister signs/reflectors manually via the `init` module, it is still recommended
+			that you use `tags` via `CollectionService` to automatically register entities.
+
 		[04/20/2026 : Light-Reflector, Version 2.2.0]
 			Author: Illinois_Roadbuff "Rogue Jr"
 
 			[Fixes]
 				- MAJOR: Fixed sign malfunctioning by updating the state's CFrame and Size before computing sign intensity
+
 			[Features]
 				- Reduced the number of `.getConfig()` calls by adding `onChange()` (like `.Changed:Connect()`, etc) to the config
 				- Removed unused ECS component `Vehicles` (`VehicleInstance` already exists)

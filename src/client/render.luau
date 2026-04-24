@@ -44,11 +44,33 @@ local isConfigTracked: boolean = false
 const activeReflectorEntities: {[jecs.Entity]: boolean} = detect.activeReflectorEntities
 local currentDetectedEntities: { [jecs.Entity]: boolean } = {}
 local _runnerThread : thread?
+local hasInit: boolean = false
 
 -- Miscellaneous
 const clamp: (number, number, number) -> number = math.clamp
 const abs: (number) -> number = math.abs
 const exp: (number) -> number = math.exp
+
+--[=[
+	Public: Initialize
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function init(): ()
+	if hasInit then
+		return
+	end
+
+	config.onChange(function(NEW_CONFIG: types.BASE_CONFIG)
+		baseConfig = NEW_CONFIG
+		constraints = NEW_CONFIG.Constraints
+		reflectorConfig = NEW_CONFIG.ReflectorConfig
+		generalConfig = NEW_CONFIG.General
+		signConfig = NEW_CONFIG.SignConfig
+	end)
+
+	hasInit = true
+end
 
 --[=[
 	Public: Rendering loop
@@ -59,23 +81,10 @@ const function start(): ()
 	local allInactive: boolean = true
 
 	_runnerThread = constraints.SPAWN(utils.pcallRetry, function()
-
-		-- Start config tracking
-		if isConfigTracked == false then
-			config.onChange(function(NEW_CONFIG: types.BASE_CONFIG)
-				baseConfig = NEW_CONFIG
-				constraints = NEW_CONFIG.Constraints
-				reflectorConfig = NEW_CONFIG.ReflectorConfig
-				generalConfig = NEW_CONFIG.General
-				signConfig = NEW_CONFIG.SignConfig
-			end)
-			isConfigTracked = true
-		end
-
 		-- pcall replaced with pcallRetry
 		while true do
 
-			const deltaTime: number, MPH: number = utils.adaptiveWait(utils.renderWait,constraints.RENDER_MIN_FPS, constraints.RENDER_MAX_FPS,
+			const deltaTime: number, MPH: number = utils.adaptiveWait(utils.renderWait, constraints.RENDER_MIN_FPS, constraints.RENDER_MAX_FPS,
 				utils.getFastestDriveSeat(cachedQueries.VehicleInstances)) -- adaptive waiting based on fastest vehicle speed
 			-- this should be in a higher FPS since it renders the fading
 			-- also utils.renderWait uses RunService.PreRender rather than RunService.Heartbeat which I think the task scheduler uses
@@ -85,7 +94,7 @@ const function start(): ()
 			const isDark: boolean = dark()
 
 			if not isDark and allInactive then
-				task.wait(1)
+				task.wait(.5)
 				continue
 			end
 
@@ -99,17 +108,19 @@ const function start(): ()
 				for entity: jecs.Entity<nil>, part:BasePart, state: types.ReflectorState in cachedQueries.Reflectors do
 					if not activeReflectorEntities[entity] then
 						const BaseMaterial = reflectorConfig.inactiveMaterial
+						const baseColor: Color3 = state.baseColor
+						const lastColor: Color3 = state.lastColor
 
-						if state.baseColor then
+						if baseColor then
 							if state.lastMaterial ~= BaseMaterial then -- reducing writes
 								part.Material = BaseMaterial
 								state.lastMaterial = BaseMaterial
 							end
 
-							if state.lastColor ~= state.baseColor then
-								if not utils.areColorsEqual(state.lastColor, state.baseColor, 0.01) then
-									part.Color = state.baseColor
-									state.lastColor = state.baseColor
+							if lastColor ~= baseColor then
+								if not utils.areColorsEqual(lastColor, baseColor, 0.01) then
+									part.Color = baseColor
+									state.lastColor = baseColor
 								end
 							end
 
@@ -120,21 +131,17 @@ const function start(): ()
 
 					const riseSpeed: number = reflectorConfig.lerpSpeed
 					const fallSpeed: number = reflectorConfig.lerpSpeed * 5
+					const targetIntensity: number = state.targetIntensity
 
 					const f: number = exp(-riseSpeed * deltaTime)
 					state.currentIntensity =
-						state.targetIntensity + (state.currentIntensity - state.targetIntensity) * f
+						targetIntensity + (state.currentIntensity - targetIntensity) * f
 
-					if state.targetIntensity <= 0 then
+					if targetIntensity <= 0 then
 						state.currentIntensity *= exp(-fallSpeed * deltaTime)
 					end
 
-			 --[[state.currentIntensity +=
-				(state.targetIntensity - state.currentIntensity)
-				* clamp(lerpSpeed * deltaTime, 0, 1)]]
-
 					if state.isHybrid then
-
 						state.currentTransparency += (state.targetTransparency - state.currentTransparency)
 							* clamp(lerpSpeed * deltaTime, 0, 1)
 
@@ -159,14 +166,9 @@ const function start(): ()
 					end
 
 					const intensity: number = state.currentIntensity
-					--if abs(intensity - state.lastIntensity) < 0.00002 then
-					--	continue
-					--end
 
 					local newColor: Color3?
 					local newMaterial: Enum.Material?
-					-- ^ variables to reduce .Material and .Color calls
-					--   Will only be changed if the material/color is not the same as the current one
 
 					if intensity >= reflectorConfig.neonActivationIntensity or state.isHybrid == true then
 						newMaterial = reflectorConfig.activeMaterial
@@ -182,18 +184,7 @@ const function start(): ()
 						const b: number = clamp(baseColor.B * scale, 0, 1)
 
 						newColor = Color3.new(r, g, b)
-
-			 --[[elseif intensity > 0.3 then
-				newMaterial = Enum.Material.Plastic
-
-				newColor = state.baseColor:Lerp(
-					reflectorConfig.partialDimmingBaseColor,
-					intensity * 0.5
-				)]]
 					else
-						--newMaterial = reflectorConfig.inactiveMaterial
-						--newColor = state.baseColor
-
 						const fadeStart: number = 0.15
 						const fadeEnd: number = 0.6
 
@@ -229,6 +220,7 @@ const function start(): ()
 
 			if signConfig.isEnabled then
 				lerpSpeed = signConfig.lerpSpeed
+				const speed: number = clamp(lerpSpeed * deltaTime, 0, 1)
 
 				for entity: jecs.Entity<nil>, part: Instance, signState: types.SignEntity in cachedQueries.SignsPartsStates do
 					if signState.partRenderMode == "SurfaceGui" then
@@ -244,14 +236,16 @@ const function start(): ()
 
 						if gui and gui.Parent then
 							const inPart: boolean = currentDetectedEntities[entity] ~= nil
+
+
 							if inPart then
-								state.currentTransparency += (state.targetTransparency - state.currentTransparency) * clamp(lerpSpeed * deltaTime, 0, 1)
-								state.currentBrightness += (state.targetBrightness - state.currentBrightness) * clamp(lerpSpeed * deltaTime, 0, 1)
-								state.currentLightInfluence += (state.targetLightInfluence - state.currentLightInfluence) * clamp(lerpSpeed * deltaTime, 0, 1)
+								state.currentTransparency += (state.targetTransparency - state.currentTransparency) * speed
+								state.currentBrightness += (state.targetBrightness - state.currentBrightness) * speed
+								state.currentLightInfluence += (state.targetLightInfluence - state.currentLightInfluence) * speed
 							else
-								state.currentTransparency += (1 - state.currentTransparency) * clamp(lerpSpeed * deltaTime, 0, 1)
-								state.currentBrightness += (0 - state.currentBrightness) * clamp(lerpSpeed * deltaTime, 0, 1)
-								state.currentLightInfluence += (1 - state.currentLightInfluence) * clamp(lerpSpeed * deltaTime, 0, 1)
+								state.currentTransparency += (1 - state.currentTransparency) * speed
+								state.currentBrightness += (0 - state.currentBrightness) * speed
+								state.currentLightInfluence += (1 - state.currentLightInfluence) * speed
 
 								if state.currentTransparency >= signConfig.inactiveTransparencyThreshold then
 									state.isPendingRemoval = true
@@ -294,18 +288,16 @@ const function start(): ()
 						const decal: Decal? = signState.mainDecal
 						if not decal then continue end
 
-						const lerpSpeed: number = signConfig.lerpSpeed
-
 						const inPart: boolean = currentDetectedEntities[entity] ~= nil
 
 						if inPart then
-							state.currentBrightness += (state.targetBrightness - state.currentBrightness) * clamp(lerpSpeed * deltaTime, 0, 1)
+							state.currentBrightness += (state.targetBrightness - state.currentBrightness) * speed
 						else
-							state.currentBrightness += (0 - state.currentBrightness) * clamp(lerpSpeed * deltaTime, 0, 1)
+							state.currentBrightness += (0 - state.currentBrightness) * speed
 						end
 
 						const base: Color3 = state.baseColor
-						const scale: number = 1 + (clamp(state.currentBrightness, 0, 4) * signConfig.decalIntensityMultiplier) -- multiply to better match up the brightness with the SurfaceGui rendering mode
+						const scale: number = 1+ ((clamp(state.currentBrightness, 0, 4)) * signConfig.decalIntensityMultiplier) -- multiply to better match up the brightness with the SurfaceGui rendering mode
 
 						const r: number = base.R * scale
 						const g: number = base.G * scale
@@ -349,6 +341,7 @@ end
 -- Return public API
 return table.freeze({
 	Name = "render",
+	init = init,
 	start = start,
 	safeCancelThread = safeCancelThread
 }) :: types.Render

@@ -6,7 +6,6 @@
 --[[
     SPDX-FileCopyrightText: 2025-2026 Illinois_Roadbuff <illinois_roadbuff@proton.me>
     SPDX-FileCopyrightText: 2025-2026 Project Roadwork and Contributors
-    SPDX-FileCopyrightText: 2025 Parihsz
 
     SPDX-License-Identifier: MPL-2.0 AND MIT
 
@@ -15,6 +14,8 @@
    file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
    Includes some config components from Chrono 2.0.x (https://github.com/Parihsz/Chrono)
+
+    SPDX-FileCopyrightText: 2025 Parihsz
 
 ]]
 
@@ -28,6 +29,7 @@ const FLAGS = {
 	["TEST_FLAG"] = false, -- This does nothing
 	["PCALL"] = true, -- Enable pcalls or not. Useful for debugging.
 	["TRACK_ANCESTRY_CONNECTIONS"] = false, -- Enable to track ancestry connections
+	["NO_STATE_POOLING"] = false, -- Disables pooling/recycling of states (tables)
 }
 
 -- Base Config
@@ -137,9 +139,14 @@ const BASE_CONFIG = {
 		-- ^ Base reflective intensity attribute name for both signs and reflectors
 
 		-- [DEBUG]
-		IS_RAYCAST_ENABLED = false, -- (recommended -> false)
+		IS_RAYCAST_INDEXING_ENABLED = false, -- (recommended -> false)
 		-- ^ Only set this to true if you actually need raycasting which is unneccesary (lots of lag).
 		-- 	 Otherwise, leaving this as false processes all of the signs
+
+		OCCLUSION_RAYCAST_QUALITY = 2.5, -- (recommended -> 2-5)
+		-- ^ Controls occlusion sampling resolution (N x N rays across the surface).
+		--   Higher valies reduce artifacts from small obstacles (e.g. poles); however, they increase
+		--   raycast cost.
 
 	},
 
@@ -159,7 +166,7 @@ const BASE_CONFIG = {
 		-- ^ ClockTime end of night
 
 		-- [ANGLE]
-		lightHalfAngle = math.rad(10), -- (recommended -> 10)
+		lightHalfAngle = math.rad(25), -- (recommended -> 10)
 		-- ^ Half of the angle of the light cone in radians
 
 		-- [OFFSETS]
@@ -170,6 +177,10 @@ const BASE_CONFIG = {
 
 		movingPartAttribute = "LRMoving",
 		-- ^ attribute name to identify moving reflectors or signs
+
+		occlusionRaycastExclude = {},
+
+		occlusionRaycastExcludeTransparent = true
 
 	},
 
@@ -185,6 +196,12 @@ const BASE_CONFIG = {
 
 		tagName = "ReflectiveSign",
 		-- ^ Sign tag name should you use tags.
+
+		useRaycastForObstacles = false, -- (No recommendation; default -> false)
+		-- Uses Raycasts to determine if a sign is obstructed from its light source(s)
+		-- Since there is usually less signs than reflectors in a map, lag would not be as heavy as pavement reflectors.
+		--  HOWEVER, it depends on whether you have "too many" signs when viewed in the client or not.
+		--   so setting this to true or false is at your discretion.
 
 		partRenderModeAttributeName = "LRRenderMode",
 		-- ^ Part attribute name for render mode
@@ -205,6 +222,8 @@ const BASE_CONFIG = {
 
 		signsFolders = { workspace.Signs },
 		-- ^ Set this to your own signs folders separated by a comma
+
+		isDebugConeAngleEnabled = false,
 
 		isDebugBoxEnabled = false, -- Shows the debug box. THIS ONLY WORKS FOR RAYCASTING.
 		debugBoxColor = Color3.fromRGB(0,255,0),
@@ -253,6 +272,11 @@ const BASE_CONFIG = {
 		-- ^ It is recommended that you set this to true if your reflectors are parented under folders with many instances.
 		--   Additionally, this uses CollectionService.
 
+		useRaycastForObstacles = false, -- (recommended -> false)
+		-- Uses Raycasts to determine if a reflector is obstructed from its light source(s)
+		-- Setting this to false is strongly recommended since it causes tremendous lag with the number of light
+		--   reflectors for little visual benefit. This option is only provided should it be needed.
+
 		tagName = "Reflector",
 		-- ^ Reflector tag name should you use tags
 
@@ -298,6 +322,7 @@ const BASE_CONFIG = {
 		maxBrightness = 400, -- (recommended -> 400)
 		-- ^ Brightness of reflectors
 
+		useMaxDOT = true,  -- (recommended -> true)
 
 		--[HYBRID SUBSYSTEM]
 		isHybridEnabled = true,
@@ -392,7 +417,6 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function _deepMerge(defaults: Dict, overrides: Dict, path: string?): ()
-
 	path = if path then path else ""
 
 	for key, value in next, overrides do

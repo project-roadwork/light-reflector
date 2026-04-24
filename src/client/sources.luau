@@ -21,7 +21,11 @@ const types = require("../shared/types")
 -- Array of sources
 const list : types.SourceList = {}
 
--- Public: Creates a source
+--[=[
+	Public: Creates a source
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
 const function create(car: Instance | types.Vehicle,
 	getPosition: () -> Vector3,
 	getDirection: () -> Vector3,
@@ -38,13 +42,21 @@ const function create(car: Instance | types.Vehicle,
 	}
 end
 
--- Public: Adds a source
+--[=[
+	Public: Adds a source
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
 const function add(source: types.LightSource): types.LightSource
 	table.insert(list, source)
 	return source
 end
 
--- Public: Cretes and adds a source
+--[=[
+	Public: Creates and adds a source
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
 const function register(car: Instance | types.Vehicle,
 	getPosition: () -> Vector3,
 	getDirection: () -> Vector3,
@@ -55,7 +67,11 @@ const function register(car: Instance | types.Vehicle,
 	return add(create(car, getPosition, getDirection, getEnabled, intensity))
 end
 
--- Public: Checks if any source is active
+--[=[
+	Public: Checks if any source is active
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
 const function anyActive(): boolean
 	for _, source in list do
 		if source.isActive() then
@@ -65,6 +81,11 @@ const function anyActive(): boolean
 	return false
 end
 
+--[=[
+	Public: Returns all active sources
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
 const function getAllActive(): {types.LightSource}
 	const activeSources = {}
 	for _, source in list do
@@ -75,8 +96,9 @@ const function getAllActive(): {types.LightSource}
 	return activeSources
 end
 
+-- Return public API
 return table.freeze({
-	Name = "sources",
+	name = "sources",
 	list = list,
 	create = create,
 	add = add,

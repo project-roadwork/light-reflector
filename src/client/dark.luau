@@ -15,34 +15,60 @@
 
 ]]
 
--- Types Module
-const types = require("../shared/types")
-
--- Configuration
-const config: types.Configuration = require("../shared/config")
-
--- Debugger
-const debugger: types.Debugger = require("../shared/debugger")
-
--- Services
+-- IMPORTANT: Services
 const Lighting:Lighting = game:GetService("Lighting")
 const ReplicatedStorage:ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- Dark weathers (TTP / Redon Tech weather system compatibility)
+-- IMPORTANT: Modules
+const types = require("../shared/types")
+const config: types.Configuration = require("../shared/config")
+const debugger: types.Debugger = require("../shared/debugger")
+
+-- Configuration Variables
+local baseConfig: types.BASE_CONFIG = config.getConfig()
+local generalConfig: types.GeneralConfig = baseConfig.General
+local darkStart: number = generalConfig.darkClockTimeStart
+local darkEnd: number = generalConfig.darkClockTimeEnd
+
+-- Dark weathers table (TTP / Redon Tech weather system compatibility)
 const darkWeathers: types.DarkWeathers = {
 	["Heavy Rain"] = true,
 	["Thunderstorms"] = true,
 	["Strong Thunderstorms"] = true,
 	["Heavy Rain / Snow"] = true
 }
-
--- Configuration Variables
-local baseConfig: types.BASE_CONFIG = config.getConfig()
-local generalConfig: types.GeneralConfig = baseConfig.General
-
 -- Variables
 local AlreadyPrinted: boolean = false
 local isConfigTracked: boolean = false
+local weatherValue: StringValue? = nil
+local isWeatherDark: boolean = false
+local clockTime: number = Lighting.ClockTime
+
+--[=[
+	Private: Resolves weather
+	@private
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function _resolveWeather(): ()  -- Includes TTP / Redon Tech weather compatibility. Expand should you wish.
+	const Weather: Instance? = ReplicatedStorage:WaitForChild("WeatherResources", 10)
+	if not Weather then return end
+
+	const WeatherFolder: Instance? = Weather:FindFirstChild("Weather")
+	if not WeatherFolder then return end
+
+	const CurrentFolder: Instance? = WeatherFolder:FindFirstChild("Current")
+	if not CurrentFolder then return end
+
+	const Value: Instance? = CurrentFolder:FindFirstChild("Weather")
+	if Value and Value:IsA("StringValue") then
+		weatherValue = Value
+		isWeatherDark = darkWeathers[Value.Value] or false
+		Value:GetPropertyChangedSignal("Value"):Connect(function()
+			isWeatherDark = darkWeathers[Value.Value] or false
+		end)
+	end
+end
 
 -- Start config tracking
 config.waitForLock(function(): ()
@@ -50,7 +76,16 @@ config.waitForLock(function(): ()
 		config.onChange(function(NEW_CONFIG: types.BASE_CONFIG)
 			baseConfig = NEW_CONFIG
 			generalConfig = NEW_CONFIG.General
+			darkStart = generalConfig.darkClockTimeStart
+			darkEnd = generalConfig.darkClockTimeEnd
 		end)
+
+		task.defer(_resolveWeather)
+
+		Lighting:GetPropertyChangedSignal("ClockTime"):Connect(function()
+			clockTime = Lighting.ClockTime
+		end)
+
 		isConfigTracked = true
 	end
 end)
@@ -60,31 +95,8 @@ end)
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-return function(): boolean -- Includes TTP / Redon Tech weather compatibility. Expand should you wish.
-	local canCount: boolean = false
+return function(): boolean
+	const isNight: boolean = (clockTime >= darkStart or clockTime < darkEnd)
 
-	const clockTime: number = Lighting.ClockTime
-	const Weather: Folder? = ReplicatedStorage:FindFirstChild("WeatherResources") :: Folder?
-	const DarkClockTimeStart: number = generalConfig.darkClockTimeStart
-	const DarkClockTimeEnd: number = generalConfig.darkClockTimeEnd
-
-	if Weather then
-		const WeatherFolder: Folder? = Weather:FindFirstChild("Weather") :: Folder?
-		if WeatherFolder then
-			const CurrentFolder: Folder? = WeatherFolder:FindFirstChild("Current") :: Folder?
-
-			if CurrentFolder then
-				const WeatherValue: StringValue? = CurrentFolder:FindFirstChild("Weather") :: StringValue?
-				if WeatherValue and darkWeathers[WeatherValue.Value] then
-					canCount = true
-				end
-			end
-		end
-	elseif AlreadyPrinted == false then
-		AlreadyPrinted = true
-		debugger.print("Info","Unable to find Weather System")
-	end
-
-	return (clockTime >= DarkClockTimeStart or clockTime < DarkClockTimeEnd)
-		or canCount
+	return isNight or isWeatherDark
 end

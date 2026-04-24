@@ -15,39 +15,65 @@
 
 ]]
 
--- Types Module
+-- IMPORTANT: Modules
 const types = require("../shared/types")
-
--- Debugger
 const debugger: types.Debugger = require("../shared/debugger")
-
--- Utilities
 const utils: types.Utils = require("./utils")
-
--- Grid
 const grid: types.GridModule = require("./grid")
 
 -- Variables
 const rangeTypes: { [types.RangeType]: boolean } = { near = true, far = true }
 const clamp: (number, number, number) -> number = math.clamp
+const raycast: (WorldRoot, Vector3, Vector3, RaycastParams) -> RaycastResult? = workspace.Raycast
 
--- Functions
+const rayParams: RaycastParams = RaycastParams.new()
+rayParams.FilterType = Enum.RaycastFilterType.Exclude
+rayParams.IgnoreWater = true
+
+const SAMPLE_POINTS: {Vector3} = {}
+
 --[=[
-	Public: Get nearby light sources
+	Private: Computes the occlusion of a part via Raycast
+	@private
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function _getNearbySources(signPos: Vector3, sources: types.SourceList, maxDistance: number): { types.LightSource }
-	const nearby: { types.LightSource } = {}
-	for _, source in sources do
-		if source.isActive() then
-			const dist = (source.getPosition() - signPos).Magnitude
-			if dist <= maxDistance then
-				nearby[#nearby + 1] = source
+const function _computeOcclusion(part: BasePart, CFrame: CFrame, Size: Vector3, lightPos: Vector3, samplePoints: {Vector3}, rayParams: RaycastParams, config:types.BASE_CONFIG): number
+	const total: number = #samplePoints
+	local hit: number = 0
+
+	for _: number, offset: Vector3 in samplePoints do
+		const worldPoint: Vector3 = CFrame:PointToWorldSpace(offset * Size)
+
+		const dir: Vector3 = worldPoint - lightPos
+		const result: RaycastResult? = raycast(workspace, lightPos, dir, rayParams)
+		const instance: Instance? = result and result.Instance or nil
+		const excludeTransparent: boolean = config.General.occlusionRaycastExcludeTransparent
+
+		if instance and instance ~= part then
+			if excludeTransparent then
+				if instance.IsA(instance, "BasePart") and instance.Transparency ~= 1 then
+					const transmittance: number = instance.Transparency ^ 2.5
+					-- ^ light doesn't work like fractioning, so use an exponent instead of 1 - transparency
+					hit += (1 - transmittance)
+				end
+			else
+				hit += 1
 			end
 		end
+
+		if excludeTransparent == false then
+			if hit == total then
+				return 0
+			end
+
+			if hit == 0 then
+				return 1
+			end -- Micro optimization
+		end
 	end
-	return nearby
+
+	return math.sqrt(1 - (hit / total))
 end
 
 --[=[
@@ -55,7 +81,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function computeReflectorIntensity(part: BasePart, state, source: types.LightSource, MPH: number, config: types.BASE_CONFIG): (boolean | number, boolean | number)
+const function computeReflectorIntensity(part: BasePart, state, source: types.LightSource, MPH: number, config: types.BASE_CONFIG): (number, number)
 
 	--[[
 		             __________________________________________________________
@@ -86,10 +112,10 @@ const function computeReflectorIntensity(part: BasePart, state, source: types.Li
 
 	local canHybridKeepColors: boolean = false
 
-	local maxDot: number = 0
+	const maxDot: number =  math.cos(config.General.lightHalfAngle)
 
 	if state.isHybrid then
-		maxDot =  math.cos(config.General.lightHalfAngle)
+		--maxDot =  math.cos(config.General.lightHalfAngle)
 		hybridFadeRange = state.hybridFadeRange
 		hybridMinDistance = state.hybridMinDistance
 		hybridTransparencyMultiplier = state.hybridTransparencyMultiplier
@@ -113,6 +139,10 @@ const function computeReflectorIntensity(part: BasePart, state, source: types.Li
 	const toPart: Vector3 = change.Unit
 	const dot: number =  clamp(dir:Dot(toPart), 0, 1)
 
+	const coneFactor: number = if config.ReflectorConfig.useMaxDOT then
+		(clamp((dot - maxDot) / (1 - maxDot), 0, 1)) ^ .42
+		else 1
+
 	const dist: number = change.Magnitude
 	const distFactor: number = clamp(1 - (dist / config.ReflectorConfig.maxDistance), 0, 1)
 
@@ -121,9 +151,7 @@ const function computeReflectorIntensity(part: BasePart, state, source: types.Li
 	if state.isWedge then
 		const toLight: Vector3 = -toPart
 		const rawDot: number = state.slopeNormalWorld:Dot(toLight)
-
 		--	part:SetAttribute("RawDOT", rawDot) -- Kept as reference for debugging
-
 		if rawDot <= 0 then
 			wedgeFactor = 0
 		else
@@ -140,7 +168,7 @@ const function computeReflectorIntensity(part: BasePart, state, source: types.Li
 		if not utils.validFaces[face] then
 			debugger.warn("Warning", `Invalid Enum.NormalID face; got {face}.`)
 			--	continue
-			return false, false
+			return -1, -1
 		end
 
 		const facedot: number = math.max(0, state.faceNormalWorld:Dot(-toPart)) -- clamping seems to bug
@@ -149,13 +177,13 @@ const function computeReflectorIntensity(part: BasePart, state, source: types.Li
 
 		if facedot <= config.ReflectorConfig.hybridFacingDotThreshold then -- Usually near 0
 			--continue
-			return false, false
+			return -1, -1
 		end
 	end
 
 	const proximityFactor = (dist < config.ReflectorConfig.minDistance) and (dist / config.ReflectorConfig.minDistance) or 1
 
-	intensity += dot * distFactor * wedgeFactor * proximityFactor * (lightIntensity or 1)
+	intensity += (dot * (coneFactor)) * distFactor * wedgeFactor * proximityFactor * (lightIntensity or 1)
 
 	if state.isHybrid then
 		if canHybridKeepColors == false then intensity = .5 end
@@ -163,14 +191,14 @@ const function computeReflectorIntensity(part: BasePart, state, source: types.Li
 		const distFade: number = clamp(dist / hybridFadeRange, 0, 1)
 
 		if distFade <= 0 then
-			return false, false
+			return -1, -1
 		end
 
 		const distanceFactor: number = clamp(1 - (dist / hybridFadeRange), 0, 1)
 
-		const angleFade: number = math.sqrt(1 - dot) -- different equation since it's a smaller part
+		const angleFade: number = math.sqrt(1 - dot)
 		const baseTransparency: number = (dot <= 0.1) and 1 or
-			(distFade * 0.3 + angleFade * 0.7)
+			(distFade * 0.2 + angleFade * 0.8)
 
 		const proximityFactor: number = (dist < hybridMinDistance) and (dist /  hybridMinDistance) or 1
 
@@ -185,6 +213,10 @@ const function computeReflectorIntensity(part: BasePart, state, source: types.Li
 		finalTransparency = math.min(finalTransparency, weightedTransparency)
 	end
 
+	if config.ReflectorConfig.useRaycastForObstacles then
+		intensity *= _computeOcclusion(part, state.CFrame, part.Size, seatPos, SAMPLE_POINTS, rayParams, config)
+	end
+
 	return clamp(intensity * baseIntensity, 0, 1), if intensity > 0 then clamp(finalTransparency*hybridTransparencyMultiplier, 0.5, 1) else 1
 end
 
@@ -193,7 +225,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function computeSignIntensity(entity: types.SignEntity, part : BasePart, decal : Decal, rangeType: types.RangeType, activeSources: types.SourceList, config: types.BASE_CONFIG)
+const function computeSignIntensity(part : BasePart, state: types.SignEntity,  source: types.LightSource, decal: Decal, rangeType: types.RangeType, config: types.BASE_CONFIG)
 
 	--[[
 			              			 ______________________________________________________________
@@ -212,112 +244,136 @@ const function computeSignIntensity(entity: types.SignEntity, part : BasePart, d
 	--debugger.assert(part:IsA("BasePart"), "InvalidInstance", "BasePart", part.ClassName) Removed since :IsA() calls are expensive
 	debugger.assert(rangeTypes[rangeType], "InvalidType", `either "far" or "near"`, rangeType)
 
-	const baseIntensity:number = part:GetAttribute(config.Constraints.BASE_INTENSITY_ATTRIBUTE) or 1
-
 	const FadeDistance:number = config.SignConfig.maxFadeDistance
 	const MinFadeDistance:number = config.SignConfig.minFadeDistance
 
-	const partCFrame:CFrame = entity.CFrame
+	const partCFrame:CFrame = state.CFrame
 	const partPosition:Vector3 = partCFrame.Position
-	const partSize:Vector3 = entity.Size -- probably offers a bit of optimization?
+	const partSize:Vector3 = state.Size -- probably offers a bit of optimization?
 
 	-- INFO OF VARIABLES:
-	--   	Transparency affects the ImageLabel with the sign (SurfaceGui.ImageLabel)
+	--   	Transparency affects the ImageLabel with the sign (SurfaceGui.ImageLabel.ImageTransparency)
 	--   	Brightness affects SurfaceGui.Brightness
-	--      Light affects SurfaceGui.LightInfluence
+	--      LightInfluence affects SurfaceGui.LightInfluence
 
-	local finalTransparency:number = 1
-	local finalBrightness:number = 0
-	local finalLightInfluence:number = 1
+	local transparency:number = 1
+	local brightness:number = 0
+	local lightInfluence:number = 1
 
-	const partVeryReflective:boolean? = entity.partVeryReflective
-
-	local count:number = 0
-
-	const nearbySources: { types.LightSource } = _getNearbySources(partPosition, activeSources, config.SignConfig.maxFadeDistance + 500)
-	if #nearbySources == 0 then
-		return { transparency = 1, brightness = 0, lightInfluence = 0 }
-	end
+	const partVeryReflective:boolean? = state.partVeryReflective
 
 	local hasActiveLight: boolean = false
 	const maxDot: number = math.cos(config.General.lightHalfAngle)
 
-	for _: number, light: types.LightSource in nearbySources do
-		count += 1
+	const seatPos: Vector3 = source.getPosition()
+	const carLook: Vector3 = source.getDirection()
+	local intensity: number = source.getIntensity(source.Owner) or 1
 
-		const seatPos: Vector3 = light.getPosition()
-		const carLook: Vector3 = light.getDirection()
-		const intensity: number = light.getIntensity(light.Owner) or 1
+	const dist: number = (seatPos - partPosition).Magnitude
 
-		const dist: number = (seatPos - partPosition).Magnitude
+	const isReflective: boolean = (partVeryReflective)
+		or (partSize.X > 2.5 or partSize.Y > 2.5 or partSize.Z > 2.5)
 
-		const isReflective: boolean = (partVeryReflective)
-			or (partSize.X > 2.5 or partSize.Y > 2.5 or partSize.Z > 2.5)
+	const fadeRange: number = (rangeType == "near") and (isReflective and FadeDistance or FadeDistance / 2)
+		or (isReflective and FadeDistance * 2 or FadeDistance)
 
+	const distFade: number = clamp(dist / fadeRange, 0, 1)
 
-		const fadeRange: number = (rangeType == "near") and (isReflective and FadeDistance or FadeDistance / 2)
-			or (isReflective and FadeDistance * 2 or FadeDistance)
+	const distanceFactor : number= clamp(1 - (dist / fadeRange), 0, 1)
 
-		const distFade: number = clamp(dist / fadeRange, 0, 1)
+	const toDecal: Vector3 = (partPosition - seatPos).Unit
 
-		const distanceFactor : number= clamp(1 - (dist / fadeRange), 0, 1)
+	const dot: number = clamp(carLook:Dot(toDecal), 0, 1)
+	const angleFade: number = clamp(math.sqrt(1 - dot) ^ 1.25, 0, 1)
+	local baseTransparency: number = (dot <= 0.1) and 1 or (distFade * 0.3 + angleFade * 0.7)
 
-		const toDecal: Vector3 = (partPosition - seatPos).Unit
+	const proximityFactor: number = (dist < MinFadeDistance) and (dist / MinFadeDistance) or 1
 
-		const dot: number = clamp(carLook:Dot(toDecal), 0, 1)
-		const angleFade: number = clamp(((1 - dot) ^ 2.5) * (distanceFactor * 2 + 0.7), 0, 1)
-		const baseTransparency: number = (dot <= 0.1) and 1 or (distFade * 0.2 + angleFade * 0.8)
-		const proximityFactor: number = (dist < MinFadeDistance) and (dist / MinFadeDistance) or 1
+	const dotClamped: number = clamp((dot - maxDot) / (1 - maxDot), 0, 1)
+	const angleContribution: number = 1 - dotClamped
 
-		const dotClamped: number = clamp((dot - maxDot) / (1 - maxDot), 0, 1)
-		const angleContribution: number = 1 - dotClamped
-		const distContribution: number = baseTransparency
+	const distContribution: number = baseTransparency
 
-		const faceNormalconst: Vector3 = Vector3.FromNormalId(decal.Face)
-		const faceNormalWorld: Vector3 = partCFrame:VectorToWorldSpace(faceNormalconst)
+	const faceNormalconst: Vector3 = Vector3.FromNormalId(decal.Face)
+	const faceNormalWorld: Vector3 = partCFrame:VectorToWorldSpace(faceNormalconst)
 
-		const toLight: Vector3 = (seatPos - partPosition).Unit
-		const facedot: number = clamp(faceNormalWorld:Dot(toLight), 0, 1)
+	const toLight: Vector3 = (seatPos - partPosition).Unit
+	const facedot: number = clamp(faceNormalWorld:Dot(toLight), 0, 1)
+	--	part:SetAttribute("DOT", facedot) -- Kept as reference for debugging
 
-		--	part:SetAttribute("DOT", facedot) -- Kept as reference for debugging
-
-		if facedot <= config.SignConfig.decalFacingDotThreshold then -- Usually near 0
-			continue
-		end
-
-		if dist < config.SignConfig.maxFadeDistance and dot > 0 then
-			const weightedTransparency = (baseTransparency * proximityFactor * angleContribution) / intensity
-			const weightedBrightness = ((1 + (1 - distContribution) * 0.25 + angleContribution * 0.25) * proximityFactor + (1 - proximityFactor))  * intensity
-			const weightedLightInfluence = ((distContribution * 0.5 + angleContribution * 0.5) * proximityFactor + (1 - proximityFactor)) / intensity
-
-			finalTransparency = math.min(finalTransparency, weightedTransparency)
-			finalBrightness += weightedBrightness
-			finalLightInfluence = math.min(finalLightInfluence, weightedLightInfluence)
-
-			hasActiveLight = true
-		end
+	if facedot <= config.SignConfig.decalFacingDotThreshold then -- Usually near 0
+		return {
+			transparency = -1,
+			brightness = -0,
+			lightInfluence =-1,
+		}
 	end
 
-	if not hasActiveLight then
-		finalTransparency = 1
-		finalBrightness = 0
-		finalLightInfluence = 1
-	else
-		finalTransparency = clamp(finalTransparency  , 0, 1)
-		finalBrightness   = clamp(finalBrightness * baseIntensity  , 0, 5)
-		finalLightInfluence        = clamp(finalLightInfluence   , 0, 1)
+	if dist < config.SignConfig.maxFadeDistance and dot > 0 then
+		if config.SignConfig.useRaycastForObstacles then
+			const configCustomExclude: {Instance} = config.General.occlusionRaycastExclude :: {Instance}
+
+			if #configCustomExclude > 0 then
+				rayParams.FilterDescendantsInstances = {source.Owner, table.unpack(configCustomExclude)}
+			else
+				rayParams.FilterDescendantsInstances = {source.Owner}
+			end
+
+			intensity *= _computeOcclusion(part, state.CFrame, state.Size, seatPos, SAMPLE_POINTS, rayParams, config)
+		end
+
+		transparency = (baseTransparency * proximityFactor * angleContribution) / intensity
+		brightness = ((1 + (1 - distContribution) * 0.25 + angleContribution * 0.25) * proximityFactor + (1 - proximityFactor))  * intensity
+		lightInfluence = ((distContribution * 0.5 + angleContribution * 0.5) * proximityFactor + (1 - proximityFactor)) / intensity
+
+		hasActiveLight = true
+	end
+
+	if config.SignConfig.isDebugConeAngleEnabled then
+		task.defer(utils.spawnDebugField, seatPos, carLook, maxDot,
+			60,
+			50,
+			config.SignConfig.debugBoxFolder or workspace
+		)
+
+		task.defer(utils.spawnDebugField, seatPos, carLook, maxDot,
+			120,
+			100,
+			config.SignConfig.debugBoxFolder or workspace
+		)
 	end
 
 	return {
-		transparency = finalTransparency,
-		brightness   = finalBrightness,
-		lightInfluence        = finalLightInfluence,
+		transparency = transparency,
+		brightness = brightness,
+		lightInfluence = lightInfluence,
+		hasActiveLight = hasActiveLight
 	}
+end
+
+--[=[
+	Public: Builds sample points to be used for raycasting
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function buildSamplePoints(quality: number)
+	for x: number = 0, quality do
+		for y: number = 0, quality do
+			table.insert(SAMPLE_POINTS,
+				Vector3.new(
+					(x / quality) - 0.5,
+					(y / quality) - 0.5,
+					0
+				)
+			)
+		end
+	end
 end
 
 -- Return public variables and API
 return table.freeze({
-	Name = "equations",
+	name = "equations",
 	computeSignIntensity = computeSignIntensity,
-	computeReflectorIntensity = computeReflectorIntensity
+	computeReflectorIntensity = computeReflectorIntensity,
+	buildSamplePoints = buildSamplePoints
 }) :: types.Equations

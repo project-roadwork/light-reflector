@@ -45,9 +45,25 @@ const utils: types.Utils = require("@self/client/utils")
 
 -- Local Variables
 local isRunning: boolean = false
+local hasInit: boolean = false
 
 -- Functions
 
+const function init(): ()
+	if hasInit then
+		return
+	end
+
+	debugger.print("Info", "[Init Module] 🟡 Initializing Light Reflector...")
+
+	register.init()
+	detect.init()
+	render.init()
+
+	hasInit = true
+
+	debugger.print("Info", "[Init Module] 🟢 Light Reflector Initialized!")
+end
 --[=[
 	Public: Starts the module
 
@@ -64,16 +80,17 @@ const function start() : ()
 
 	isRunning = true
 
-	debugger.print("Info","🟡 Starting!")
+	debugger.print("Info","[Init Module] 🟡 Starting...")
+
+	init() -- Backwards compatibility
 
 	config.lock()
 
 	register.start()
-
 	detect.start()
 	render.start()
 	-- ^ two separate loops since both are in different frequencies
-	debugger.print("Info","🟢 Successfully loaded!")
+	debugger.print("Info","[Init Module] 🟢 Successfully started!")
 
 	debug.profileend()
 end
@@ -87,7 +104,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function cleanup(): ()
+const function reset(): ()
 	const constraints: types.Constraints = config.getConfig().Constraints
 
 	debugger.assert(isRunning, "Warning", "Cleanup called before Start().")
@@ -110,8 +127,9 @@ end
 
 -- Return public variables and API
 return table.freeze({
+	init = init,
 	start = start,
-	cleanup = cleanup,
+	reset = reset,
 	config = config,
 	register = register,
 	utils = utils,

@@ -21,7 +21,7 @@ const CollectionService: CollectionService = game:GetService("CollectionService"
 const RunService: RunService = game:GetService("RunService")
 
 -- IMPORTANT: Debugger
-const debugger: types.Debugger = require("../shared/debugger")
+const debugger = require("../shared/debugger")
 
 -- IMPORTANT: Modules
 const types = require("../shared/types")
@@ -30,6 +30,7 @@ const config: types.Configuration = require("../shared/config")
 const utils: types.Utils = require("./utils")
 const sources: types.SourcesModule = require("./sources")
 const grid: types.GridModule = require("./grid")
+const states: types.StatesModule = require("./states")
 
 -- IMPORTANT: Configuration Variables
 local baseConfig: types.BaseConfig = config.getConfig()
@@ -37,10 +38,10 @@ local constraints: types.Constraints = baseConfig.Constraints
 local reflectorConfig: types.ReflectorConfig = baseConfig.ReflectorConfig
 local generalConfig: types.GeneralConfig = baseConfig.General
 local signConfig: types.SignConfig = baseConfig.SignConfig
-local isConfigTracked: boolean = false
 
--- Reflector Grid
+-- Grids
 const reflectorGrid: types.Grid = grid.newGrid(1900)
+const signGrid: types.Grid = grid.newGrid(1900)
 
 -- SurfaceGui Object Pool
 const surfaceGuiPool: types.Pool = utils.initPool()
@@ -49,6 +50,7 @@ const surfaceGuiPool: types.Pool = utils.initPool()
 const scriptConnections: { [RBXScriptConnection]: boolean } = {}
 const trackedAncestryInstances: { [Instance]: boolean } = {}
 const instanceToEntityId: {[Instance]: jecs.Entity} = {}
+local hasInit: boolean = false
 
 -- Debug Box Setup
 const debugBoxTemplate:BasePart = Instance.new("Part") -- forced to do instance.new instead of nil or else the type solver is going into a panic attack
@@ -81,13 +83,13 @@ const cachedQueries: types.CachedQueries = {
 const overlapDetectionParams: OverlapParams = OverlapParams.new()
 
 overlapDetectionParams.FilterType = Enum.RaycastFilterType.Include
-overlapDetectionParams.FilterDescendantsInstances = signConfig.signsFolders :: {Instance}
 
 --[=[
 	Public: Removes a vehicle
+
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function unregisterVehicle(car: (types.Vehicle & Instance)): ()
+const function removeVehicle(car: (types.Vehicle & Instance)): ()
 	const entityId: jecs.Entity<nil>? = instanceToEntityId[car]
 
 	if not entityId then
@@ -129,9 +131,10 @@ end
 
 --[=[
 	Public: Adds a vehicle
+
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function registerVehicle(car: Instance & types.Vehicle, isEnabled: (Instance) -> boolean, getIntensity: (Instance) -> number): ()
+const function addVehicle(car: Instance & types.Vehicle, isEnabled: (Instance) -> boolean, getIntensity: (Instance) -> number): ()
 	-- could have asserted but would flood the output with errors
 
 	if car == nil then
@@ -139,10 +142,10 @@ const function registerVehicle(car: Instance & types.Vehicle, isEnabled: (Instan
 		return
 	end
 
-	--if registeredVehicles[car] then
-	--	debugger.warn("Warning", "Vehicle already indexed in vehicle map.")
-	--	return
-	--	end
+	if instanceToEntityId[car] then
+		debugger.warn("Warning", "Vehicle already indexed in vehicle map.")
+		return
+	end
 
 	const seat: VehicleSeat? = car:FindFirstChildOfClass("VehicleSeat")
 
@@ -164,7 +167,6 @@ const function registerVehicle(car: Instance & types.Vehicle, isEnabled: (Instan
 		return
 	end
 
-	--registeredVehicles[car] = true
 	const entity: jecs.Entity<nil> = world:entity()
 
 	world:set(entity, components.VehicleInstance, car)
@@ -187,7 +189,7 @@ const function registerVehicle(car: Instance & types.Vehicle, isEnabled: (Instan
 	if not trackedAncestryInstances[car] then
 		const connection: RBXScriptConnection = utils.trackAncestryRemoval(car, function()
 			trackedAncestryInstances[car] = nil
-			unregisterVehicle(car)
+			removeVehicle(car)
 		end)
 
 		scriptConnections[connection] = true
@@ -197,152 +199,163 @@ end
 
 --[=[
 	Public: Processes reflectors and normalizes base color
+
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function registerReflector(part: Instance)
-	if part:GetAttribute(reflectorConfig.hybridCloneAttributeName) then
+const function addReflector(part: Instance)
+	const attributes: {[string]: any} = part:GetAttributes()
+
+	if attributes[reflectorConfig.hybridCloneAttributeName] then
 		return
 	end
 
-	if (reflectorConfig.isReflector(part) or part:HasTag(reflectorConfig.tagName)) and part:IsA("BasePart") then
+	if not part:IsA("BasePart") then
+		return
+	end
 
-		if part:IsA("MeshPart") then
-			const canKeepTexturesAttribute:boolean? = part:GetAttribute(reflectorConfig.canKeepTexturesAttribute)
+	if not (reflectorConfig.isReflector(part) or part:HasTag(reflectorConfig.tagName)) then
+		return
+	end
+
+	if part:IsA("MeshPart") then
+		const canKeepTexturesAttribute:boolean? = part:GetAttribute(reflectorConfig.canKeepTexturesAttribute)
+
+		const canKeepTextureProperty: boolean =
+			if typeof(canKeepTexturesAttribute) == "boolean"
+			then canKeepTexturesAttribute
+			else reflectorConfig.defaultCanKeepTextures
+
+		if canKeepTextureProperty == false then
+			if part.TextureID then
+				part.TextureID = ""
+			end
+		end
+	end
+
+	const isHybrid: boolean = reflectorConfig.isHybridEnabled and attributes[reflectorConfig.hybridAttributeName]
+
+	if isHybrid then
+		const clone: BasePart = part:Clone()
+
+		clone:SetAttribute(reflectorConfig.hybridCloneAttributeName, true)
+		CollectionService:RemoveTag(clone, reflectorConfig.tagName)
+
+		if clone:IsA("MeshPart") then
+			const canKeepTexturesAttribute:boolean? = clone:GetAttribute(reflectorConfig.canHybridKeepTexturesAttribute)
 
 			const canKeepTextureProperty: boolean =
 				if typeof(canKeepTexturesAttribute) == "boolean"
 				then canKeepTexturesAttribute
-				else reflectorConfig.defaultCanKeepTextures
+				else reflectorConfig.defaultHybridCanKeepTextures
 
-			if canKeepTextureProperty == false then
-				if part.TextureID then
-					part.TextureID = ""
+			if not canKeepTexturesAttribute then
+				if clone.TextureID then
+					clone.TextureID = ""
 				end
 			end
 		end
 
-		if reflectorConfig.isHybridEnabled and part:GetAttribute(reflectorConfig.hybridAttributeName) then
-			const clone: BasePart = part:Clone()
+		const hybridCanKeepColorsAttribute: boolean? = part:GetAttribute(reflectorConfig.hybridKeepColorsAttribute)
 
-			clone:SetAttribute(reflectorConfig.hybridCloneAttributeName, true)
-			CollectionService:RemoveTag(clone, reflectorConfig.tagName)
+		const canHybridKeepColors: boolean =
+			if typeof(hybridCanKeepColorsAttribute) == "boolean"
+			then hybridCanKeepColorsAttribute
+			else reflectorConfig.defaultCanHybridKeepColors
 
-			if clone:IsA("MeshPart") then
-				const canKeepTexturesAttribute:boolean? = clone:GetAttribute(reflectorConfig.canHybridKeepTexturesAttribute)
 
-				const canKeepTextureProperty: boolean =
-					if typeof(canKeepTexturesAttribute) == "boolean"
-					then canKeepTexturesAttribute
-					else reflectorConfig.defaultHybridCanKeepTextures
+		if part:IsA("UnionOperation") and canHybridKeepColors == false then part.UsePartColor = true end
 
-				if not canKeepTexturesAttribute then
-					if clone.TextureID then
-						clone.TextureID = ""
-					end
+		if reflectorConfig.isHybridFaceOffsetEnabled then
+			const offset: number = reflectorConfig.hybridOffset
+
+			const face: string? = part:GetAttribute("LRFace")
+			if face and utils.validFaces[face] then
+				const faceNormalconst: Vector3 = Vector3.FromNormalId(Enum.NormalId[face])
+				const faceNormalWorld: Vector3 = part.CFrame:VectorToWorldSpace(faceNormalconst)
+
+				const offsetDistance: number = abs(faceNormalWorld.X) > 0 and offset
+					or abs(faceNormalWorld.Y) > 0 and offset
+					or offset
+
+				clone.CFrame = part.CFrame + faceNormalWorld * (offsetDistance)
+			end
+		end -- an offset may be needed or else the neon clone and non-neon clone may overlap and flicker
+
+		clone.Name = reflectorConfig.hybridCloneName
+		clone.Transparency = 1
+		clone.CanCollide = false
+		clone.CanTouch = false
+		clone.CanQuery = false
+		clone.Parent = part.Parent
+
+		const entity: jecs.Entity<nil> = world:entity()
+
+		world:set(entity, components.Reflector, clone)
+		instanceToEntityId[clone] = entity
+
+		utils.normalizeBaseColor(clone, false) -- setting the second argument to false just sets the baseColor attribute
+
+		if not trackedAncestryInstances[clone] then
+			const connection: RBXScriptConnection = utils.trackAncestryRemoval(clone, function()
+				const state: types.ReflectorState? = world:get(entity, components.ReflectorState)
+
+				if state then
+					grid.remove(reflectorGrid,entity, state.CFrame.Position)
+					states.returnReflectorState(state)
+				else
+					grid.remove(reflectorGrid,entity, part.Position)
 				end
-			end
 
-			const hybridCanKeepColorsAttribute: boolean? = part:GetAttribute(reflectorConfig.hybridKeepColorsAttribute)
+				instanceToEntityId[part] = nil
+				trackedAncestryInstances[part] = nil
+				world:delete(entity)
+			end)
 
-			const canHybridKeepColors: boolean =
-				if typeof(hybridCanKeepColorsAttribute) == "boolean"
-				then hybridCanKeepColorsAttribute
-				else reflectorConfig.defaultCanHybridKeepColors
-
-
-			if part:IsA("UnionOperation") and canHybridKeepColors == false then part.UsePartColor = true end
-
-			if reflectorConfig.isHybridFaceOffsetEnabled then
-				const offset: number = reflectorConfig.hybridOffset
-
-				const face: string? = part:GetAttribute("LRFace")
-				if face and utils.validFaces[face] then
-					const faceNormalconst: Vector3 = Vector3.FromNormalId(Enum.NormalId[face])
-					const faceNormalWorld: Vector3 = part.CFrame:VectorToWorldSpace(faceNormalconst)
-
-					const offsetDistance: number = abs(faceNormalWorld.X) > 0 and offset
-						or abs(faceNormalWorld.Y) > 0 and offset
-						or offset
-
-					clone.CFrame = part.CFrame + faceNormalWorld * (offsetDistance)
-				end
-			end -- an offset may be needed or else the neon clone and non-neon clone may overlap and flicker
-
-			clone.Name = reflectorConfig.hybridCloneName
-			clone.Transparency = 1
-			clone.CanCollide = false
-			clone.CanTouch = false
-			clone.CanQuery = false
-			clone.Parent = part.Parent
-
-			const entity: jecs.Entity<nil> = world:entity()
-
-			world:set(entity, components.Reflector, clone)
-			instanceToEntityId[clone] = entity
-			--registeredReflectors[clone] = true
-			utils.normalizeBaseColor(clone, false) -- setting the second argument to false just sets the baseColor attribute
-
-			if not trackedAncestryInstances[clone] then
-				const connection: RBXScriptConnection = utils.trackAncestryRemoval(clone, function()
-					const state: types.ReflectorState? = world:get(entity, components.ReflectorState)
-
-					if state then
-						grid.remove(reflectorGrid,entity, state.CFrame.Position)
-					else
-						grid.remove(reflectorGrid,entity, part.Position)
-					end
-
-					instanceToEntityId[part] = nil
-					trackedAncestryInstances[part] = nil
-					world:delete(entity)
-				end)
-
-				scriptConnections[connection] = true
-				trackedAncestryInstances[clone] = true
-			end
-
-			grid.spawn(reflectorGrid, entity, clone.Position)
-		else
-			const entity: jecs.Entity<nil> = world:entity()
-
-			world:set(entity, components.Reflector, part)
-			instanceToEntityId[part] = entity
-
-			--registeredReflectors[part] = true
-			utils.normalizeBaseColor(part, true)
-
-			if not trackedAncestryInstances[part] then
-				const connection: RBXScriptConnection = utils.trackAncestryRemoval(part, function()
-					const state: types.ReflectorState? = world:get(entity, components.ReflectorState)
-
-					if state then
-						grid.remove(reflectorGrid,entity, state.CFrame.Position)
-					else
-						grid.remove(reflectorGrid,entity, part.Position)
-					end
-
-					instanceToEntityId[part] = nil
-					trackedAncestryInstances[part] = nil
-					world:delete(entity)
-
-				end)
-
-				scriptConnections[connection] = true
-				trackedAncestryInstances[part] = true
-			end
-
-
-			grid.spawn(reflectorGrid, entity, part.Position)
+			scriptConnections[connection] = true
+			trackedAncestryInstances[clone] = true
 		end
+
+		grid.spawn(reflectorGrid, entity, clone.Position)
+	else
+		const entity: jecs.Entity<nil> = world:entity()
+
+		world:set(entity, components.Reflector, part)
+		instanceToEntityId[part] = entity
+
+		utils.normalizeBaseColor(part, true)
+
+		if not trackedAncestryInstances[part] then
+			const connection: RBXScriptConnection = utils.trackAncestryRemoval(part, function()
+				const state: types.ReflectorState? = world:get(entity, components.ReflectorState)
+
+				if state then
+					grid.remove(reflectorGrid,entity, state.CFrame.Position)
+					states.returnReflectorState(state)
+				else
+					grid.remove(reflectorGrid,entity, part.Position)
+				end
+
+				instanceToEntityId[part] = nil
+				trackedAncestryInstances[part] = nil
+				world:delete(entity)
+
+			end)
+
+			scriptConnections[connection] = true
+			trackedAncestryInstances[part] = true
+		end
+
+
+		grid.spawn(reflectorGrid, entity, part.Position)
 	end
 end
 
-
 --[=[
 	Public: Removes reflectors from the reflector rable
+
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function unregisterReflector(part:BasePart): ()
+const function removeReflector(part:BasePart): ()
 	if reflectorConfig.isReflector(part) or part:HasTag(reflectorConfig.tagName) then
 		if instanceToEntityId[part] then
 			const entity: jecs.Entity<nil> = instanceToEntityId[part]
@@ -352,6 +365,7 @@ const function unregisterReflector(part:BasePart): ()
 
 				if state then
 					grid.remove(reflectorGrid,entity, state.CFrame.Position)
+					states.returnReflectorState(state)
 				else
 					grid.remove(reflectorGrid,entity, part.Position)
 				end
@@ -366,16 +380,18 @@ const function unregisterReflector(part:BasePart): ()
 			instanceToEntityId[part] = nil
 		end
 
-		--registeredReflectors[part] = nil
-
 		if part:GetAttribute(reflectorConfig.hybridCloneAttributeName) then
 			part:Destroy()
 		end
 	end
 end
 
-const function registerSign(part:Instance, rangeType: string?): ()
-	--registeredSigns[part::any] = if rangeType ~= nil then rangeType else "near" -- near and far range types does not really make a difference
+--[=[
+	Public: Adds a sign
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function addSign(part:Instance, rangeType: string?): ()
 	if instanceToEntityId[part] then
 		return
 	end
@@ -393,19 +409,35 @@ const function registerSign(part:Instance, rangeType: string?): ()
 
 				world:delete(entity)
 				instanceToEntityId[part] = nil
+				grid.remove(signGrid, entity)
 			end)
 
 			scriptConnections[connection] = true
 			trackedAncestryInstances[part] = true
 		end
+		grid.spawn(signGrid, entity, part.Position)
 	end
-
 end
 
-const function unregisterSign(part:Instance): ()
+--[=[
+	Public: Removes a sign
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function removeSign(part:Instance): ()
 	if instanceToEntityId[part] then
 		const entity: jecs.Entity<nil>? = instanceToEntityId[part]
 		if entity and world:contains(entity) then
+			const signState: types.SignEntity? = world:get(entity, components.SignState)
+
+			if signState then
+				const surfaceGuiState: types.SurfaceGuiState? = signState.surfaceGuiState
+				const decalState: types.DecalState? = signState.decalState
+
+				states.returnSignState(signState, surfaceGuiPool)
+			end
+
+			grid.remove(signGrid, entity)
 			world:delete(entity)
 		end
 		instanceToEntityId[part] = nil
@@ -424,13 +456,13 @@ const function _cacheSigns():  ()
 
 	if isTagsEnabled then
 		for _, part: BasePart in CollectionService:GetTagged(tagName) do
-			registerSign(part)
+			addSign(part)
 		end
 
 		if constraints.IS_STREAMING_ENABLED then
-			const instanceAddedSignal:RBXScriptConnection = CollectionService:GetInstanceAddedSignal(tagName):Connect(registerSign)
+			const instanceAddedSignal:RBXScriptConnection = CollectionService:GetInstanceAddedSignal(tagName):Connect(addSign)
 
-			const instanceRemovedSignal:RBXScriptConnection = CollectionService:GetInstanceRemovedSignal(tagName):Connect(unregisterSign)
+			const instanceRemovedSignal:RBXScriptConnection = CollectionService:GetInstanceRemovedSignal(tagName):Connect(removeSign)
 
 			scriptConnections[instanceAddedSignal] = true
 			scriptConnections[instanceRemovedSignal] = true
@@ -439,16 +471,16 @@ const function _cacheSigns():  ()
 	else
 		for _: number, folder: Folder in signConfig.signsFolders :: {Folder} do
 			for _: number, part:BasePart in folder:GetDescendants() do
-				registerSign(part)
+				addSign(part)
 			end
 
 			if constraints.IS_STREAMING_ENABLED then
 				const descendantAddedSignal:RBXScriptConnection = folder.DescendantAdded:Connect(function(part)
-					registerSign(part) -- cannot do :Connect(registerSign) or else it would cause type issues
+					addSign(part) -- cannot do :Connect(addSign) or else it would cause type issues
 				end)
 
 				const descendantRemovingSignal:RBXScriptConnection = folder.DescendantRemoving:Connect(function(part)
-					unregisterSign(part)
+					removeSign(part)
 				end)
 
 				scriptConnections[descendantAddedSignal] = true
@@ -492,12 +524,12 @@ const function getPartsByRaycast(): {[BasePart]: types.RangeType}
 		end
 
 		for _: number, part: BasePart in generalConfig.GetPartsInBox(workspace, seatCF * signConfig.raycastBoxOffsetNear, signConfig.raycastBoxSizeNear, overlapDetectionParams) do
-			registerSign(part, "near")
+			addSign(part, "near")
 		end
 
 		for _: number, part: BasePart in generalConfig.GetPartsInBox(workspace, seatCF * signConfig.raycastBoxOffsetFar, signConfig.raycastBoxSizeFar, overlapDetectionParams) do
 			--if not partsDictionary[part] then partsDictionary[part] = "far" end
-			registerSign(part, "far")
+			addSign(part, "far")
 		end
 	end
 
@@ -513,22 +545,22 @@ end
 const function _cacheReflectors(): ()
 	if reflectorConfig.isTagsEnabled then
 		for _: number, part:Instance in CollectionService:GetTagged(reflectorConfig.tagName) do
-			registerReflector(part)
+			addReflector(part)
 		end
 
-		const instanceAddedSignal:RBXScriptConnection = CollectionService:GetInstanceAddedSignal(reflectorConfig.tagName):Connect(registerReflector)
-		const instanceRemovedSignal:RBXScriptConnection = CollectionService:GetInstanceRemovedSignal(reflectorConfig.tagName):Connect(unregisterReflector)
+		const instanceAddedSignal:RBXScriptConnection = CollectionService:GetInstanceAddedSignal(reflectorConfig.tagName):Connect(addReflector)
+		const instanceRemovedSignal:RBXScriptConnection = CollectionService:GetInstanceRemovedSignal(reflectorConfig.tagName):Connect(removeReflector)
 
 		scriptConnections[instanceAddedSignal] = true
 		scriptConnections[instanceRemovedSignal] = true
 	else
 		for _: number, Folder: any in reflectorConfig.reflectorsFolder do
 			for _: number, part:Instance in Folder:GetDescendants() do
-				registerReflector(part)
+				addReflector(part)
 			end
 
-			const descendantAddedSignal:RBXScriptConnection = Folder.DescendantAdded:Connect(registerReflector::any)
-			const DescendantRemovingSignal:RBXScriptConnection = Folder.DescendantRemoving:Connect(unregisterReflector::any)
+			const descendantAddedSignal:RBXScriptConnection = Folder.DescendantAdded:Connect(addReflector::any)
+			const DescendantRemovingSignal:RBXScriptConnection = Folder.DescendantRemoving:Connect(removeReflector::any)
 
 			scriptConnections[descendantAddedSignal] = true
 			scriptConnections[DescendantRemovingSignal] = true
@@ -567,6 +599,53 @@ end
 const function getWorldUtils(): (jecs.World, types.Components, {[Instance]: jecs.Entity}, types.CachedQueries)
 	return world, components, instanceToEntityId, cachedQueries
 end
+
+--[=[
+	Public: Initializes the register
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function init(): ()
+	if hasInit then
+		return
+	end
+
+	if not world then
+		debugger.fatal("FatalInit","[Register Module] 🔴 JECS (an Entity Component System) failed to load the world.")
+	end
+
+	config.onChange(function(NEW_CONFIG: types.BASE_CONFIG)
+		baseConfig = NEW_CONFIG
+		constraints = NEW_CONFIG.Constraints
+		reflectorConfig = NEW_CONFIG.ReflectorConfig
+		generalConfig = NEW_CONFIG.General
+		signConfig = NEW_CONFIG.SignConfig
+
+		overlapDetectionParams.FilterDescendantsInstances = signConfig.signsFolders :: {Instance}
+	end)
+
+	overlapDetectionParams.FilterDescendantsInstances = signConfig.signsFolders :: {Instance}
+
+	_initDebugBox()
+
+	hasInit = true
+end
+
+--[=[
+	Public: Starts the register
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function start(): ()
+	init() -- Most likely is not needed, but adding it anyway in case someone uses this module by itself
+
+	if not constraints.IS_RAYCAST_INDEXING_ENABLED then
+		_cacheSigns()
+	end
+
+	_cacheReflectors()
+end
+
 --[=[
 	Public: Disconnects the connections in the table 'scriptConnections'
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
@@ -582,28 +661,6 @@ const function clearConnections(): ()
 	end
 
 	table.clear(scriptConnections)
-end
-
-const function start(): ()
-	-- Start config tracking
-	if isConfigTracked == false then
-		config.onChange(function(NEW_CONFIG: types.BASE_CONFIG)
-			baseConfig = NEW_CONFIG
-			constraints = NEW_CONFIG.Constraints
-			reflectorConfig = NEW_CONFIG.ReflectorConfig
-			generalConfig = NEW_CONFIG.General
-			signConfig = NEW_CONFIG.SignConfig
-		end)
-		isConfigTracked = true
-	end
-
-	_initDebugBox()
-
-	if not constraints.IS_RAYCAST_ENABLED then
-		_cacheSigns()
-	end
-
-	_cacheReflectors()
 end
 
 --[=[
@@ -661,14 +718,17 @@ const function reset(): ()
 	end
 
 	grid.empty(reflectorGrid)
+	grid.empty(signGrid)
 
 	local toDelete: {jecs.Entity} = {}
 
-	for entity: jecs.Entity in world:query() do
+	--for entity: jecs.Entity in world:query() do
+	for instance: Instance, entity: jecs.Entity in instanceToEntityId do
 		table.insert(toDelete, entity)
 	end
 
 	for _: number, entity: jecs.Entity in toDelete do
+		print("delete  ent")
 		world:delete(entity)
 	end
 
@@ -680,19 +740,23 @@ end
 return table.freeze({
 	name = "register",
 
+	init = init,
 	start = start,
 
 	reflectorGrid = reflectorGrid,
+	signGrid = signGrid,
 
 	debugBoxTemplate = debugBoxTemplate,
 	surfaceGuiPool = surfaceGuiPool,
 
 	getWorldUtils = getWorldUtils,
 
-	registerVehicle = registerVehicle,
-	unregisterVehicle = unregisterVehicle,
-	registerReflector = registerReflector,
-	unregisterReflector = unregisterReflector,
+	addVehicle = addVehicle,
+	removeVehicle = removeVehicle,
+	addReflector = addReflector,
+	removeReflector = removeReflector,
+	addSign = addSign,
+	removeSign = removeSign,
 
 	clearConnections = clearConnections,
 	reset = reset,

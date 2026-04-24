@@ -29,16 +29,16 @@ const equations: types.Equations = require("./equations")
 const sources: types.SourcesModule = require("./sources")
 const grid: types.GridModule = require("./grid")
 const register: types.Register  = require("./register")
+const states: types.StatesModule = require("./states")
 const jecs: types.JecsModule = require("../shared/jecs")
-const constraints = config.getConfig().Constraints
 
 -- IMPORTANT: Register Variables
-const world: jecs.World,
-components: types.Components,
-instancetoEntityId: {[Instance]: jecs.Entity},
-cachedQueries: types.CachedQueries = register.getWorldUtils()
+const world: jecs.World, components: types.Components,
+	instancetoEntityId: {[Instance]: jecs.Entity},
+	cachedQueries: types.CachedQueries = register.getWorldUtils()
 
 const reflectorGrid: types.Grid = register.reflectorGrid
+const signGrid: types.Grid = register.signGrid
 const surfaceGuiPool: types.Pool = register.surfaceGuiPool
 const scriptConnections: { [RBXScriptConnection]: boolean } = register.scriptConnections
 const activeReflectorEntities: { [jecs.Entity]: boolean } = {}
@@ -53,8 +53,305 @@ local isConfigTracked: boolean = false
 
 -- IMPORTANT: Module Public and Private Variables
 local currentDetectedEntities: { [jecs.Entity]: boolean } = {}
+local areStatesDeactivated: boolean = false
 local _detectedEntitiesThisFrame: { [jecs.Entity]: boolean } = {}
 local _runnerThread: thread?
+local hasInit: boolean = false
+const min: (number, number) -> number = math.min
+
+-- Miscellaneous
+const clamp: (number, number, number) -> number = math.clamp
+
+--[=[
+	Private: Deactivates all states
+	@private
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function _deactivateAllStates(): ()
+	for entity: jecs.Entity<nil>, signState: types.SignEntity in cachedQueries.SignStates do
+		if signState.partRenderMode == "SurfaceGui" then
+			const state: types.SurfaceGuiState? = signState.surfaceGuiState
+
+			if state then
+				state.targetTransparency = 1
+				state.targetBrightness = 0
+				state.targetLightInfluence = 1
+			end
+		elseif signState.partRenderMode == "Decal" then
+			const state: types.DecalState? = signState.decalState
+
+			if state then
+				state.targetBrightness = 0
+			end
+		end
+	end
+
+	for entity: jecs.Entity<nil>, part:BasePart, state: types.ReflectorState in cachedQueries.Reflectors do
+		state.targetIntensity = 0
+		state.isActive = false
+
+		if state.baseColor then
+			part.Color = state.baseColor
+			part.Material = reflectorConfig.inactiveMaterial
+		end
+	end
+end
+
+--[=[
+	Private: Processes a reflector
+	@private
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function _processReflector(entity: jecs.Entity, source: types.LightSource, MPH: number)
+	const part: BasePart? = world:get(entity, components.Reflector)
+
+	if not part then
+		debugger.warn("Entity is missing a Reflector component")
+		return
+	end
+
+	activeReflectorEntities[entity] = true
+
+	local state: types.ReflectorState? = world:get(entity, components.ReflectorState)
+
+	if not state then
+		state = states.acquireReflectorState(part, baseConfig, reflectorGrid)
+		world:set(entity, components.ReflectorState, state)
+	end
+
+	if not state then
+		return -- have to add this because of type checker
+	end
+
+	if state.doesReflectorMove then
+		const newCFrame: CFrame = part.CFrame
+
+		const oldX: number, oldZ: number = state.cellKey[1], state.cellKey[2]
+		const newX: number?, newZ: number? = grid.getCellKey(reflectorGrid, newCFrame.Position)
+
+		if newX and newZ then
+			if oldX ~= newX or oldZ ~= newZ then
+				grid.remove(reflectorGrid, entity) -- old cell
+				grid.spawn(reflectorGrid, entity, newCFrame.Position) -- new cell
+				state.cellKey = {newX, newZ}
+			end
+		end
+
+		state.CFrame = part.CFrame
+
+		const slopeNormalWorld: Vector3? = if state.isWedge then part.CFrame:VectorToWorldSpace(Vector3.new(0,1,-1).Unit) else nil
+
+		local faceNormalWorld: Vector3?
+		if state.faceAttributeName and utils.validFaces[state.faceAttributeName] then
+			faceNormalWorld = newCFrame:VectorToWorldSpace(Vector3.FromNormalId(Enum.NormalId[state.faceAttributeName]))
+		end
+
+		state.slopeNormalWorld = slopeNormalWorld
+		state.faceNormalWorld = faceNormalWorld
+	end
+
+	const intensity: number, transparency: number = equations.computeReflectorIntensity(part, state, source, MPH, baseConfig)
+
+	if transparency < 0 then
+		return
+	end -- A negative number would mean that the function returned mid-way because the source was not facing the reflector
+
+	state.targetIntensity += intensity
+	if state.isHybrid then
+		state.targetTransparency = min(state.targetTransparency, transparency)
+	end
+end
+
+--[=[
+	Private: Processes a sign
+	@private
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function _processSign(entity: jecs.Entity, source: types.LightSource)
+	const part: Instance? = world:get(entity, components.Sign)
+
+	if not part then
+		return
+	end
+
+	if not part:IsA("BasePart") then
+		debugger.warn("Warning", `[Detect] Entity: {entity} | Sign part {part.Name} at {part:GetFullName()} is NOT a BasePart`)
+		return
+	end
+
+	local finalTransparency:number = 1
+	local finalBrightness:number = 0
+	local finalLightInfluence:number = 1
+
+	local signState: types.SignEntity? = world:get(entity, components.SignState)
+
+	if not signState then
+		signState = states.acquireSignState(part, baseConfig)
+		world:set(entity, components.SignState, signState)
+	end
+
+	if not signState then
+		return -- have to add this because of type checker
+	end
+
+	if signState.doesSignMove then
+		signState.CFrame = part.CFrame
+		signState.Size = part.Size
+	end
+
+	local mainDecal: Decal? = signState.mainDecal
+
+	if not mainDecal then
+		mainDecal = part:FindFirstChild(signConfig.mainDecalName) :: Decal?
+		-- ^ unfortunately one cannot set instances as attributes
+		if not mainDecal then
+			for _:number, decal:Instance in part:GetChildren() do
+				if decal:IsA("Decal") then
+					const name = decal.Name
+
+					if signConfig.isMainDecal(decal) then
+						mainDecal = decal
+						decal.Name = signConfig.mainDecalName
+						break
+					end
+				end
+			end
+		end
+
+		signState.mainDecal = mainDecal
+	end
+
+	if not mainDecal then return end
+
+	const isRenderModeSurfaceGui: boolean = signState.partRenderMode == "SurfaceGui"
+
+	-- 2.2.0 patch: add this if-statement immediately before `.computeSignIntensity()` is called, or else it would have the wrong CFrames and size
+	if isRenderModeSurfaceGui then
+		if part:GetAttribute("IsFixed") ~= true then
+			utils.fixPartOrientation(part, mainDecal)
+			signState.CFrame = part.CFrame
+			signState.Size = part.Size
+		end
+	end
+
+	const signData: {brightness: number, lightInfluence: number, transparency: number, hasActiveLight: boolean} = equations.computeSignIntensity(part, signState, source, mainDecal, "near", baseConfig)
+
+	if signData.transparency < 0 then
+		return
+	end
+
+	if signData.hasActiveLight then
+		finalTransparency = min(finalTransparency, signData.transparency)
+		finalBrightness += signData.brightness
+		finalLightInfluence = min(finalLightInfluence, signData.lightInfluence)
+	else
+		finalTransparency = 1
+		finalBrightness = 0
+		finalLightInfluence = 1
+	end
+
+	finalTransparency = clamp(finalTransparency  , 0, 1)
+	finalBrightness   = clamp(finalBrightness * signState.baseIntensity , 0, 5)
+	finalLightInfluence = clamp(finalLightInfluence   , 0, 1)
+
+	if finalTransparency >= signConfig.inactiveTransparencyThreshold  then
+		return
+	end
+
+	if isRenderModeSurfaceGui then
+		local state: types.SurfaceGuiState? = signState.surfaceGuiState
+
+		if not state then
+			state = states.acquireSurfaceGuiState()
+			signState.surfaceGuiState = state
+		end
+
+		if not state then return end -- have to add this due to type weird errors
+
+		local gui: types.SurfaceGuiTemplate? = state.gui
+
+		if not gui then
+			gui = surfaceGuiPool:GetObject() :: types.SurfaceGuiTemplate
+
+			if gui == nil then debugger.warn("Warning", "Pool contains nil instances.") return end
+
+			gui.Face = mainDecal.Face
+			gui.Adornee = part
+			gui.Parent = part
+			gui.Enabled = true
+			gui.ImageLabel.Image = mainDecal.Texture
+			gui.ImageLabel.ImageTransparency = mainDecal.Transparency
+			state.gui = gui
+		end
+
+		if gui and gui.Parent == nil then
+			gui.Face = mainDecal.Face
+			gui.Parent = part
+			gui.Adornee = part
+			gui.Enabled = true
+			gui.ImageLabel.Image = mainDecal.Texture
+			gui.ImageLabel.ImageTransparency = mainDecal.Transparency
+		end
+
+		state.targetTransparency = finalTransparency
+		state.targetBrightness = finalBrightness
+		state.targetLightInfluence = finalLightInfluence
+
+		_detectedEntitiesThisFrame[entity] = true
+	end
+
+	if signState.partRenderMode == "Decal" then
+		local state: types.DecalState? = signState.decalState
+
+		if not state then
+			local baseColor: Color3 = Color3.fromRGB(255, 255, 255)
+			const attribute: Color3? = mainDecal:GetAttribute("BaseColor")
+
+			if attribute then
+				baseColor = attribute
+			else
+				baseColor = mainDecal.Color3
+				mainDecal:SetAttribute("BaseColor", baseColor)
+			end
+
+			state = states.acquireDecalState()
+			state.baseColor = baseColor
+			signState.decalState = state
+		end
+
+		if not state then return end -- have to add this line again due to type errors
+
+		state.targetBrightness = finalBrightness - (finalTransparency * 2)
+
+		_detectedEntitiesThisFrame[entity] = true
+	end
+end
+
+--[=[
+	Public: Initializes the detection module
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function init(): ()
+	if hasInit then
+		return
+	end
+
+	config.onChange(function(NEW_CONFIG: types.BASE_CONFIG)
+		baseConfig = NEW_CONFIG
+		constraints = NEW_CONFIG.Constraints
+		reflectorConfig = NEW_CONFIG.ReflectorConfig
+		generalConfig = NEW_CONFIG.General
+		signConfig = NEW_CONFIG.SignConfig
+	end)
+
+	equations.buildSamplePoints(constraints.OCCLUSION_RAYCAST_QUALITY)
+
+	hasInit = true
+end
 
 --[=[
 	Public: Starts zone detection/boundary loop
@@ -63,32 +360,8 @@ local _runnerThread: thread?
 ]=]
 const function start() : ()
 	_runnerThread = constraints.SPAWN(utils.pcallRetry, function()
-
-		const debugBoxTemplate: BasePart = register.debugBoxTemplate
-		-- pcall replaced with pcallRetry used in the Start function
-		--	local partsDictionary: {[BasePart]: types.RangeType}
-
-		--	if not constraints.IS_RAYCAST_ENABLED then
-		--	partsDictionary = {} -- no longer rneeded b/c of Jecs
-		-- OLD REFERENCE: partsDictionary = registeredSigns
-		-- ^ Cacheparts is a weak table, so probably better to clone everything to create an interm (temp) strong ref?
-		--end
-
 		-- Start config tracking
-		if isConfigTracked == false then
-			config.onChange(function(NEW_CONFIG: types.BASE_CONFIG)
-				baseConfig = NEW_CONFIG
-				constraints = NEW_CONFIG.Constraints
-				reflectorConfig = NEW_CONFIG.ReflectorConfig
-				generalConfig = NEW_CONFIG.General
-				signConfig = NEW_CONFIG.SignConfig
-			end)
-			isConfigTracked = true
-		end
-
 		while true do
-			-- Variables
-
 
 			const deltaTime: number, MPH: number = utils.adaptiveWaitWithSourcesOverride(task.wait, constraints.BOUNDARY_MIN_FPS,
 				constraints.BOUNDARY_MAX_FPS, utils.getFastestDriveSeat(cachedQueries.VehicleInstances))
@@ -97,420 +370,109 @@ const function start() : ()
 			--    so the FPS numbers should be low
 
 			-- This loop SHOULD run slower than the `runRenderLoop()`
+
 			table.clear(_detectedEntitiesThisFrame)
 			table.clear(activeReflectorEntities)
 
-			--for entity in world:query(components.Reflector):with(components.ActiveReflector) do
-			--	world:remove(entity, components.ActiveReflector)
-			--end
+			const debugBoxTemplate: BasePart = register.debugBoxTemplate
 
-			const isSourceActive: boolean = sources.anyActive()
-			const isDark: boolean = dark()
+			if not sources.anyActive() or not dark() then
+				if debugBoxTemplate then
+					debugBoxTemplate.Transparency = 0.95
+				end
 
-			--if constraints.IS_RAYCAST_ENABLED == false then
-			--	table.clear(partsDictionary)
-			--	for part: BasePart, range: types.RangeType in registeredSigns do
-			--		partsDictionary[part] = range
-			--	end
-
-			if constraints.IS_RAYCAST_ENABLED then
-				register.getPartsByRaycast()
+				if areStatesDeactivated ~= true then
+					_deactivateAllStates()
+					areStatesDeactivated = true
+				end
+				continue
 			end
 
-			if not isSourceActive or not isDark then
-				if debugBoxTemplate then debugBoxTemplate.Transparency = 0.95 end
+			areStatesDeactivated = false
 
-				for entity: jecs.Entity<nil>, signState: types.SignEntity in cachedQueries.SignStates do
-
-					if signState.partRenderMode == "SurfaceGui" then
-						const state: types.SurfaceGuiState? = signState.surfaceGuiState
-
-						if state then
-							state.targetTransparency = 1
-							state.targetBrightness = 0
-							state.targetLightInfluence = 1
-						end
-					elseif signState.partRenderMode == "Decal" then
-						const state: types.DecalState? = signState.decalState
-
-						if state then
-							state.targetBrightness = 0
-						end
-					end
-				end
-
-				for entity: jecs.Entity<nil>, part:BasePart, state: types.ReflectorState in cachedQueries.Reflectors do
-					--	state.currentIntensity = 0
-					state.targetIntensity = 0
-					state.isActive = false
-
-					if state.baseColor then
-						part.Color = state.baseColor
-						part.Material = reflectorConfig.inactiveMaterial
-					end
-				end
-
-				if not isDark then
-					--	task.wait(15)
-				end
-
-				continue
+			if constraints.IS_RAYCAST_INDEXING_ENABLED then
+				register.getPartsByRaycast()
 			end
 
 			const activeSources: {types.LightSource} = sources.getAllActive()
 
 			if reflectorConfig.isEnabled then
-				--	grid.clear()
-
 				for entity: jecs.Entity<nil>, state: types.ReflectorState in cachedQueries.ReflectorStates do
-					--const state: types.ReflectorState = reflectorStatesByPart[part]
 					if state then
-						state.targetIntensity = 0
-						state.targetTransparency = 1
+						if state.targetIntensity ~= 0 then
+							state.targetIntensity = 0
+						end
+
+						if state.targetTransparency ~= 1 then
+							state.targetTransparency = 1
+						end
+
 					end
-
-
 				end
+			end
 
-				for _: number, source: types.LightSource in activeSources do
-					const pos: Vector3 = source.getPosition()
+			for _: number, source: types.LightSource in activeSources do
+				const pos: Vector3 = source.getPosition()
+
+				if reflectorConfig.isEnabled then
 					const nearbyReflectors: {jecs.Entity<nil>}? = grid.query(reflectorGrid, pos) :: {jecs.Entity<nil>}
 
-					if not nearbyReflectors then continue end
+					if not nearbyReflectors then
+						continue
+					end
 
 					for i = 1, #nearbyReflectors do
-
 						const entity: jecs.Entity<nil> = nearbyReflectors[i]
 
-						if not entity then continue end
-
-						const part: BasePart? = world:get(entity, components.Reflector)
-
-						if not part then
-							debugger.warn("Entity is missing a Reflector component")
+						if not entity then
 							continue
 						end
 
-						activeReflectorEntities[entity] = true
-						--world:add(entity, components.ActiveReflector)
-						--local state: types.ReflectorState = reflectorStatesByPart[part]
-						local state: types.ReflectorState? = world:get(entity, components.ReflectorState)
+						_processReflector(entity, source, MPH)
+					end
+				end
 
-						if not state then -- Cache values
-							const partCFrame: CFrame = part.CFrame
+				if signConfig.isEnabled then
+					const nearbySigns: {jecs.Entity<nil>}? = grid.query(signGrid, pos) :: {jecs.Entity<nil>}
 
-							const cellX: number?, cellZ: number? = grid.getCellKey(reflectorGrid, partCFrame.Position)
+					if not nearbySigns then
+						continue
+					end
 
-							const isHybrid: boolean = if reflectorConfig.isHybridEnabled then part:GetAttribute(reflectorConfig.hybridAttributeName) else false
-							const hybridTransparencyAttribute: number? = if isHybrid then part:GetAttribute(reflectorConfig.hybridTransparencyAttribute) else nil
-							const hybridCanKeepColorsAttribute: boolean? = if isHybrid then part:GetAttribute(reflectorConfig.hybridKeepColorsAttribute) else nil
+					for i = 1, #nearbySigns do
+						const entity: jecs.Entity<nil> = nearbySigns[i]
 
-							const useWedge: boolean = reflectorConfig.useWedgeFacingDetection
-							const isWedge: boolean = useWedge and (part:IsA("WedgePart") or (part:IsA("Part") and part.Shape == Enum.PartType.Wedge))
-
-							const slopeNormalWorld: Vector3? = if isWedge then partCFrame:VectorToWorldSpace(Vector3.new(0,1,-1).Unit) else nil
-
-							const faceAttributeName: string = part:GetAttribute(reflectorConfig.faceAttributeName)
-
-							local faceNormalWorld: Vector3?
-							if faceAttributeName and utils.validFaces[faceAttributeName] then
-								faceNormalWorld = partCFrame:VectorToWorldSpace(Vector3.FromNormalId(Enum.NormalId[faceAttributeName]))
-							end
-
-							state = {
-								isActive = false,
-
-								currentIntensity = 0,
-								lastIntensity = 0.1,
-								targetIntensity = 0,
-								targetTransparency = 1,
-								currentTransparency = 1,
-								lastTransparency = 0,
-
-								cellKey = {cellX or 0, cellZ or 0},
-
-								baseColor = part:GetAttribute("BaseColor"),
-								lastColor = Color3.fromRGB(1,2,3),
-								lastMaterial = Enum.Material.Rock,
-
-								isWedge = isWedge,
-								isHybrid = isHybrid,
-								CFrame = partCFrame,
-								baseIntensity = part:GetAttribute(constraints.BASE_INTENSITY_ATTRIBUTE) or 1,
-
-								hybridFadeRange = if isHybrid then
-									(part:GetAttribute(reflectorConfig.hybridMaxDistanceAttribute) or reflectorConfig.defaultHybridMaxDistance) else nil,
-
-								hybridMinDistance = if isHybrid then
-									(part:GetAttribute(reflectorConfig.hybridMinDistanceAttribute) or reflectorConfig.defaultHybridMinDistance) else nil,
-
-								hybridTransparencyMultiplier = if typeof(hybridTransparencyAttribute) == "number" then hybridTransparencyAttribute else
-									reflectorConfig.defaultHybridTransparencyMultiplier,
-
-								canHybridKeepColors = if typeof(hybridCanKeepColorsAttribute) == "boolean" then hybridCanKeepColorsAttribute
-									else reflectorConfig.defaultCanHybridKeepColors,
-
-								faceAttributeName = faceAttributeName,
-								slopeNormalWorld = slopeNormalWorld,
-								faceNormalWorld = faceNormalWorld,
-
-								doesReflectorMove = part:GetAttribute(generalConfig.movingPartAttribute),
-							}:: types.ReflectorState
-							--reflectorStatesByPart[part] = state
-
-							world:set(entity, components.ReflectorState, state)
+						if not entity then
+							continue
 						end
 
-						--print(world:get(entity, components.ReflectorState))
-
-						if not state then
-							continue -- have to add this because of type checker
-						end
-
-						if state.doesReflectorMove then
-							const newCFrame: CFrame = part.CFrame
-
-							const oldX: number, oldZ: number = state.cellKey[1], state.cellKey[2]
-							const newX: number?, newZ: number? = grid.getCellKey(reflectorGrid, newCFrame.Position)
-
-							if newX and newZ then
-								if oldX ~= newX or oldZ ~= newZ then
-									grid.remove(reflectorGrid, entity) -- old cell
-									grid.spawn(reflectorGrid, entity, newCFrame.Position) -- new cell
-									state.cellKey = {newX, newZ}
-								end
-							end
-
-							state.CFrame = part.CFrame
-
-							const slopeNormalWorld: Vector3? = if state.isWedge then part.CFrame:VectorToWorldSpace(Vector3.new(0,1,-1).Unit) else nil
-
-							local faceNormalWorld: Vector3?
-							if state.faceAttributeName and utils.validFaces[state.faceAttributeName] then
-								faceNormalWorld = newCFrame:VectorToWorldSpace(Vector3.FromNormalId(Enum.NormalId[state.faceAttributeName]))
-							end
-
-							state.slopeNormalWorld = slopeNormalWorld
-							state.faceNormalWorld = faceNormalWorld
-						end
-
-						const intensity: number | boolean, transparency: number | boolean = equations.computeReflectorIntensity(part, state, source, MPH, baseConfig)
-
-						if typeof(intensity) == "boolean" or typeof(transparency) == "boolean" then continue end
-
-						state.targetIntensity += intensity
-						if state.isHybrid then
-							state.targetTransparency = math.min(state.targetTransparency, transparency)
-						end
-
-						--print( state.currentIntensity)
+						_processSign(entity, source)
 					end
 				end
 			end
+
 
 			if signConfig.isEnabled then
-				for entity: jecs.Entity<nil>, part: Instance, rangeType: types.RangeType in cachedQueries.Signs do
-					if not isSourceActive or not isDark then
-						continue
-					end
-
-					if part == nil then
-						debugger.warn(`Sign part is nil for entity: {entity}`)
-						continue
-					end
-
-					if not part:IsA("BasePart") then
-						debugger.warn(`Sign part is NOT a BasePart for entity: {entity}`)
-						continue
-					end
-
-					--local entity: types.SignEntity = signEntitiesByPart[part]
-					local signState: types.SignEntity? = world:get(entity, components.SignState)
-
+				for entity: jecs.Entity<nil>, signState: types.SignEntity in cachedQueries.SignStates do
 					if not signState then
-						local partRenderMode: "Decal" | "SurfaceGui" = part:GetAttribute(signConfig.partRenderModeAttributeName)
-						partRenderMode = partRenderMode or constraints.SIGNS_PRIMARY_RENDER_MODE :: "Decal" | "SurfaceGui"
-
-						signState = {
-							CFrame = part.CFrame,
-							Size = part.Size,
-							partVeryReflective = part:GetAttribute("VeryReflective"),
-
-							doesSignMove = part:GetAttribute(generalConfig.movingPartAttribute),
-
-							partRenderMode = partRenderMode,
-
-							surfaceGuiState = nil,
-							decalState = nil,
-
-							mainDecal = nil,
-						} :: types.SignEntity
-
-						world:set(entity, components.SignState, signState)
-					end
-
-					if not signState then
-						continue -- have to add this because of type checker
-					end
-
-					if signState.doesSignMove then
-						signState.CFrame = part.CFrame
-						signState.Size = part.Size
-					end
-
-					local mainDecal: Decal? = signState.mainDecal
-
-					if not mainDecal then
-						mainDecal = part:FindFirstChild(signConfig.mainDecalName) :: Decal?
-						-- ^ unfortunately one cannot set instances as attributes
-						if not mainDecal then
-							for _:number, decal:Instance in part:GetChildren() do
-								if decal:IsA("Decal") then
-									const name = decal.Name
-
-									if signConfig.isMainDecal(decal) then
-										mainDecal = decal
-										decal.Name = signConfig.mainDecalName
-										break
-									end
-								end
-							end
-						end
-
-						signState.mainDecal = mainDecal
-					end
-
-					if not mainDecal then continue end
-
-					const isRenderModeSurfaceGui: boolean = signState.partRenderMode == "SurfaceGui"
-
-					-- 2.2.0 patch: add this if-statement immediately before `.computeSignIntensity()` is called, or else it would have the wrong CFrames and size
-					if isRenderModeSurfaceGui then
-						if part:GetAttribute("IsFixed") ~= true then
-							utils.fixPartOrientation(part, mainDecal)
-							signState.CFrame = part.CFrame
-							signState.Size = part.Size
-						end
-					end
-
-					const signData: {brightness: number, lightInfluence: number, transparency: number} = equations.computeSignIntensity(signState, part, mainDecal, "near", activeSources, baseConfig)
-
-					if signData.transparency >= signConfig.inactiveTransparencyThreshold  then
 						continue
 					end
 
-					if isRenderModeSurfaceGui then
-						local state: types.SurfaceGuiState? = signState.surfaceGuiState
+					const surfaceGuiState: types.SurfaceGuiState? = signState.surfaceGuiState
 
-						if not state then
-							state = {
-								gui = nil,
-								currentTransparency = 1,
-								currentBrightness = 0,
-								currentLightInfluence = 1,
-								isActive = true,
-								isPendingRemoval = false,
-								lastTransparency = 1,
-								lastBrightness = 0,
-								lastLightInfluence = 1,
+					if surfaceGuiState and surfaceGuiState.isPendingRemoval and surfaceGuiState.gui then
+						utils.resetSurfaceGui(surfaceGuiPool, surfaceGuiState.gui)
 
-								targetTransparency = 1,
-								targetBrightness = 0,
-								targetLightInfluence = 1,
-								--	renderMode = "SurfaceGui",
-							}:: types.SurfaceGuiState -- forced to do this or else type errors
-							signState.surfaceGuiState = state
-						end
-
-						if not state then continue end -- have to add this due to type weird errors
-
-						local gui: types.SurfaceGuiTemplate? = state.gui
-
-						if not gui then
-							gui = surfaceGuiPool:GetObject() :: types.SurfaceGuiTemplate
-
-							if gui == nil then debugger.warn("Warning", "Pool contains nil instances.") continue end
-
-							gui.Face = mainDecal.Face
-							gui.Adornee = part
-							gui.Parent = part
-							gui.Enabled = true
-							gui.ImageLabel.Image = mainDecal.Texture
-							gui.ImageLabel.ImageTransparency = mainDecal.Transparency
-							state.gui = gui
-						end
-
-						if gui and gui.Parent == nil then
-							gui.Face = mainDecal.Face
-							gui.Parent = part
-							gui.Adornee = part
-							gui.Enabled = true
-							gui.ImageLabel.Image = mainDecal.Texture
-							gui.ImageLabel.ImageTransparency = mainDecal.Transparency
-						end
-
-						state.targetTransparency = signData.transparency
-						state.targetBrightness = signData.brightness
-						state.targetLightInfluence = signData.lightInfluence
-
-						_detectedEntitiesThisFrame[entity] = true
-					end
-
-					if signState.partRenderMode == "Decal" then
-						local baseColor: Color3 = Color3.fromRGB(255, 255, 255)
-						const attribute: Color3? = mainDecal:GetAttribute("BaseColor")
-
-						if attribute then
-							baseColor = attribute
-						else
-							baseColor = mainDecal.Color3
-							mainDecal:SetAttribute("BaseColor", baseColor)
-						end
-
-						local state: types.DecalState? = signState.decalState
-
-						if not state then
-							state = {
-								currentBrightness = 0,
-								targetBrightness = 0,
-								baseColor = baseColor,
-							} :: types.DecalState
-							signState.decalState = state
-						end
-
-						if not state then continue end -- have to add this line again due to type errors
-
-						state.targetBrightness = signData.brightness
-
-						_detectedEntitiesThisFrame[entity] = true
+						surfaceGuiState.gui = nil
+						signState.surfaceGuiState = nil
+						signState.mainDecal = nil
 					end
 				end
 			end
 
-			for entity: jecs.Entity<nil>, signState: types.SignEntity in cachedQueries.SignStates do
-				--[[if not part:IsDescendantOf(workspace) then
-					signEntitiesByPart[part] = nil
-					continue
-				end]]
-
-				if not signState then
-					continue
-				end
-
-				const surfaceGuiState: types.SurfaceGuiState? = signState.surfaceGuiState
-
-				if surfaceGuiState and surfaceGuiState.isPendingRemoval and surfaceGuiState.gui then
-					utils.resetSurfaceGui(surfaceGuiPool, surfaceGuiState.gui)
-
-					surfaceGuiState.gui = nil
-					signState.surfaceGuiState = nil
-					signState.mainDecal = nil
-				end
-			end
-
-			local temp = currentDetectedEntities
+			local _tempDetectedEntities = currentDetectedEntities
 			currentDetectedEntities = _detectedEntitiesThisFrame
-			_detectedEntitiesThisFrame = temp
+			_detectedEntitiesThisFrame = _tempDetectedEntities
 		end
 	end, constraints.MAX_PCALL_RETRIES)
 end
@@ -559,8 +521,10 @@ end
 
 -- Return public API
 return table.freeze({
+	name = "detect",
 	currentDetectedEntities = currentDetectedEntities,
 	activeReflectorEntities = activeReflectorEntities,
+	init = init,
 	start = start,
 	reset = reset,
 	getDetectedEntities = getDetectedEntities,

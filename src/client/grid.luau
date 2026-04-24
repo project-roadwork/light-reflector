@@ -26,32 +26,13 @@
 	-   objects without querying the entitre dataset.                             -
 	-                                                                             -
 	-  Language: Luau                                                             -
-	-                                                                             -
-	-  API:                                                                       -
-	-  const grids = require(THIS_MODULE)                                         -
-	-  const grid = gridModule.newGrid(1900)                                      -
-	-  const entityId = grids.spawn(grid, part, Vector3)                          -
-	-                                                                             -
-	-  grids.updatePosition(grid, entityId, Vector3)                              -
-	-  grids.remove(grid, entityId or part)                                       -
-	-                                                                             -
-	-  const parts = grids.query(grid, Vector3, radius?)                          -
-    -  const entityIds = grids.queryAllInRadius(grid, Vector3, radius)            -
-    -                                                                             -
-    -  const x, z = grids.getCellCoords(grid, position)                           -
-    -  const x, z = grids.getCellKey(grid, id or position)                        -
-    -                                                                             -
-    -  grids.empty(grid)                                                          -
-    -  grids.destroy(grid)                                                        -
-    -                                                                             -
-    -  Copyright (c) 2026 Project Roadwork and Contributors                       -
     -                                                                             -
     -  Repositories:                                                              -
     -   https://codeberg.org/project-roadwork/spatial-grid (Main)                 -
     -   https://github.com/project-roadwork/spatial-grid (Backup)                 -
     -                                                                             -
     -  Authors:                                                                   -
-    -  Illinois_Roadbuff (Rogue Jr) - April 1, 2026 - Created the file            -
+    -  Illinois_Roadbuff (Rogue Jr) - April 1, 2026 - Created the file              -
     -                                                                             -
     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -98,10 +79,8 @@ local function getIdKey(entityId: EntityId): number | string
 	if typeof(entityId) == "number" then
 		return entityId
 	elseif typeof(entityId) == "vector" then
-		-- combine id + generation into a unique key
 		return entityId.x .. ":" .. entityId.y
 	elseif typeof(entityId) == "Vector3" then
-		-- combine id + generation into a unique key
 		return entityId.X .. ":" .. entityId.Y
 	end
 	error("Invalid EntityId type: ".. typeof(entityId))
@@ -324,6 +303,7 @@ const function remove(grid: Grid, entityId: EntityId): ()
 	grid.Dirty[key] = nil
 	grid.EntityMap[key] = nil
 end
+
 -- Public: Query nearby entities
 const function query(grid: Grid, pos: Vector3, radius: number?): {EntityId}
 	const results = grid._scratchIds
@@ -461,7 +441,7 @@ end
 
 -- Return API
 return table.freeze({
-	Name = "grid",
+	name = "grid",
 	newGrid = newGrid,
 	getCellCoords = getCellCoords,
 	spawn = spawn,

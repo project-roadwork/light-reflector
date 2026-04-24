@@ -186,13 +186,13 @@ end
 --- Prewarms the object pool with a specified number of objects.
 ---@param count number  Number of objects to prewarm the pool with.
 function ObjectPool:Prewarm(count: number): ()
---	debugger.print("Info", "Prewarming the pool with " .. count .. " objects.")
+	--	debugger.print("Info", "Prewarming the pool with " .. count .. " objects.")
 	for i = 1, count do
 		const obj: Object = self.CreateObject(self.ObjectTemplate)
 		table.insert(self.Objects, obj)
 	end
 	self.UsageMetrics.AvailableCount = #self.Objects
---	debugger.print("Info", "Prewarming completed.")
+	--	debugger.print("Info", "Prewarming completed.")
 end
 
 local Returned: number = 0
@@ -218,7 +218,7 @@ function ObjectPool:GetObject(): Object
 	else
 		if self.UsageMetrics.ActiveCount < self.MaxSize then
 			obj = self.CreateObject(self.ObjectTemplate)
-	--		debugger.print("Info", "Created new object.")
+			--		debugger.print("Info", "Created new object.")
 		else
 			debugger.fatal("Fatal",
 				"Max pool size reached! Unable to create new object."
@@ -242,7 +242,7 @@ function ObjectPool:GetObject(): Object
 	--	"Object retrieved from pool. Active count: " .. self.UsageMetrics.ActiveCount
 	--);
 	if self.ObjectTaken then
-	--	self.ObjectTaken:Fire(obj)
+		--	self.ObjectTaken:Fire(obj)
 	end
 	self.Mutex:unlock()
 
@@ -280,11 +280,11 @@ function ObjectPool:ReturnObject(obj: Object): (boolean, string?)
 				"Object destroyed due to exceeding max pool size."
 			);
 		end
---		debugger.print("Info",
---			"Object returned to pool. Active count: " .. self.UsageMetrics.ActiveCount
---		);
+		--		debugger.print("Info",
+		--			"Object returned to pool. Active count: " .. self.UsageMetrics.ActiveCount
+		--		);
 		if self.ObjectReturned then
-		--	self.ObjectReturned:Fire(obj)
+			--	self.ObjectReturned:Fire(obj)
 		end
 		if self.HierarchicalPools[obj] then
 			local childPool: Pool = self.HierarchicalPools[obj]

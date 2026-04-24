@@ -15,26 +15,17 @@
 
 ]]
 
--- Services
+-- IMPORTANT: Services
 const RunService:RunService = game:GetService("RunService")
 const ReplicatedStorage: ReplicatedStorage = game:GetService("ReplicatedStorage")
+const Debris: Debris = game:GetService("Debris")
 
--- Types module
+-- IMPORTANT: Modules
 const types = require("../shared/types")
-
--- Jecs
 const jecs: types.JecsModule = require("../shared/jecs")
-
--- Debugger
 const debugger: types.Debugger = require("../shared/debugger")
-
--- Sources
 const sources: types.SourcesModule = require("./sources")
-
--- Configuration
 const config: types.Configuration = require("../shared/config")
-
--- Pool
 const pool: types.PoolModule = require("./pool")
 
 -- Valid faces for Enum.NormalId
@@ -415,6 +406,91 @@ const function resetSurfaceGui(SurfaceGuiPool: types.Pool, gui: types.SurfaceGui
 end
 
 --[=[
+	Private: Builds a cone basis for a given forward vector
+	@private
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+local function _buildBasis(forward: Vector3)
+	const up = math.abs(forward:Dot(Vector3.yAxis)) > 0.95
+		and Vector3.xAxis
+		or Vector3.yAxis
+
+	const right = forward:Cross(up).Unit
+	const correctedUp = right:Cross(forward).Unit
+
+	return right, correctedUp, forward.Unit
+end
+
+--[=[
+	Private: Generates a random Vector3 within a unit radius
+	@private
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function _randomConeVector(forward: Vector3, cosAngle: number): Vector3
+	const u: number = math.random()
+	const v: number   = math.random()
+
+	const theta = 2 * math.pi * u
+
+	const z: number  = v * (1 - cosAngle) + cosAngle
+	const sinT: number  = math.sqrt(1 - z * z)
+
+	const x: number  = sinT * math.cos(theta)
+	const y: number  = sinT * math.sin(theta)
+
+	local right: Vector3, up: Vector3, fwd: Vector3 = _buildBasis(forward)
+
+	return (right * x + up * y + fwd * z).Unit
+end
+
+--[=[
+	Private: Checks if a direction is within a cone
+	@private
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function _isInCone(dir: Vector3, forward: Vector3, cosAngle: number): boolean
+	return dir:Dot(forward) >= cosAngle
+end
+
+--[=[
+	Public: Spawns a debug field
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function spawnDebugField(origin: Vector3, forward: Vector3, maxDot: number, radius: number, count: number, debugFolder: Instance): ()
+	for i: number = 1, count do
+		const dir: Vector3 = _randomConeVector(forward, maxDot)
+
+		const worldPos: Vector3 = origin + dir * radius
+
+		const dot: number = forward:Dot(dir)
+
+		const p: Part = Instance.new("Part")
+		p.Anchored = true
+		p.CanCollide = false
+		p.Material = Enum.Material.Neon
+
+		const t: number = math.clamp((dot - maxDot) / (1 - maxDot), 0, 1)
+
+		p.Color = Color3.new(
+			1 - t, -- red = edge/back
+			t,     -- green = forward cone
+			0
+		)
+
+		p.Size = Vector3.new(0.15, 0.15, 0.15)
+		p.Position = worldPos
+		p.Parent = debugFolder
+
+		Debris:AddItem(p, 5)
+		-- ^ May be more performance friendly to use an alternative to DebrisService, but this is only for debug purposes.
+	end
+end
+
+--[=[
 	Public: Initializes and returns the SurfaceGui pool
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
@@ -423,7 +499,6 @@ const function initPool(): types.Pool
 	local surfaceGuiTemplate:Instance? = ReplicatedStorage:FindFirstChild("ReflectorTemplate")
 
 	if not surfaceGuiTemplate then
-		debugger.warn("InitWarning","SurfaceGui template does not exist! Using safety net and creating SurfaceGui template...")
 		surfaceGuiTemplate = Instance.new("Folder")
 		surfaceGuiTemplate.Name = "ReflectorTemplate"
 		surfaceGuiTemplate.Parent = ReplicatedStorage
@@ -432,8 +507,6 @@ const function initPool(): types.Pool
 	local templateGui: SurfaceGui? = if surfaceGuiTemplate then surfaceGuiTemplate:FindFirstChildOfClass("SurfaceGui") else nil -- forced to do this or else the type solver would get into a panick attack
 
 	if not templateGui then
-		debugger.warn("InitWarning","SurfaceGui does not exist in the template! Using safety net and creating SurfaceGui...")
-
 		const surfaceGui:SurfaceGui = Instance.new("SurfaceGui")
 		surfaceGui.Name = "SurfaceGui"
 		surfaceGui.Brightness = 0
@@ -471,10 +544,11 @@ config.waitForLock(function(): ()
 		isConfigTracked = true
 	end
 end)
+--^ I will not be making a "start"/"init" function for a utilities module
 
 -- Return public variables and API
 return table.freeze({
-	Name = "utils",
+	name = "utils",
 	trackAncestryRemoval = trackAncestryRemoval,
 	getSpeedMPH = getSpeedMPH,
 	adaptiveWait = adaptiveWait,
@@ -486,6 +560,7 @@ return table.freeze({
 	areColorsEqual = areColorsEqual,
 	validFaces = validFaces,
 	renderWait = renderWait,
+	spawnDebugField = spawnDebugField,
 	resetSurfaceGui = resetSurfaceGui,
 	initPool = initPool,
 }) :: types.Utils

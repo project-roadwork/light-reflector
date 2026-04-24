@@ -51,7 +51,7 @@ export type DebuggerLogs = typeof(require("../shared/logs"))
 
 -- Configuration Types
 export type Configuration = typeof(config)
-export type BaseConfig = typeof(baseConfig)
+export type BaseConfig = typeof(baseConfig) -- kind of lazy but adding types for each configuration value is a lot of work
 export type Constraints = typeof(baseConfig.Constraints)
 export type GeneralConfig = typeof(baseConfig.General)
 export type ReflectorConfig = typeof(baseConfig.ReflectorConfig)
@@ -105,7 +105,7 @@ export type IntensityData = {
 }
 
 export type SourcesModule = {
-	Name: string,
+	name: string,
 	list: SourceList,
 
 	create: (...any) -> LightSource,
@@ -118,7 +118,7 @@ export type SourcesModule = {
 
 -- Utilities Types
 export type Utils = {
-	Name: string,
+	name: string,
 
 	deepMerge: (defaults: Dict, overrides: Dict, path: string?) -> (),
 	trackAncestryRemoval: (instance: Instance, callback: (Instance) -> ()) -> RBXScriptConnection,
@@ -138,8 +138,11 @@ export type Utils = {
 	areColorsEqual: (colorA: Color3, colorB: Color3, epsilon: number?) -> boolean,
 	renderWait: (waitTime: number?) -> number,
 
+	spawnDebugField: (origin: Vector3, forward: Vector3, maxDot: number, radius: number, count: number, debugFolder: Instance) -> (),
+
 	validFaces: { [string]: boolean },
 }
+
 
 -- Register Types
 export type VehicleMap = {[Instance & Vehicle]: any}
@@ -164,13 +167,16 @@ export type Components = {
 }
 
 export type Register = {
-	Name: string,
+	name: string,
 
 	getPartsByRaycast: () -> {[BasePart]: RangeType},
 
+
+	init: () -> (),
 	start: () -> (),
 
 	reflectorGrid: Grid,
+	signGrid: Grid,
 	surfaceGuiPool: Pool,
 	debugBoxTemplate: BasePart,
 
@@ -178,17 +184,20 @@ export type Register = {
 
 	scriptConnections: {[RBXScriptConnection]: boolean},
 
-	registerVehicle: (car: Instance & Vehicle, isEnabled: (Instance) -> boolean, getIntensity: (Instance) -> number) -> (),
-	unregisterVehicle: (car: Vehicle & Instance) -> (),
-	registerReflector: (part: Instance) -> (),
-	unregisterReflector: (part: BasePart) -> (),
+	addVehicle: (car: Instance & Vehicle, isEnabled: (Instance) -> boolean, getIntensity: (Instance) -> number) -> (),
+	removeVehicle: (car: Vehicle & Instance) -> (),
+	addReflector: (part: Instance) -> (),
+	removeReflector: (part: BasePart) -> (),
+	addSign: (part: Instance, rangeType: RangeType?) -> (),
+	removeSign: (part: BasePart) -> (),
+
 	clearConnections: () -> (),
 	reset: () -> (),
 }
 
 -- Equations Types
 export type Equations = {
-	Name: string,
+	name: string,
 
 	computeReflectorIntensity: (
 		part: BasePart,
@@ -196,27 +205,32 @@ export type Equations = {
 		source: LightSource,
 		MPH: number,
 		config: BASE_CONFIG
-	) -> (boolean | number, boolean | number),
+	) -> (number, number),
 
 	computeSignIntensity: (
-		entity: SignEntity,
+
 		part: BasePart,
+		state: SignEntity,
+		source: LightSource,
 		decal: Decal,
 		rangeType: RangeType,
-		activeSources: SourceList,
 		config: BASE_CONFIG
 	) -> {
 		transparency: number,
 		brightness: number,
 		lightInfluence: number,
-	}
+		hasActiveLight: boolean
+	},
+
+	buildSamplePoints: (quality: number) -> (),
 }
 
 -- Detector Types
 export type Detect = {
-	Name: string,
+	name: string,
 	currentDetectedEntities: {[jecs.Entity]: boolean},
 	activeReflectorEntities: {[jecs.Entity]: boolean },
+	init: () -> (),
 	start: () -> (),
 	reset: () -> (),
 	safeCancelThread: () -> (boolean, string?),
@@ -225,7 +239,8 @@ export type Detect = {
 
 -- Renderer Types
 export type Render = {
-	Name: string,
+	name: string,
+	init: () -> (),
 	start: () -> (),
 	reset: () -> (),
 	safeCancelThread: () -> (boolean, string?),
@@ -252,6 +267,7 @@ export type Vehicle = {
 
 -- States
 export type SurfaceGuiState = {
+	_inPool: boolean,
 	gui: SurfaceGuiTemplate?,
 	currentTransparency: number,
 	currentBrightness: number,
@@ -267,6 +283,7 @@ export type SurfaceGuiState = {
 }
 
 export type DecalState = {
+	_inPool: boolean,
 	baseColor: Color3,
 	currentBrightness: number,
 	targetBrightness: number,
@@ -281,9 +298,11 @@ export type SurfaceGuiStates = { [BasePart]: SurfaceGuiState }
 export type DecalStates = { [BasePart]: DecalState }
 
 export type ReflectorState = {
+	_inPool: boolean,
 	currentIntensity: number,
 	targetIntensity: number,
 	lastIntensity: number,
+	baseIntensity: number,
 
 	baseColor: Color3,
 	isActive: boolean?,
@@ -292,6 +311,10 @@ export type ReflectorState = {
 	lastColor: Color3,
 
 	isHybrid: boolean?,
+	hybridFadeRange: number?,
+	hybridMinDistance: number?,
+	hybridTransparencyMultiplier: number,
+	canHybridKeepColors: boolean,
 	targetTransparency: number,
 	currentTransparency: number,
 	lastTransparency: number,
@@ -307,6 +330,7 @@ export type ReflectorState = {
 
 
 export type SignEntity = {
+	_inPool: boolean,
 	partRenderMode: "SurfaceGui" | "Decal",
 	surfaceGuiState: SurfaceGuiState?,
 	decalState: DecalState?,
@@ -316,14 +340,36 @@ export type SignEntity = {
 	CFrame: CFrame,
 	Size: Vector3,
 	partVeryReflective: boolean?,
+	baseIntensity: number,
 }
 
 export type LightReflector = {
+	init: () -> (),
 	start: () -> (),
-	cleanup: () -> (),
+	reset: () -> (),
 	config: Configuration,
 	register: Register,
 	utils: Utils,
+}
+
+-- States module types
+export type StatesModule = {
+	name: string,
+
+	acquireDecalState: () -> DecalState,
+	acquireSignState: (part: BasePart, baseConfig: BASE_CONFIG) -> SignEntity,
+	acquireReflectorState: (part: BasePart, baseConfig: BASE_CONFIG, reflectorGrid: Grid) -> ReflectorState,
+	acquireSurfaceGuiState: () -> SurfaceGuiState,
+
+	returnSignState: (state: SignEntity, surfaceGuiPool: Pool) -> (),
+	returnReflectorState: (state: ReflectorState) -> (),
+}
+
+export type StatePools = {
+	SignState: {SignEntity},
+	DecalState: {DecalState},
+	SurfaceGuiState: {SurfaceGuiState},
+	ReflectorState: {ReflectorState},
 }
 
 -- Return
