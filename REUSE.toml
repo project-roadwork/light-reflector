@@ -25,7 +25,8 @@ SPDX-License-Identifier = "CC0-1.0 OR Unlicense"
 path = [
 
     "README.md",
-    "assets/images/**"
+    "assets/images/**",
+    "docs/interim/**",
 ]
 SPDX-FileCopyrightText = [
 "2025-2026 Illinois_Roadbuff <illinois_roadbuff@proton.me>",
