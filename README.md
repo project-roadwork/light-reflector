@@ -68,10 +68,10 @@
 
 ## Essential Public API
 1. `.start()` - Starts the module
-2. `.cleanup()` - Resets states and cleans up the module
+2. `.reset()` - Resets states and cleans up the module
 3. `.config.applyOverrides({})` - Parses user configuration before starting (if you cannot do it IN the module first)
-4. `.register.registerVehicle(car: Instance, isHeadlightEnabled: () -> boolean, getIntensity: () -> number)` - Registers vehicles into the module
-5. `.register.unregisterVehicle(car: Instance)` - Unregisters vehicles from the module
+4. `.register.addVehicle(car: Instance, isHeadlightEnabled: () -> boolean, getIntensity: () -> number)` - Registers vehicles into the module
+5. `.register.removeVehicle(car: Instance)` - Unregisters vehicles from the module
 
 ## Example Usage
 ```lua
