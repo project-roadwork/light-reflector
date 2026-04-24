@@ -22,11 +22,11 @@
 
 		Each reflector has two tables, and each sign also has two tables. If
 		there were 500 reflectors in the workspace (with Instance Streaming
-		enabled) and 50 signs, thwew would be over 1100 tables in total.
+		enabled) and 50 signs, there would be over 1100 tables in total.
 
 		When the player is driving, reflectors and signs are going to stream
-		out. Then every second, the client is going to be creating tables and
-		setting tables to `nil`, which may cause tremendeous GC pressure.
+		out. The client is going to be creating tables and setting tables
+		to `nil` every second, which may cause tremendeous GC pressure.
 
 		Pooling tables may be a solution since it allows spare tables to be
 		recycled; however, I am unsure of the overhead of pooling by itself.
