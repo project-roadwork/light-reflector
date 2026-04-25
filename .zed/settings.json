@@ -6,6 +6,11 @@
           "sourcemap": {
             "rojoProjectFile": "roblox.test.project.json",
           },
+          "fflags": {
+            "enable_new_solver": true,
+            "enable_by_default": true,
+            "sync": true,
+          },
         },
         "ext": {
           "roblox": {

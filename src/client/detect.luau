@@ -118,6 +118,11 @@ const function _processReflector(entity: jecs.Entity, source: types.LightSource,
 
 	if not state then
 		state = states.acquireReflectorState(part, baseConfig, reflectorGrid)
+
+		if not state then
+		    return -- have to add this because of type checker thinking state is still nil
+		end
+
 		world:set(entity, components.ReflectorState, state)
 	end
 
