@@ -20,7 +20,7 @@ local config = require(LightReflector.shared.config).getConfig()
 local signFolders = config.SignConfig.signsFolders
 local reflectorFolders = config.ReflectorConfig.reflectorsFolder
 
-if config.ReflectorConfig.Enabled then
+if config.ReflectorConfig.enabled then
 	for i,Folder in reflectorFolders do
 		for i,p in Folder:GetDescendants() do
 			if p:IsA("BasePart") and p.Parent and p.Parent.Name == "P" and not p:IsA("MeshPart") then
