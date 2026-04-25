@@ -7,7 +7,7 @@
 *1. Add a function determining the light strength of the provided vehicle:*
 ```luau
 -- Light Reflector Handler
--- client.handler.luau (continued)
+-- handler.client.luau (continued)
 
 -- Assuming this is an A-Chassis vehicle
 local function determineIntensity(vehicle: Model)
@@ -28,9 +28,6 @@ end
 
 *2. Add a function that returns the `ValueBase` that determines if any headlight is on in the provided vehicle:*
 ```luau
--- Light Reflector Handler
--- client.handler.luau (continued)
-
 -- Assuming this is an A-Chassis vehicle
 local function CheckForRegLightValue(vehicle: Model)
     -- This is just an example and every headlight system will be different.

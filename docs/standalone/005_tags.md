@@ -27,7 +27,7 @@ If you already have unique identifiers (`Size`, `Color`, `Name`, etc.) for signs
 ![Diagram](../../assets/images/005_tags_fig3.png)
 
 ```luau
--- server.handler.luau
+-- handler.server.luau
 
 local CollectionService = game:GetService("CollectionService")
 local signFolder = workspace.Signs
@@ -45,7 +45,7 @@ end
 ![Diagram](../../assets/images/005_tags_fig4.png)
 
 ```luau
--- server.handler.luau
+-- handler.server.luau
 
 local CollectionService = game:GetService("CollectionService")
 local roadFolder = workspace.Roads

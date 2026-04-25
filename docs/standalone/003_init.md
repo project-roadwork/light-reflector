@@ -5,7 +5,7 @@
 Your script should look similar to the accompanying sample below:
 ```luau
 -- Light Reflector Handler
--- client.handler.luau
+-- handler.client.luau
 
 local ReplicatedStorage: ReplicatedStorage = game:GetService("ReplicatedStorage")
 local lightreflector = require(ReplicatedStorage.Packages.lightreflector)
