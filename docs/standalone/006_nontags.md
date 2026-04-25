@@ -72,4 +72,4 @@ for index: number, part: Instance in roadsFolders:GetDescendants() do
 end
 ```
 
-### Next, learn about hybrid reflectors!
+### Next, learn about signs in general!
