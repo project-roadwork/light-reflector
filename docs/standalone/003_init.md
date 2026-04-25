@@ -20,8 +20,8 @@ lightreflector.init()
 
 **Third, configure the settings during runtime by calling `lightreflector.config.applyOverrides()`.**
 
-> [!INFO]
-> Note that you can also modify `BASE_CONFIG` in the `config` module before runtime; however, it is not recommended since you would have to change every modified value when you upgrade Light Reflector to a newer version.
+> [!NOTE]
+> You can also modify `BASE_CONFIG` in the `config` module before runtime; however, it is not recommended since you would have to change every modified value when you upgrade Light Reflector to a newer version.
 
 ```luau
 lightreflector.config.applyOverrides({
