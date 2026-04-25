@@ -5,7 +5,7 @@ description = "A vehicle-based light reflector that reflects decals and basepart
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 license = "MPL-2.0"
-includes = ["pesde.toml","README.md","LICENSE","NOTICE","src/**/*.luau"]
+includes = ["LICENSE","NOTICE","src/**/*.luau"]
 repository = "https://codeberg.org/project-roadwork/light-reflector.git"
 authors = ["Illinois_Roadbuff [Rogue Jr] <illinois_roadbuff@proton.me>"]
 
