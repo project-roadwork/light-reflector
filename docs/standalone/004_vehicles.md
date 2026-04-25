@@ -44,7 +44,7 @@ local function CheckForRegLightValue(vehicle: Model)
     -- continue on....
 
     -- Use `true` as a fallback if you cannot return any values. 
-    -- Note that this will enable the source for the respective vehicle regardless if the headlighs are on or not.
+    -- Note that this will enable the source for the respective vehicle regardless if the headlights are on or not.
     return true
 end
 ```
