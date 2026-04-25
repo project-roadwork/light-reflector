@@ -38,7 +38,6 @@ const darkWeathers: types.DarkWeathers = {
 }
 -- Variables
 local _isConfigTracked: boolean = false
-local _weatherValue: StringValue? = nil
 local _isWeatherDark: boolean = false
 local _clockTime: number = Lighting.ClockTime
 
@@ -60,7 +59,6 @@ const function _resolveWeather(): ()  -- Includes TTP / Redon Tech weather compa
 
 	const Value: Instance? = CurrentFolder:FindFirstChild("Weather")
 	if Value and Value:IsA("StringValue") then
-		_weatherValue = Value
 		_isWeatherDark = darkWeathers[Value.Value] or false
 		Value:GetPropertyChangedSignal("Value"):Connect(function()
 			_isWeatherDark = darkWeathers[Value.Value] or false
