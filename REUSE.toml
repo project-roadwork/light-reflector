@@ -15,6 +15,7 @@ path = [
     "pesde.lock",
     "wally.lock",
     "wally.toml",
+    ".luaurc",
 ]
 SPDX-FileCopyrightText = "NONE"
 SPDX-License-Identifier = "CC0-1.0 OR Unlicense"
