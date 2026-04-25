@@ -1,6 +1,6 @@
 ## Tags
 
-Tags are the most recommended way to register and unregister signs and reflectors. It allows to find certain objects regardless of their location in the workspace, AND filters out other objects that may otherwise cause overhead.
+Tags are the most recommended way to register/unregister signs and reflectors for both fresh and existing projects. It allows to find certain objects regardless of their location in the workspace, AND filters out other objects that may otherwise cause overhead.
 
 Tags should be applied to signs and reflectors BEFORE the module starts.
 

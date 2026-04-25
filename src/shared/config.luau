@@ -235,6 +235,18 @@ const BASE_CONFIG = {
 		signsFolders = { workspace.Signs },
 		-- ^ Set this to your own signs folders separated by a comma
 
+		isSign = function(part: BasePart)
+			if part.Name == "Sign" then
+			    return true
+			else
+				return false
+			end
+		end,
+		-- ^ Conditions that make an instance a sign
+		--
+		--   NOTE: If you have tags enabled, this function WILL be overriden should the part have the respective
+		--   reflective tag.
+
 		isDebugConeAngleEnabled = false,
 		-- ^ Enabling this would show the cone of the light source for debug purposes
 		--
@@ -272,9 +284,6 @@ const BASE_CONFIG = {
 			return name == "F" or (name ~= "Back" and name ~= "B" and name ~= "Images/Metal Lined" and not isExcludedBottom)
 		end,
 		-- ^ Conditions that make an instance a main front decal or sign, and not the back of it
-		--
-		--   NOTE: If you have tags enabled, this function WILL be overriden should the part have the respective
-		--   reflective tag.
 
 		inactiveTransparencyThreshold = 0.98, -- (recommended -> 0.98)
 		-- ^ Number of what makes a sign nearly invisible
@@ -312,8 +321,8 @@ const BASE_CONFIG = {
 		reflectorsFolder = { workspace.Roads },
 		-- ^ Folders where your reflectors are, seperated by a comma. This will not be used if you have tags enabled.
 
-		isReflector = function(p)
-			return p:IsA("BasePart") and p.Parent and typeof(p.Parent) == "Instance" and p.Parent.Name == "P" and not p:IsA("MeshPart")
+		isReflector = function(p: BasePart)
+			return p.Parent and typeof(p.Parent) == "Instance" and p.Parent.Name == "P" and not p:IsA("MeshPart")
 		end,
 		-- ^ Condition of what makes a BasePart a "reflector"
 		--   NOTE: If you have tags enabled, this function WILL be overriden should the part have the respective

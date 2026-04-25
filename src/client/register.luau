@@ -212,7 +212,7 @@ const function addReflector(part: Instance)
 		return
 	end
 
-	if not (reflectorConfig.isReflector(part) or part:HasTag(reflectorConfig.tagName)) then
+	if not (part:HasTag(reflectorConfig.tagName) or reflectorConfig.isReflector(part)) then
 		return
 	end
 
@@ -401,7 +401,11 @@ const function addSign(part:Instance, rangeType: string?): ()
 	world:set(entity, components.SignInRange, (if rangeType ~= nil then rangeType else "near"):: types.RangeType)
 	instanceToEntityId[part] = entity
 
-	if part:IsA("BasePart") then
+	if not part:IsA("BasePart") then
+        return
+	end
+
+	if (part:HasTag(signConfig.tagName) or signConfig.isSign(part)) then
 		if not trackedAncestryInstances[part] then
 			const connection: RBXScriptConnection = utils.trackAncestryRemoval(part, function()
 				trackedAncestryInstances[part] = nil
@@ -553,7 +557,7 @@ const function _cacheReflectors(): ()
 		scriptConnections[instanceAddedSignal] = true
 		scriptConnections[instanceRemovedSignal] = true
 	else
-		for _: number, Folder: any in reflectorConfig.reflectorsFolder do
+		for _: number, Folder: any in reflectorConfig.reflectorsFolders do
 			for _: number, part:Instance in Folder:GetDescendants() do
 				addReflector(part)
 			end
