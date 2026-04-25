@@ -274,7 +274,10 @@ const function _processSign(entity: jecs.Entity, source: types.LightSource)
 		if not gui then
 			gui = surfaceGuiPool:GetObject() :: types.SurfaceGuiTemplate
 
-			if gui == nil then debugger.warn("Warning", "Pool contains nil instances.") return end
+			if gui == nil then
+			    debugger.warn("Warning", "Pool contains nil instances.")
+			    return
+			end
 
 			gui.Face = mainDecal.Face
 			gui.Adornee = part
