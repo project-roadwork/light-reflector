@@ -20,8 +20,12 @@ lightreflector.init()
 
 **Third, configure the settings during runtime by calling `lightreflector.config.applyOverrides()`.**
 
+Note that you can also modify `BASE_CONFIG` in the `config` module before runtime; however, it is not recommended since you would have to change every modified value when you upgrade Light Reflector to a newer version.
+
 ```luau
 lightreflector.config.applyOverrides({
+    -- This is just an example! You may want to configure more values than this.
+    -- See the config module for reference
 	SignConfig = {
 		signsFolders = {workspace.Signs}
 	}
