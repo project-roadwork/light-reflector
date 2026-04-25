@@ -203,16 +203,16 @@ const function _processSign(entity: jecs.Entity, source: types.LightSource)
 	local mainDecal: Decal? = signState.mainDecal
 
 	if not mainDecal then
-		mainDecal = part:FindFirstChild(signConfig.mainDecalName) :: Decal?
+	    const name: string = signConfig.mainDecalName
+
+		mainDecal = part:FindFirstChild(name) :: Decal?
 		-- ^ unfortunately one cannot set instances as attributes
 		if not mainDecal then
 			for _:number, decal:Instance in part:GetChildren() do
 				if decal:IsA("Decal") then
-					const name = decal.Name
-
 					if signConfig.isMainDecal(decal) then
 						mainDecal = decal
-						decal.Name = signConfig.mainDecalName
+						decal.Name = name
 						break
 					end
 				end
