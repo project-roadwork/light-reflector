@@ -10,7 +10,7 @@
 ]]
 -- Variables
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local LightReflector = require(ReplicatedStorage.lightreflector)
+local LightReflector = require(ReplicatedStorage.Packages.lightreflector)
 local Cars = workspace.Cars
 
 
@@ -57,14 +57,14 @@ LightReflector.start()
 
 task.wait(2)
 
-for i, car in workspace.Cars:GetChildren() do
+for i, car in Cars:GetChildren() do
     if car:IsA("Model") and (car:FindFirstChildOfClass("VehicleSeat") or car:WaitForChild("DriveSeat",5)) then
 		print("Indexed Vehicle")
 		LightReflector.register.addVehicle(car, CheckForRegLightValue(car), determineIntensity)
 	end
 end
 
-workspace.Cars.ChildAdded:Connect(function(car)
+Cars.ChildAdded:Connect(function(car)
 	task.wait() -- a-chassis init reasons
 	if car:IsA("Model") and (car:FindFirstChildOfClass("VehicleSeat") or car:WaitForChild("DriveSeat",5)) then
 		print("Indexed Vehicle")

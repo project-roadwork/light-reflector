@@ -13,7 +13,7 @@
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local LightReflector = ReplicatedStorage.lightreflector
+local LightReflector = ReplicatedStorage.Packages.lightreflector
 
 local config = require(LightReflector.shared.config).getConfig()
 

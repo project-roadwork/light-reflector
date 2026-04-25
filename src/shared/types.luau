@@ -331,16 +331,15 @@ export type ReflectorState = {
 
 export type SignEntity = {
 	_inPool: boolean,
-	partRenderMode: "SurfaceGui" | "Decal",
-	surfaceGuiState: SurfaceGuiState?,
-	decalState: DecalState?,
-	mainDecal: Decal?,
-	part: BasePart?,
-	doesSignMove:boolean,
 	CFrame: CFrame,
 	Size: Vector3,
 	partVeryReflective: boolean?,
 	baseIntensity: number,
+	doesSignMove: boolean,
+	partRenderMode: "SurfaceGui" | "Decal",
+	surfaceGuiState: SurfaceGuiState?,
+	decalState: DecalState?,
+	mainDecal: Decal?,
 }
 
 export type LightReflector = {

@@ -22,7 +22,6 @@ const ReplicatedStorage: ReplicatedStorage = game:GetService("ReplicatedStorage"
 -- IMPORTANT: Modules
 const types = require("../shared/types")
 const config: types.Configuration = require("../shared/config")
-const debugger: types.Debugger = require("../shared/debugger")
 
 -- Configuration Variables
 local baseConfig: types.BASE_CONFIG = config.getConfig()
@@ -38,11 +37,10 @@ const darkWeathers: types.DarkWeathers = {
 	["Heavy Rain / Snow"] = true
 }
 -- Variables
-local AlreadyPrinted: boolean = false
-local isConfigTracked: boolean = false
-local weatherValue: StringValue? = nil
-local isWeatherDark: boolean = false
-local clockTime: number = Lighting.ClockTime
+local _isConfigTracked: boolean = false
+local _weatherValue: StringValue? = nil
+local _isWeatherDark: boolean = false
+local _clockTime: number = Lighting.ClockTime
 
 --[=[
 	Private: Resolves weather
@@ -62,17 +60,17 @@ const function _resolveWeather(): ()  -- Includes TTP / Redon Tech weather compa
 
 	const Value: Instance? = CurrentFolder:FindFirstChild("Weather")
 	if Value and Value:IsA("StringValue") then
-		weatherValue = Value
-		isWeatherDark = darkWeathers[Value.Value] or false
+		_weatherValue = Value
+		_isWeatherDark = darkWeathers[Value.Value] or false
 		Value:GetPropertyChangedSignal("Value"):Connect(function()
-			isWeatherDark = darkWeathers[Value.Value] or false
+			_isWeatherDark = darkWeathers[Value.Value] or false
 		end)
 	end
 end
 
 -- Start config tracking
 config.waitForLock(function(): ()
-	if isConfigTracked == false then
+	if _isConfigTracked == false then
 		config.onChange(function(NEW_CONFIG: types.BASE_CONFIG)
 			baseConfig = NEW_CONFIG
 			generalConfig = NEW_CONFIG.General
@@ -83,10 +81,10 @@ config.waitForLock(function(): ()
 		task.defer(_resolveWeather)
 
 		Lighting:GetPropertyChangedSignal("ClockTime"):Connect(function()
-			clockTime = Lighting.ClockTime
+			_clockTime = Lighting.ClockTime
 		end)
 
-		isConfigTracked = true
+		_isConfigTracked = true
 	end
 end)
 
@@ -96,7 +94,7 @@ end)
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 return function(): boolean
-	const isNight: boolean = (clockTime >= darkStart or clockTime < darkEnd)
+	const isNight: boolean = (_clockTime >= darkStart or _clockTime < darkEnd)
 
-	return isNight or isWeatherDark
+	return isNight or _isWeatherDark
 end
