@@ -24,12 +24,11 @@ const utils: types.Utils = require("./utils")
 const register: types.Register = require("./register")
 const detect: types.Detect = require("./detect")
 const dark: () -> boolean = require("./dark")
-const sources: types.SourcesModule = require("./sources")
 
 -- IMPORTANT: Register Variables
 const world: jecs.World,
 components: types.Components,
-instancetoEntityId: {[Instance]: jecs.Entity},
+_instancetoEntityId: {[Instance]: jecs.Entity},
 cachedQueries: types.CachedQueries = register.getWorldUtils()
 
 -- IMPORTANT: Configuration Variables
