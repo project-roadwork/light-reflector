@@ -125,6 +125,8 @@ const BASE_CONFIG = {
 		RENDER_MIN_FPS = 45, -- (recommended -> 45)
 		RENDER_MAX_FPS = 59, -- (recommended -> 55)
 		-- ^ FPS of the Render function
+		--
+		-- NOTE: If render FPS is low, it may go below `RENDER_MIN_FPS`.
 
 		MAX_MPH = 12, -- (recommended -> 10)
 		-- ^ Maximum speed in which the Boundary/Detect and Render system would run its fastest
@@ -174,13 +176,20 @@ const BASE_CONFIG = {
 		-- ^ Offset of the vehicle seat
 
 		GetPartsInBox = workspace.GetPartBoundsInBox,
+		-- ^ Raycast function for getting parts in a box
 
 		movingPartAttribute = "LRMoving",
-		-- ^ attribute name to identify moving reflectors or signs
+		-- ^ Attribute name to identify moving reflectors or signs
 
 		occlusionRaycastExclude = {},
+		-- ^ Any additional instances you want to include in raycast exclusion
 
 		occlusionRaycastExcludeTransparent = true
+		-- ^ Automatically excludes transparent parts, BUT semi-transparent parts will not be excluded
+		--   and would affect the intensity of the signs and/or reflectors.
+		--
+		--   More transparent = less intensity
+		--   Less transparent = more intensity
 
 	},
 
@@ -199,8 +208,10 @@ const BASE_CONFIG = {
 
 		useRaycastForObstacles = false, -- (No recommendation; default -> false)
 		-- Uses Raycasts to determine if a sign is obstructed from its light source(s)
+		--
 		-- Since there is usually less signs than reflectors in a map, lag would not be as heavy as pavement reflectors.
-		--  HOWEVER, it depends on whether you have "too many" signs when viewed in the client or not.
+		--
+		-- HOWEVER, it depends on whether you have "too many" signs when viewed in the client or not.
 		--   so setting this to true or false is at your discretion.
 
 		partRenderModeAttributeName = "LRRenderMode",
@@ -211,8 +222,9 @@ const BASE_CONFIG = {
 
 		decalIntensityMultiplier = 1.4, -- (recommended -> 1.4)
 		-- ^ Decal intensity multiplier to match up with the appearance of the SurfaceGui
-		-- Decals relying on the base brightness itself appears darker than SurfaceGuis,
-		-- so it would be best to add a multiplier.
+		--
+		--   Decals relying on the base brightness itself appears darker than SurfaceGuis,
+		--   so it would be best to add a multiplier.
 
 		maxFadeDistance = 2500, -- (recommended -> 2500)
 		-- ^  Max fade distane of signs in studs
@@ -224,6 +236,9 @@ const BASE_CONFIG = {
 		-- ^ Set this to your own signs folders separated by a comma
 
 		isDebugConeAngleEnabled = false,
+		-- ^ Enabling this would show the cone of the light source for debug purposes
+		--
+		--   WARNING: This drastically affects performance as it spawns thousands of parts.
 
 		isDebugBoxEnabled = false, -- Shows the debug box. THIS ONLY WORKS FOR RAYCASTING.
 		debugBoxColor = Color3.fromRGB(0,255,0),
@@ -244,7 +259,8 @@ const BASE_CONFIG = {
 		lerpSpeed = 12, -- (recommended -> 9)
 		-- ^ Fade out and lerp speed of signage
 
-		decalFacingDotThreshold = 0,
+		decalFacingDotThreshold = 0, -- (recommended -> 0)
+		-- ^ Threshold for whether a sign is faced away from a source or facing towards it.
 
 		mainDecalName = "ACTUALMainDecal123",
 		-- ^ Set this to something unique that no other decal has since that identifies the main decal
@@ -256,6 +272,9 @@ const BASE_CONFIG = {
 			return name == "F" or (name ~= "Back" and name ~= "B" and name ~= "Images/Metal Lined" and not isExcludedBottom)
 		end,
 		-- ^ Conditions that make an instance a main front decal or sign, and not the back of it
+		--
+		--   NOTE: If you have tags enabled, this function WILL be overriden should the part have the respective
+		--   reflective tag.
 
 		inactiveTransparencyThreshold = 0.98, -- (recommended -> 0.98)
 		-- ^ Number of what makes a sign nearly invisible
@@ -281,10 +300,14 @@ const BASE_CONFIG = {
 		-- ^ Reflector tag name should you use tags
 
 		defaultCanKeepTextures = true,
-		-- ^ default value whether to keep textures on the MAIN reflector or not
+		-- ^ Default value whether to keep textures on the MAIN reflector or not
+		--
+		--   Primarily affects BaseParts such as meshes.
 
 		canKeepTexturesAttribute = "LRCanKeepTextures",
-		-- ^ attribute name to override whether to keep textures or not on the MAIN reflector
+		-- ^ Attribute name to override whether to keep textures or not on the MAIN reflector.
+		--
+		--   If a part has this attribute, it WILL override the configuration default values.
 
 		reflectorsFolder = { workspace.Roads },
 		-- ^ Folders where your reflectors are, seperated by a comma. This will not be used if you have tags enabled.
@@ -293,14 +316,18 @@ const BASE_CONFIG = {
 			return p:IsA("BasePart") and p.Parent and typeof(p.Parent) == "Instance" and p.Parent.Name == "P" and not p:IsA("MeshPart")
 		end,
 		-- ^ Condition of what makes a BasePart a "reflector"
+		--   NOTE: If you have tags enabled, this function WILL be overriden should the part have the respective
+		--   reflective tag.
 
 		minDistance = 50, -- (recommended -> 50)  -- studs
 		maxDistance = 1900, -- (recommended -> 1900)  -- studs
 		-- ^ Reflector Distances
-		-- enabling `useWedgeFacingDetection` may override maxDistance
+		--
+		--   NOTE: Enabling `useWedgeFacingDetection` may override maxDistance due to `:Dot()`
 
 		useWedgeFacingDetection = true, -- (recommended -> true)
-		-- ^ may have its own "maxDistance" based on wedge slope
+		-- ^ May have its own "maxDistance" based on wedge slope
+
 		wedgeFacingDotThreshold = 0,  -- (recommended -> 0)
 		-- ^ (BASED ON POINT OF SOURCE) higher number = stricter; lower number = less stricter
 		--   (if the wedge should be active or not based on where the light source is pointing)
@@ -323,66 +350,72 @@ const BASE_CONFIG = {
 		-- ^ Brightness of reflectors
 
 		useMaxDOT = true,  -- (recommended -> true)
+		-- ^ Uses `:Dot()` WITH the light half angle to determine part of the intensity, albeit not too strict.
+		--
+		--   NOTE: This may drastically affect how the reflectors light up based on the source's angle.
 
 		--[HYBRID SUBSYSTEM]
 		isHybridEnabled = true,
-		-- ^ Enables or disables hybrid functionality (SurfaceGui transparency logic PLUS BasePart logic)
-		--   really you have to add a hybrid attribute anyway, but this is mainly for testing
+		-- ^ Enables or disables hybrid functionality (SurfaceGui transparency logic PLUS BasePart logic).
+		--   Really you have to add a hybrid attribute anyway, but this is mainly for testing.
 
 		isHybridFaceOffsetEnabled = true, -- (recommended -> true)
-		-- ^ enabling this offsets the hybrid reflector clone away from the selected face attribute if there is one
+		-- ^ Enabling this offsets the hybrid reflector clone away from the selected face attribute if there is one
 
 		faceAttributeName = "LRFace",
-		-- ^ attribute to identify the selected face of reflectors (Top, Bottom, Right, etc.)
+		-- ^ Attribute to identify the selected face of reflectors (Top, Bottom, Right, etc.)
 
 		hybridOffset = 0.003, -- (recommended -> 0.003)
 		-- ^ CFrame offset increment should `isHybridFaceOffsetEnabled` be set to true
 
 		hybridCloneName = "LRHybridClone",
-		-- ^ name that would be given to hybrid clone parts
+		-- ^ Name that would be given to hybrid clone parts.
+		--   Make sure that no other part in the workspace is named as such.
 
 		hybridCloneAttributeName = "LR_IsHybridClone",
-		-- ^ set this to something unique that no other part will have. This identifies hybrid clones to prevent maximum event re-entrancy depth
+		-- ^ Set this to something unique that no other part will have.
+		--   This identifies hybrid clones to prevent maximum event re-entrancy depth
 
 		hybridAttributeName = "LRHybrid",
-		-- ^ attribute to identify hybrid reflectors (you must add the Reflector tag too as the hybrid system is UNDER the reflector system)
+		-- ^ Attribute to identify hybrid reflectors (you must add the Reflector tag too as the hybrid system is UNDER the reflector system)
 
 		defaultHybridMaxDistance = 1600, -- (recommended -> 1600)
-		-- ^ default hybrid max fade distance should the respective hybrid reflector does NOT have its own max distance attribute
+		-- ^ Default hybrid max fade distance should the respective hybrid reflector does NOT have its own max distance attribute
 
 		defaultHybridMinDistance = 50, -- (recommended -> 50)
-		-- ^ default hybrid min fade distance should the respective hybrid reflector does NOT have its own min distance attribute
+		-- ^ Default hybrid min fade distance should the respective hybrid reflector does NOT have its own min distance attribute
 
 		hybridMinDistanceAttribute = "HybridMinDistance",
-		-- ^ attribute to identify the hybrid min distance of the hybrid reflector
+		-- ^ Attribute to identify the hybrid min distance of the hybrid reflector
 
 		hybridMaxDistanceAttribute = "HybridMaxDistance",
-		-- ^ attribute to identify the hybrid max distance of the hybrid reflector
+		-- ^ Attribute to identify the hybrid max distance of the hybrid reflector
 
 		hybridFacingDotThreshold = 0, -- (recommended -> 0)
 		-- ^ (BASED ON POINT OF SOURCE) higher number = stricter; lower number = less stricter
 		--   (if the reflectpr be active or not based on where the light source is pointing)
 
 		defaultCanHybridKeepColors = false,
-		-- ^ enabling this prevents the hybrid system from tampering with the base colors by default
-		--   if you have more parts that you wish to "keep colors" on (like unions that you cannot set `SetPartColor` to true),
-		--    then set this to true, then create an attribute on the part you wish to NOT keep colors
-		--     on and set it to false (attribute defined in `hybridKeepColorsAttribute`)
+		-- ^ Enabling this prevents the hybrid system from tampering with the base colors by default
+		--
+		--   NOTE: If you have more parts that you wish to "keep colors" on (like unions that you cannot set `SetPartColor` to true),
+		--   then set this to true, then create an attribute on the part you wish to NOT keep colors
+		--   on and set it to false (attribute defined in `hybridKeepColorsAttribute`)
 
 		hybridKeepColorsAttribute = "CanHybridKeepColors",
-		-- ^ attribute name to override the default CanHybridKeepColors per part
+		-- ^ Attribute name to override the default CanHybridKeepColors per part
 
 		defaultHybridTransparencyMultiplier = 2, -- (recommended -> more than 1 such as 2)
-		-- ^ default hybrid transparency multiplier
+		-- ^ Default hybrid transparency multiplier
 
 		hybridTransparencyAttribute = "HybridTransparencyMultiplier",
-		-- ^ attribute name to override the default hybrid transparency multiplier per part
+		-- ^ Attribute name to override the default hybrid transparency multiplier per part
 
 		defaultHybridCanKeepTextures = false,
-		-- ^ default value whether to keep textures or not on the HYBRID clone, not the main reflector
+		-- ^ Default value whether to keep textures or not on the HYBRID clone, not the main reflector
 
 		canHybridKeepTexturesAttribute = "HybridCanKeepTexturs",
-		-- ^ attrubute name to override whether to keep textures or not on the HYBRID clone, not the main reflector
+		-- ^ Attrubute name to override whether to keep textures or not on the HYBRID clone, not the main reflector
 
 	}
 }
