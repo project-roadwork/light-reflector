@@ -17,7 +17,7 @@ Right click `ReplicatedStorage` in the explorer, then press `Insert Roblox model
 ### Installing via `pesde`
 
 > [!WARNING]
-> **The package in `pesde` is outdated since I was not able to publish newer versions using the new `const` keyword, causing the package manager to believe that it includes invalid `Luau` files.
+> **The package in `pesde` is outdated since I was not able to publish newer versions using the new `const` keyword, causing the package manager to believe that it includes invalid `Luau` files.**
 
 Type this into your terminal:
 ```bash
@@ -28,7 +28,7 @@ Replace version with the current version of the package.
 ### Installing via `wally`
 
 > [!WARNING]
-> **The package in `wally` may not be structured properly. Use at your own risk.
+> **The package in `wally` may not be structured properly. Use at your own risk.**
 
 Add this to your `wally.toml` file:
 
