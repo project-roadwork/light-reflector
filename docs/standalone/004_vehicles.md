@@ -85,7 +85,7 @@ end
 
 ### Registering/Unregistering
 
-**Now that you have your helper functions, lets index the vehicles into Light Reflector!**
+**Now that you have your helper functions, let's index the vehicles into Light Reflector!**
 
 Your script should look similar to the accompanying sample below:
 ```luau
@@ -123,6 +123,6 @@ vehicles.ChildRemoved:Connect(function(vehicle)
 end)
 ```
 
-### That's it! Now check out how to add tags to reflectors and signs (or register/unregister)!
+### That's it! Next, learn how to tag reflectors and signs, as well as how to register or unregister them!
 
 ***A completed sample can be found at `root/examples/vehicle-reflector-handler.client.luau`!***
