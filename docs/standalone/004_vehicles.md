@@ -123,6 +123,6 @@ vehicles.ChildRemoved:Connect(function(vehicle)
 end)
 ```
 
-### That's it! Next, learn how to tag reflectors and signs, as well as how to register or unregister them!
+### Next, learn how to tag reflectors and signs, as well as how to register or unregister them!
 
 ***A completed sample can be found at `root/examples/vehicle-reflector-handler.client.luau`!***
