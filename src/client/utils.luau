@@ -500,9 +500,6 @@ const function initPool(): types.Pool
 
 	if not surfaceGuiTemplate then
 		surfaceGuiTemplate = Instance.new("Folder")
-
-
-
 		surfaceGuiTemplate.Name = "ReflectorTemplate"
 		surfaceGuiTemplate.Parent = ReplicatedStorage
 	end
