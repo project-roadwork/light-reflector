@@ -36,7 +36,7 @@ local function CheckForRegLightValue(vehicle: Model)
     -- This is just an example and every headlight system will be different.
     local values = vehicle.DriveSeat:FindFirstChild("Values")
 
-    -- If the high beams are enabled, then the intensity will be greater.
+    -- Just check if there is a headlight value
     if values and values:FindFirstChild("LowBeam") then
         return values.LowBeam
     end
