@@ -105,8 +105,6 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function reset(): ()
-	const constraints: types.Constraints = config.getConfig().Constraints
-
 	debugger.assert(isRunning, "Warning", "Cleanup called before Start().")
 
 	debugger.print("Info","Cleaning up!")
