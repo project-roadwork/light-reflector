@@ -28,7 +28,7 @@ return [[
 		  GROUP:            Project Roadwork
 		  VERSION:          2.2.0
 		  CREATED:          2025-10-26 2:03 PM CDT
-		  LAST UPDATED:     2026-04-23 10:43 PM CDT
+		  LAST UPDATED:     2026-04-24 11:11 PM CDT
 
 		  SPDX-License-Identifier:   MPL-2.0
 		  SPDX-FileCopyrightText:   2025-2026 Illinois_Roadbuff <illinois_roadbuff@proton.me>
@@ -72,6 +72,18 @@ return [[
 			https://discord.gg/sd4XfAqNF9
 
 	D. Changelog [MM/DD/YYYY]
+
+	    [04/24/2026 : Light-Reflector, Version 2.3.1]
+			Author: Illinois_Roadbuff "Rogue Jr"
+
+			[Fixes]
+			    - MAJOR: Fixed rojo
+			    - Removed unused variables
+				- Fixed some typing annotations
+
+			[Features]
+				- Added more descriptors for some config variables
+
 		[04/23/2026 : Light-Reflector, Version 2.3.0]
 			Author: Illinois_Roadbuff "Rogue Jr"
 
