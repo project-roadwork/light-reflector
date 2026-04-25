@@ -1,7 +1,7 @@
 # Light Reflector 
 **Latest Pre-Release Version: N/A**
 
-**Latest Partially Stable Version: 2.3.0**
+**Latest Partially Stable Version: 2.3.1**
 
  **A vehicle-based light reflector system that reflects `Decals` and `BasePart` reflectors at long distances on roads, built using [Jecs](https://github.com/Ukendio/jecs.git).**
 
