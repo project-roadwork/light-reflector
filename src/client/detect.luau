@@ -30,7 +30,7 @@ const jecs: types.JecsModule = require("../shared/jecs")
 
 -- IMPORTANT: Register Variables
 const world: jecs.World, components: types.Components,
-	instancetoEntityId: {[Instance]: jecs.Entity},
+    _instancetoEntityId: {[Instance]: jecs.Entity},
 	cachedQueries: types.CachedQueries = register.getWorldUtils()
 
 const reflectorGrid: types.Grid = register.reflectorGrid
