@@ -4,7 +4,7 @@
       "settings": {
         "luau-lsp": {
           "sourcemap": {
-            "rojoProjectFile": "roblox.test.project.json",
+            "rojoProjectFile": "roblox-test.project.json",
           },
         },
         "fflags": {
