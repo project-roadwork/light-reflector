@@ -7,11 +7,11 @@
 
 ![Diagram](../../assets/images/external/commons/i55_i355_interchange.jpg)
 
+#### Clicking this picture will redirect you to Wikimedia Commons
+
 In games, it would usually be displayed as a part with an image.
 
 [![Diagram](../../assets/images/external/crossroads/i55_i355_interchange_crossroads_stil.jpg)](https://commons.wikimedia.org/wiki/File:Interstate_55_Gantries_and_Signs_at_Southbound_I-355_in_Bolingbrook,_Illinois_(October_2025).tif)
-
-#### Clicking this picture will redirect you to Wikimedia Commons
 
 ## Sign System
 
