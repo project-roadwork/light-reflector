@@ -35,9 +35,7 @@ cachedQueries: types.CachedQueries = register.getWorldUtils()
 local baseConfig: types.BaseConfig = config.getConfig()
 local constraints: types.Constraints = baseConfig.Constraints
 local reflectorConfig: types.ReflectorConfig = baseConfig.ReflectorConfig
-local generalConfig: types.GeneralConfig = baseConfig.General
 local signConfig: types.SignConfig = baseConfig.SignConfig
-local isConfigTracked: boolean = false
 
 -- IMPORTANT: Module Public and Private Variables
 const activeReflectorEntities: {[jecs.Entity]: boolean} = detect.activeReflectorEntities
@@ -64,7 +62,6 @@ const function init(): ()
 		baseConfig = NEW_CONFIG
 		constraints = NEW_CONFIG.Constraints
 		reflectorConfig = NEW_CONFIG.ReflectorConfig
-		generalConfig = NEW_CONFIG.General
 		signConfig = NEW_CONFIG.SignConfig
 	end)
 
