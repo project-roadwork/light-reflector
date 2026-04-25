@@ -73,5 +73,3 @@ end
 ```
 
 ### Next, learn about hybrid reflectors!
-
-***A completed sample can be found at `root/examples/vehicle-reflector-handler.client.luau`!***
