@@ -136,7 +136,6 @@ const function spawn(grid: Grid, entityId: EntityId, pos: Vector3): ()
 		return
 	end
 
-	-- store original ECS entity
 	grid.EntityMap[key] = entityId
 	grid.Position[key] = pos
 
@@ -180,6 +179,7 @@ const function spawn(grid: Grid, entityId: EntityId, pos: Vector3): ()
 
 	grid.Dirty[key] = false
 end
+
 -- Public: Update an entity's position
 const function updatePosition(grid: Grid, entityId: EntityId, pos: Vector3): ()
 	local key = getIdKey(entityId)
