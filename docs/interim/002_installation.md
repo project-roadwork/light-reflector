@@ -3,7 +3,7 @@
 ### Installing via Codeberg Releases
 
 Head over to releases and download the `.rbxm` file from the latest version on [Codeberg](https://codeberg.org/project-roadwork/light-reflector/releases). 
-**It's recommended to place the module under `ReplicatedStorage`, however you may place it wherever you'd like.** 
+**It's recommended to place the module in `ReplicatedStorage` under a folder named `Packages`; however, you may place it wherever you'd like.** 
 
 ### Inserting into Roblox Studio
 
