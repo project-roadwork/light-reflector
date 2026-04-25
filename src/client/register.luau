@@ -18,7 +18,6 @@
 
 -- IMPORTANT: Services
 const CollectionService: CollectionService = game:GetService("CollectionService")
-const RunService: RunService = game:GetService("RunService")
 
 -- IMPORTANT: Debugger
 const debugger = require("../shared/debugger")
@@ -300,10 +299,10 @@ const function addReflector(part: Instance)
 				const state: types.ReflectorState? = world:get(entity, components.ReflectorState)
 
 				if state then
-					grid.remove(reflectorGrid,entity, state.CFrame.Position)
+					grid.remove(reflectorGrid, entity)
 					states.returnReflectorState(state)
 				else
-					grid.remove(reflectorGrid,entity, part.Position)
+					grid.remove(reflectorGrid, entity)
 				end
 
 				instanceToEntityId[part] = nil
@@ -329,10 +328,10 @@ const function addReflector(part: Instance)
 				const state: types.ReflectorState? = world:get(entity, components.ReflectorState)
 
 				if state then
-					grid.remove(reflectorGrid,entity, state.CFrame.Position)
+					grid.remove(reflectorGrid, entity)
 					states.returnReflectorState(state)
 				else
-					grid.remove(reflectorGrid,entity, part.Position)
+					grid.remove(reflectorGrid, entity)
 				end
 
 				instanceToEntityId[part] = nil
@@ -364,10 +363,10 @@ const function removeReflector(part:BasePart): ()
 				const state: types.ReflectorState? = world:get(entity, components.ReflectorState)
 
 				if state then
-					grid.remove(reflectorGrid,entity, state.CFrame.Position)
+					grid.remove(reflectorGrid, entity)
 					states.returnReflectorState(state)
 				else
-					grid.remove(reflectorGrid,entity, part.Position)
+					grid.remove(reflectorGrid, entity)
 				end
 
 				world:delete(entity)
@@ -455,7 +454,7 @@ const function _cacheSigns():  ()
 	const tagName: string = signConfig.tagName
 
 	if isTagsEnabled then
-		for _, part: BasePart in CollectionService:GetTagged(tagName) do
+		for _, part: Instance in CollectionService:GetTagged(tagName) do
 			addSign(part)
 		end
 
@@ -470,7 +469,7 @@ const function _cacheSigns():  ()
 
 	else
 		for _: number, folder: Folder in signConfig.signsFolders :: {Folder} do
-			for _: number, part:BasePart in folder:GetDescendants() do
+			for _: number, part:Instance in folder:GetDescendants() do
 				addSign(part)
 			end
 
