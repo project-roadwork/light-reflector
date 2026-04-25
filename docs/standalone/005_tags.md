@@ -10,9 +10,9 @@ Tags should be applied to signs and reflectors BEFORE runtime.
 
 **Please ensure that the decal with the sign image is named `Front` so the system knows which is the main decal. This is only needed if there are multiple decals in each part; however, it is not needed should the part only have one decal.**
 
-![Diagram](assets/images/005_tags_fig1.png)
+![Diagram](../../assets/images/005_tags_fig1.png)
 
-![Diagram](assets/images/005_tags_fig2.png)
+![Diagram](../../assets/images/005_tags_fig2.png)
 
 NOTE: The default tag for signs is `ReflectiveSign` whereas the default tag for reflectors is `Reflector`. If you changed the configuration for tags, *you may have a different tag name.*
 
