@@ -232,7 +232,10 @@ const BASE_CONFIG = {
 		minFadeDistance = 60, -- (recommended -> 60)
 		-- ^ Minimum fade distance in studs
 
-		signsFolders = { workspace.Signs },
+		signsFolders = {
+		    workspace
+		   -- workspace.Signs
+		},
 		-- ^ Set this to your own signs folders separated by a comma
 
 		isSign = function(part: BasePart)
@@ -318,7 +321,10 @@ const BASE_CONFIG = {
 		--
 		--   If a part has this attribute, it WILL override the configuration default values.
 
-		reflectorsFolder = { workspace.Roads },
+		reflectorsFolder = {
+		    workspace
+	--	    workspace.Roads
+		},
 		-- ^ Folders where your reflectors are, seperated by a comma. This will not be used if you have tags enabled.
 
 		isReflector = function(p: BasePart)
