@@ -340,6 +340,7 @@ export type SignEntity = {
 	surfaceGuiState: SurfaceGuiState?,
 	decalState: DecalState?,
 	mainDecal: Decal?,
+	cellKey: { [number]: number },
 }
 
 export type LightReflector = {

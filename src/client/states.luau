@@ -52,6 +52,7 @@ const SIGN_STATE_TEMPLATE: types.SignEntity = table.freeze({
 	partVeryReflective = false,
 	baseIntensity = 1,
 	doesSignMove = false,
+	cellKey = {0, 0},
 	partRenderMode = "SurfaceGui",
 	surfaceGuiState = nil,
 	decalState = nil,

@@ -196,7 +196,20 @@ const function _processSign(entity: jecs.Entity, source: types.LightSource)
 	end
 
 	if signState.doesSignMove then
-		signState.CFrame = part.CFrame
+		const newCFrame: CFrame = part.CFrame
+
+		const oldX: number, oldZ: number = state.cellKey[1], state.cellKey[2]
+		const newX: number?, newZ: number? = grid.getCellKey(signGrid, newCFrame.Position)
+
+		if newX and newZ then
+			if oldX ~= newX or oldZ ~= newZ then
+				grid.remove(signGrid, entity) -- old cell
+				grid.spawn(signGrid, entity, newCFrame.Position) -- new cell
+				state.cellKey = {newX, newZ}
+			end
+		end
+
+		signState.CFrame = newCFrame
 		signState.Size = part.Size
 	end
 
