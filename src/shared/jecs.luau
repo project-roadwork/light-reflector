@@ -4,6 +4,9 @@
 --draft 4
 
 --[[
+
+    https://github.com/Ukendio/jecs
+
     SPDX-FileCopyrightText: 2024 jecs authors
 
 	SPDX-License-Identifier: MIT
@@ -125,7 +128,7 @@ export type Query<T...> = typeof(setmetatable(
 	{} :: {
 		__iter: Iter<T...>,
 	}
-	))
+))
 
 type QueryArm<T...> = () -> ()
 
@@ -201,6 +204,7 @@ type world = {
 	entity: (self: world, id: i53?) -> i53,
 	component: (self: world) -> i53,
 	target: (self: world, id: i53, relation: i53, index: number?) -> i53?,
+	targets: (self: world, id: i53, relation: i53) -> () -> i53?,
 	delete: (self: world, id: i53) -> (),
 	add: (self: world, id: i53, component: i53) -> (),
 	set: (self: world, id: i53, component: i53, data: any) -> (),
@@ -243,10 +247,10 @@ export type World = {
 
 	--- Creates a new entity
 	entity:
-		& ((self: World) -> Entity<nil>)
-	& ((self: World, id: Entity) -> Entity)
-	& ((self: World, id: number) -> Entity)
-	& (<T>(self: World, id: Component<T>) -> Component<T>),
+			& ((self: World) -> Entity<nil>)
+			& ((self: World, id: Entity) -> Entity)
+			& ((self: World, id: number) -> Entity)
+			& (<T>(self: World, id: Component<T>) -> Component<T>),
 	--- Creates a new entity located in the first 256 ids.
 	--- These should be used for static components for fast access.
 	component: <T>(self: World) -> Entity<T>,
@@ -259,6 +263,13 @@ export type World = {
 		relation: ecs_entity_t<Component>,
 		index: number?
 	) -> Entity<unknown>?,
+
+	-- Gets an iterator for all viable targets of a relationship
+	targets: <T>(
+		self: World,
+		id: Entity<T> | number,
+		relation: ecs_entity_t<Component>
+	) -> () -> Id,
 
 	--- Deletes an entity and all it's related components and relationships.
 	delete: <T>(self: World, id: Entity<T>) -> (),
@@ -281,15 +292,15 @@ export type World = {
 	remove: <T, a>(self: World, id: Entity<T>, component: Component<a>) -> (),
 	--- Retrieves the value of up to 4 components. These values may be nil.
 	get: & (<T, a>(World, Entity<T> | number, Component<a>) -> a?)
-	& (<T, a, b>(World, Entity<T> | number, Component<a>, Component<b>) -> (a?, b?))
-	& (<T, a, b, c>(World, Entity<T> | number, Component<a>, Component<b>, Component<c>) -> (a?, b?, c?))
-	& (<T, a, b, c, d>(World, Entity<T> | number, Component<a>, Component<b>, Component<c>, Component<d>) -> (a?, b?, c?, d?)),
+		& (<T, a, b>(World, Entity<T> | number, Component<a>, Component<b>) -> (a?, b?))
+		& (<T, a, b, c>(World, Entity<T> | number, Component<a>, Component<b>, Component<c>) -> (a?, b?, c?))
+		& (<T, a, b, c, d>(World, Entity<T> | number, Component<a>, Component<b>, Component<c>, Component<d>) -> (a?, b?, c?, d?)),
 
 	--- Returns whether the entity has the ID.
 	has: (<T, a>(World, Entity<T>, Component<a>) -> boolean)
-	& (<T, a, b>(World, Entity<T>, Component<a>, Component<a>) -> boolean)
-	& (<T, a, b, c>(World, Entity<T>, Component<a>, Component<b>, Component<c>) -> boolean)
-	& <T, a, b, c, d>(World, Entity<T>, Component<a>, Component<b>, Component<c>, Component<d>) -> boolean,
+		& (<T, a, b>(World, Entity<T>, Component<a>, Component<a>) -> boolean)
+		& (<T, a, b, c>(World, Entity<T>, Component<a>, Component<b>, Component<c>) -> boolean)
+		& <T, a, b, c, d>(World, Entity<T>, Component<a>, Component<b>, Component<c>, Component<d>) -> boolean,
 
 	--- Get parent (target of ChildOf relationship) for entity. If there is no ChildOf relationship pair, it will return nil.
 	parent: <T>(self: World, entity: Entity<T>) -> Entity?,
@@ -306,33 +317,33 @@ export type World = {
 
 	--- Searches the world for entities that match a given query
 	query: ((World) -> Query<nil>)
-	& (<A>(World, Component<A>) -> Query<A>)
-	& (<A, B>(World, Component<A>, Component<B>) -> Query<A, B>)
-	& (<A, B, C>(World, Component<A>, Component<B>, Component<C>) -> Query<A, B, C>)
-	& (<A, B, C, D>(World, Component<A>, Component<B>, Component<C>, Component<D>) -> Query<A, B, C, D>)
-	& (<A, B, C, D, E>(World, Component<A>, Component<B>, Component<C>, Component<D>, Component<E>) -> Query<A, B, C, D, E>)
-	& (<A, B, C, D, E, F>(World, Component<A>, Component<B>, Component<C>, Component<D>, Component<E>, Component<F>) -> Query<A, B, C, D, E, F>)
-	& (<A, B, C, D, E, F, G>(
-		World,
-		Component<A>,
-		Component<B>,
-		Component<C>,
-		Component<D>,
-		Component<E>,
-		Component<F>,
-		Component<G>
+		& (<A>(World, Component<A>) -> Query<A>)
+		& (<A, B>(World, Component<A>, Component<B>) -> Query<A, B>)
+		& (<A, B, C>(World, Component<A>, Component<B>, Component<C>) -> Query<A, B, C>)
+		& (<A, B, C, D>(World, Component<A>, Component<B>, Component<C>, Component<D>) -> Query<A, B, C, D>)
+		& (<A, B, C, D, E>(World, Component<A>, Component<B>, Component<C>, Component<D>, Component<E>) -> Query<A, B, C, D, E>)
+		& (<A, B, C, D, E, F>(World, Component<A>, Component<B>, Component<C>, Component<D>, Component<E>, Component<F>) -> Query<A, B, C, D, E, F>)
+		& (<A, B, C, D, E, F, G>(
+			World,
+			Component<A>,
+			Component<B>,
+			Component<C>,
+			Component<D>,
+			Component<E>,
+			Component<F>,
+			Component<G>
 		) -> Query<A, B, C, D, E, F, G>)
-	& (<A, B, C, D, E, F, G, H>(
-		World,
-		Component<A>,
-		Component<B>,
-		Component<C>,
-		Component<D>,
-		Component<E>,
-		Component<F>,
-		Component<G>,
-		Component<H>,
-		...Component<any>
+		& (<A, B, C, D, E, F, G, H>(
+			World,
+			Component<A>,
+			Component<B>,
+			Component<C>,
+			Component<D>,
+			Component<E>,
+			Component<F>,
+			Component<G>,
+			Component<H>,
+			...Component<any>
 		) -> Query<A, B, C, D, E, F, G, H>),
 }
 
@@ -845,7 +856,7 @@ local function WORLD_TARGET(world: world, entity: i53, relation: i53, index: num
 	end
 
 	return entity_index_get_alive(entity_index,
-		ECS_PAIR_SECOND(nth :: number))
+	    ECS_PAIR_SECOND(nth :: number))
 end
 
 local function ECS_ID_IS_WILDCARD(e: i53): boolean
@@ -1478,11 +1489,11 @@ local function query_iter_init(query: QueryInner): () -> (number, ...any)
 
 			while e == nil do
 				last_archetype_u += 1
-				local compatible_archetypes = compatible_archetypes_u
-				local archetype = compatible_archetypes[last_archetype_u]
-				archetype_u = archetype
+			local compatible_archetypes = compatible_archetypes_u
+			local archetype = compatible_archetypes[last_archetype_u]
+			archetype_u = archetype
 
-				if not archetype then
+			if not archetype then
 					return nil
 				end
 				entities = archetype.entities
@@ -2616,15 +2627,15 @@ local function ecs_bulk_insert(world: world, entity: i53, ids: { i53 }, values: 
 	local emplaced: { [number]: boolean } = {}
 
 	for i, id in ids do
-		local at = find_insert(dst_types :: { number }, id :: number)
-		if at == -1 then
+	    local at = find_insert(dst_types :: { number }, id :: number)
+	    if at == -1 then
 			emplaced[i] = true
 			continue
-		end
+	    end
 
 		emplaced[i] = false
 
-		table.insert(dst_types, at, id)
+	    table.insert(dst_types, at, id)
 	end
 
 	local to = archetype_ensure(world, dst_types)
@@ -2694,7 +2705,7 @@ local function ecs_bulk_remove(world: world, entity: i53, ids: { i53 })
 			continue
 		end
 
-		remove[id] = true
+	    remove[id] = true
 		local idr = component_index[id]
 
 		local on_remove = idr.on_remove
@@ -3113,7 +3124,7 @@ local function world_new(DEBUG: boolean?)
 
 	type Listener<T> =
 		& ((e: i53, id: i53, value: T, oldarchetype: archetype) -> ())
-	& ((e: i53, id: i53, delete: boolean?) -> ())
+		& ((e: i53, id: i53, delete: boolean?) -> ())
 
 	world.added = function<T>(_: world, component: i53, fn: Listener<T>)
 		local listeners = signals.added[component]
@@ -3306,7 +3317,51 @@ local function world_new(DEBUG: boolean?)
 		end
 
 		return entity_index_get_alive(world.entity_index,
-			ECS_PAIR_SECOND(nth))
+		    ECS_PAIR_SECOND(nth))
+	end
+
+	local NOOP = NOOP :: () -> i53
+
+	local function world_targets(world: world, entity: i53, relation: i53): () -> i53?
+		local record = entity_index_try_get_unsafe(entity)
+		if not record then
+			return NOOP
+		end
+
+		local archetype = record.archetype
+		if not archetype then
+			return NOOP
+		end
+
+		local r = ECS_PAIR(relation, EcsWildcard)
+		local ct_idx = world.component_index
+		local idr = ct_idx[r]
+
+		if not idr then
+			return NOOP
+		end
+
+		local archetype_id = archetype.id
+		local count = idr.counts[archetype_id]
+		if not count then
+			return NOOP
+		end
+
+		local nth = idr.records[archetype_id]
+		local end_count = nth + count
+
+		local archetype_types = archetype.types
+		local sparse_array = entity_index.sparse_array
+		local dense_array = entity_index.dense_array
+
+		return function(): i53?
+			if nth == end_count then
+				return nil
+			end
+			local target = dense_array[sparse_array[ECS_PAIR_SECOND(archetype_types[nth])].dense]
+			nth += 1
+			return target
+		end
 	end
 
 	local function world_parent(world: world, entity: i53): i53?
@@ -3519,8 +3574,8 @@ local function world_new(DEBUG: boolean?)
 				end
 				local idr_t_types = idr_t_archetype.types
 				local entities = idr_t_archetype.entities
-				local deleted_any  = false
-				local remove_count = 0
+                local deleted_any  = false
+                local remove_count = 0
 
 				for _, id in idr_t_types do
 					if not ECS_IS_PAIR(id) then
@@ -3536,8 +3591,8 @@ local function world_new(DEBUG: boolean?)
 						deleted_any = true
 						break
 					else
-						to_remove[id] = id_record
-						remove_count += 1
+                        to_remove[id] = id_record
+                        remove_count += 1
 					end
 				end
 
@@ -3737,6 +3792,7 @@ local function world_new(DEBUG: boolean?)
 	world.get = world_get :: any
 	world.has = world_has :: any
 	world.target = world_target
+	world.targets = world_targets
 	world.parent = world_parent
 	world.contains = world_contains
 	world.exists = world_exists
@@ -4007,8 +4063,8 @@ return {
 	is_tag = (ecs_is_tag :: any) :: <T>(World, Component<T>) -> boolean,
 
 	--- OnAdd Hook to detect added components (see more how_to/110_hooks.luau)
-	OnAdd = (EcsOnAdd :: any) :: Component<<T>(entity: Entity, id: Id<T>, data: T) -> ()>,
-	--- OnRemove Hook to detect removed components (see more how_to/110_hooks.luau)
+    OnAdd = (EcsOnAdd :: any) :: Component<<T>(entity: Entity, id: Id<T>, data: T) -> ()>,
+    --- OnRemove Hook to detect removed components (see more how_to/110_hooks.luau)
 	OnRemove = (EcsOnRemove :: any) :: Component<<T>(entity: Entity, id: Id<T>, delete: boolean?) -> ()>,
 	--- OnChange Hook to detect mutations (see more how_to/110_hooks.luau)
 	OnChange = (EcsOnChange :: any) :: Component<<T>(entity: Entity, id: Id<T>, data: T) -> ()>,
