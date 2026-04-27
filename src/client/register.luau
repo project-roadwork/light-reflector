@@ -212,7 +212,10 @@ const function addReflector(part: Instance)
 		return
 	end
 
-	if not (part:HasTag(reflectorConfig.tagName) or reflectorConfig.isReflector(part)) then
+	const hasTag: boolean = reflectorConfig.isTagsEnabled and part:HasTag(reflectorConfig.tagName)
+	const isReflector_nontag: boolean? = reflectorConfig.isTagsEnabled == false and reflectorConfig.isReflector(part)
+
+	if not hasTag or isReflector_nontag  then
 		return
 	end
 
@@ -405,7 +408,10 @@ const function addSign(part:Instance, rangeType: string?): ()
         return
 	end
 
-	if (part:HasTag(signConfig.tagName) or signConfig.isSign(part)) then
+	const hasTag: boolean = reflectorConfig.isTagsEnabled and part:HasTag(signConfig.tagName)
+	const isSign_nontag: boolean? = signConfig.isTagsEnabled == false and signConfig.isSign(part)
+
+	if hasTag or isSign_nontag then
 		if not trackedAncestryInstances[part] then
 			const connection: RBXScriptConnection = utils.trackAncestryRemoval(part, function()
 				trackedAncestryInstances[part] = nil
