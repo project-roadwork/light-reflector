@@ -26,7 +26,6 @@ SPDX-License-Identifier = "CC0-1.0 OR Unlicense"
 path = [
 
     "README.md",
-    "assets/images/internal/**",
     "docs/standalone/**",
 ]
 SPDX-FileCopyrightText = [
@@ -39,6 +38,7 @@ SPDX-License-Identifier = "MPL-2.0 OR CC-BY-SA-4.0"
 path = [
 
     "assets/images/external/**",
+    "assets/images/internal/figures/**",
 
 ]
 SPDX-FileCopyrightText = [
