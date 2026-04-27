@@ -4,7 +4,7 @@
 -- Dark conditions for Light Reflector (fully typed)
 
 --[[
-    SPDX-FileCopyrightText: 2025-2026 Illinois_Roadbuff <illinois_roadbuff@proton.me>
+    SPDX-FileCopyrightText: 2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>
     SPDX-FileCopyrightText: 2025-2026 Project Roadwork and Contributors
 
     SPDX-License-Identifier: MPL-2.0

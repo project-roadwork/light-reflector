@@ -4,7 +4,7 @@
 -- Log ids and URL for the Light Reflector debugger.
 
 --[[
-    SPDX-FileCopyrightText: 2025-2026 Illinois_Roadbuff <illinois_roadbuff@proton.me>
+    SPDX-FileCopyrightText: 2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>
 	SPDX-FileCopyrightText: 2025-2026 Project Roadwork and Contributors
     SPDX-FileCopyrightText: 2025 Axiom & Contributors
 
