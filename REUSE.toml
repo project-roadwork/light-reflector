@@ -16,6 +16,8 @@ path = [
     "wally.lock",
     "wally.toml",
     ".luaurc",
+    ".gitattributes",
+    ".zed/settings.json"
 ]
 SPDX-FileCopyrightText = "NONE"
 SPDX-License-Identifier = "CC0-1.0 OR Unlicense"
@@ -24,14 +26,26 @@ SPDX-License-Identifier = "CC0-1.0 OR Unlicense"
 path = [
 
     "README.md",
-    "assets/images/**",
-    "docs/interim/**",
+    "assets/images/internal/**",
+    "docs/standalone/**",
 ]
 SPDX-FileCopyrightText = [
-"2025-2026 Illinois_Roadbuff <illinois_roadbuff@proton.me>",
+"2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>",
 "2025-2026 Project Roadwork and Contributors"]
 
 SPDX-License-Identifier = "MPL-2.0 OR CC-BY-SA-4.0"
+
+[[annotations]]
+path = [
+
+    "assets/images/external/**",
+
+]
+SPDX-FileCopyrightText = [
+"2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>",
+]
+
+SPDX-License-Identifier = "CC-BY-SA-4.0"
 
 [[annotations]]
 path = [
@@ -40,7 +54,7 @@ path = [
     "standalone.project.json"
 ]
 SPDX-FileCopyrightText = [
-"2025-2026 Illinois_Roadbuff <illinois_roadbuff@proton.me>",
+"2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>",
 "2025-2026 Project Roadwork and Contributors"]
 
 SPDX-License-Identifier = "MPL-2.0"
