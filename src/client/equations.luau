@@ -105,6 +105,8 @@ const function computeReflectorIntensity(part: BasePart, state, source: types.Li
 
 	const face:string? = state.faceAttributeName
 
+	const globalIntensityMultiplier: number = config.ReflectorConfig.reflectorIntensityMultiplier
+
 	local hybridFadeRange:number = 0
 	local hybridMinDistance:number = 0
 	local hybridCanKeepColorsAttribute:boolean? = nil
@@ -213,6 +215,8 @@ const function computeReflectorIntensity(part: BasePart, state, source: types.Li
 		finalTransparency = math.min(finalTransparency, weightedTransparency)
 	end
 
+	intensity *= globalIntensityMultiplier
+
 	if config.ReflectorConfig.useRaycastForObstacles then
 		intensity *= _computeOcclusion(part, state.CFrame, part.Size, seatPos, SAMPLE_POINTS, rayParams, config)
 	end
@@ -246,6 +250,7 @@ const function computeSignIntensity(part : BasePart, state: types.SignEntity,  s
 
 	const FadeDistance:number = config.SignConfig.maxFadeDistance
 	const MinFadeDistance:number = config.SignConfig.minFadeDistance
+	const globalIntensityMultiplier: number = config.SignConfig.signIntensityMultiplier
 
 	const partCFrame:CFrame = state.CFrame
 	const partPosition:Vector3 = partCFrame.Position
@@ -310,6 +315,8 @@ const function computeSignIntensity(part : BasePart, state: types.SignEntity,  s
 	end
 
 	if dist < config.SignConfig.maxFadeDistance and dot > 0 then
+	    intensity *= globalIntensityMultiplier
+
 		if config.SignConfig.useRaycastForObstacles then
 			const configCustomExclude: {Instance} = config.General.occlusionRaycastExclude :: {Instance}
 

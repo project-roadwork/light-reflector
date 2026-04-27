@@ -226,6 +226,9 @@ const BASE_CONFIG = {
 		--   Decals relying on the base brightness itself appears darker than SurfaceGuis,
 		--   so it would be best to add a multiplier.
 
+		signIntensityMultiplier = .8,
+		-- ^ Intensity multiplier that affects both SurfaceGuis and Decals
+
 		maxFadeDistance = 2500, -- (recommended -> 2500)
 		-- ^  Max fade distane of signs in studs
 
@@ -315,6 +318,9 @@ const BASE_CONFIG = {
 		-- ^ Default value whether to keep textures on the MAIN reflector or not
 		--
 		--   Primarily affects BaseParts such as meshes.
+
+		reflectorIntensityMultiplier = 1,
+		-- ^ Intensity multiplier that affects all reflectors
 
 		canKeepTexturesAttribute = "LRCanKeepTextures",
 		-- ^ Attribute name to override whether to keep textures or not on the MAIN reflector.
