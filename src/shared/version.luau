@@ -66,7 +66,7 @@ const function checkVersion(): ()
 				return nil
 			end
 
-			const ok: boolean, data: any = pcall(HttpService.JSONDecode, HttpService, result)
+			const ok: boolean, data: any? = pcall(HttpService.JSONDecode, HttpService, result)
 
 			return ok and data or nil
 		end
