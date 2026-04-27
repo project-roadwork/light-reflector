@@ -1,6 +1,6 @@
 Light Reflector is a `luau` vehicle-based light reflector system that reflects `Decal` and `BasePart` reflectors at long distances on roads.
 
-![Diagram](https://codeberg.org/project-roadwork/light-reflector/raw/branch/main/assets/images/light_reflector_systems.png)
+![Diagram](https://codeberg.org/project-roadwork/light-reflector/raw/branch/main/assets/images/internal/figures/light_reflector_systems.png)
 
 ## Issues
 1. **Broken Wally and Pesde packages, with mismatched versioning**

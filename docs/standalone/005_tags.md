@@ -10,9 +10,9 @@ Tags should be applied to signs and reflectors BEFORE the module starts.
 
 **Please ensure that the decal with the sign image is named `Front` so the system knows which is the main decal. This is only needed if there are multiple decals in each part; however, it is not needed should the part only have one decal.**
 
-![Diagram](../../assets/images/005_tags_fig1.png)
+![Diagram](../../assets/images/internal/figures/005_tags_fig1.png)
 
-![Diagram](../../assets/images/005_tags_fig2.png)
+![Diagram](../../assets/images/internal/figures/005_tags_fig2.png)
 
 NOTE: The default tag for signs is `ReflectiveSign` whereas the default tag for reflectors is `Reflector`. If you changed the configuration for tags, *you may have a different tag name.*
 
@@ -24,7 +24,7 @@ If you already have unique identifiers (`Size`, `Color`, `Name`, etc.) for signs
 
 **Example 1:** Signs | Make a script that adds a tag to a part if it matches with a unique identifier (in this case, `Name`)
 
-![Diagram](../../assets/images/005_tags_fig3.png)
+![Diagram](../../assets/images/internal/figures/005_tags_fig3.png)
 
 ```luau
 -- handler.server.luau
@@ -42,7 +42,7 @@ end
 
 **Example 2:** Reflectors | Make a script that adds a tag to a part if it matches with a unique identifier (in this case, `Name`)
 
-![Diagram](../../assets/images/005_tags_fig4.png)
+![Diagram](../../assets/images/internal/figures/005_tags_fig4.png)
 
 ```luau
 -- handler.server.luau
