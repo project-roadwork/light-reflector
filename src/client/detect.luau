@@ -35,7 +35,7 @@ const world: jecs.World, components: types.Components,
 
 const reflectorGrid: types.Grid = register.reflectorGrid
 const signGrid: types.Grid = register.signGrid
-const surfaceGuiPool: types.Pool = register.surfaceGuiPool
+const surfaceGuiPool: types.Pool<types.SurfaceGuiTemplate> = register.surfaceGuiPool
 const activeReflectorEntities: { [jecs.Entity]: boolean } = {}
 
 -- IMPORTANT: Configuration Variables
@@ -198,14 +198,14 @@ const function _processSign(entity: jecs.Entity, source: types.LightSource)
 	if signState.doesSignMove then
 		const newCFrame: CFrame = part.CFrame
 
-		const oldX: number, oldZ: number = state.cellKey[1], state.cellKey[2]
+		const oldX: number, oldZ: number = signState.cellKey[1], signState.cellKey[2]
 		const newX: number?, newZ: number? = grid.getCellKey(signGrid, newCFrame.Position)
 
 		if newX and newZ then
 			if oldX ~= newX or oldZ ~= newZ then
 				grid.remove(signGrid, entity) -- old cell
 				grid.spawn(signGrid, entity, newCFrame.Position) -- new cell
-				state.cellKey = {newX, newZ}
+				signState.cellKey = {newX, newZ}
 			end
 		end
 
@@ -218,7 +218,9 @@ const function _processSign(entity: jecs.Entity, source: types.LightSource)
 	if not mainDecal then
 	    const name: string = signConfig.mainDecalName
 
-		mainDecal = part:FindFirstChild(name) :: Decal?
+		const found: Instance? = part:FindFirstChild(name)
+
+		mainDecal = if found and found:IsA("Decal") then found else nil
 		-- ^ unfortunately one cannot set instances as attributes
 		if not mainDecal then
 			for _:number, decal:Instance in part:GetChildren() do
@@ -285,7 +287,7 @@ const function _processSign(entity: jecs.Entity, source: types.LightSource)
 		local gui: types.SurfaceGuiTemplate? = state.gui
 
 		if not gui then
-			gui = surfaceGuiPool:GetObject() :: types.SurfaceGuiTemplate
+			gui = surfaceGuiPool:GetObject()
 
 			if gui == nil then
 			    debugger.warn("Warning", "Pool contains nil instances.")
@@ -428,7 +430,7 @@ const function start() : ()
 				const pos: Vector3 = source.getPosition()
 
 				if reflectorConfig.isEnabled then
-					const nearbyReflectors: {jecs.Entity<nil>}? = grid.query(reflectorGrid, pos) :: {jecs.Entity<nil>}
+					const nearbyReflectors: {jecs.Entity<nil>}? = grid.query(reflectorGrid, pos)
 
 					if not nearbyReflectors then
 						continue
@@ -446,7 +448,7 @@ const function start() : ()
 				end
 
 				if signConfig.isEnabled then
-					const nearbySigns: {jecs.Entity<nil>}? = grid.query(signGrid, pos) :: {jecs.Entity<nil>}
+					const nearbySigns: {jecs.Entity<nil>}? = grid.query(signGrid, pos)
 
 					if not nearbySigns then
 						continue
@@ -542,4 +544,4 @@ return table.freeze({
 	reset = reset,
 	getDetectedEntities = getDetectedEntities,
 	safeCancelThread = safeCancelThread
-}) :: types.Detect
+})

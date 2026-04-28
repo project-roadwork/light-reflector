@@ -31,7 +31,7 @@ const debugger: types.Debugger = require("@self/shared/debugger")
 const logs: types.DebuggerLogs  = require("@self/shared/logs")
 const version: string = require("@self/shared/version")._VERSION
 
-debugger.set(`Light Reflector {version}`, logs.Ids :: {[string]: string}, logs.URL) -- URL will be omitted or left out if not in Studio
+debugger.set(`Light Reflector {version}`, logs.Ids, logs.URL) -- URL will be omitted or left out if not in Studio
 
 -- IMPORTANT: RunContext Safety Net
 debugger.assert(RunService:IsClient(), "RunContext", "Init module can only be run from the client.")
@@ -131,4 +131,4 @@ return table.freeze({
 	config = config,
 	register = register,
 	utils = utils,
-}) :: types.LightReflector
+})

@@ -45,7 +45,7 @@ const utils: types.Utils = require("./utils")
 const grid: types.GridModule = require("./grid")
 
 -- IMPORTANT: Templates
-const SIGN_STATE_TEMPLATE: types.SignEntity = table.freeze({
+const SIGN_STATE_TEMPLATE: types.SignEntity = {
 	_inPool = false,
 	CFrame = CFrame.new(0, 0, 0),
 	Size = Vector3.new(0, 0, 0),
@@ -57,16 +57,16 @@ const SIGN_STATE_TEMPLATE: types.SignEntity = table.freeze({
 	surfaceGuiState = nil,
 	decalState = nil,
 	mainDecal = nil,
-}) :: types.SignEntity -- Casting is required to avoid the `table.freeze` type error
+} -- Casting is required to avoid the `table.freeze` type error
 
-const DECAL_STATE_TEMPLATE: types.DecalState = table.freeze({
+const DECAL_STATE_TEMPLATE: types.DecalState = {
 	_inPool = false,
 	currentBrightness = 0,
 	targetBrightness = 0,
 	baseColor = Color3.new(0, 0, 0),
-}) :: types.DecalState
+}
 
-const SURFACE_GUI_STATE_TEMPLATE: types.SurfaceGuiState = table.freeze({
+const SURFACE_GUI_STATE_TEMPLATE: types.SurfaceGuiState = {
 	_inPool = false,
 	gui = nil,
 	currentTransparency = 1,
@@ -81,9 +81,9 @@ const SURFACE_GUI_STATE_TEMPLATE: types.SurfaceGuiState = table.freeze({
 	targetTransparency = 1,
 	targetBrightness = 0,
 	targetLightInfluence = 1,
-}) :: types.SurfaceGuiState
+}
 
-const REFLECTOR_STATE_TEMPLATE: types.ReflectorState = table.freeze({
+const REFLECTOR_STATE_TEMPLATE: types.ReflectorState = {
 	_inPool = false,
 	isActive = false,
 
@@ -118,7 +118,7 @@ const REFLECTOR_STATE_TEMPLATE: types.ReflectorState = table.freeze({
 	faceNormalWorld = Vector3.new(0, 0, 0),
 
 	doesReflectorMove = false,
-}) :: types.ReflectorState
+}
 
 -- IMPORTANT: Pools
 const pools: types.StatePools = {
@@ -286,7 +286,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function _returnSurfaceGuiState(state: types.SurfaceGuiState, surfaceGuiPool: types.Pool): ()
+const function _returnSurfaceGuiState(state: types.SurfaceGuiState, surfaceGuiPool: types.Pool<types.SurfaceGuiTemplate>): ()
 	if state._inPool then
 		return
 	end
@@ -307,7 +307,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function returnSignState(state: types.SignEntity, surfaceGuiPool: types.Pool): ()
+const function returnSignState(state: types.SignEntity, surfaceGuiPool: types.Pool<types.SurfaceGuiTemplate>): ()
 	if config.FLAGS.NO_STATE_POOLING then
 		return
 	end
@@ -363,4 +363,4 @@ return table.freeze({
 	acquireSurfaceGuiState = acquireSurfaceGuiState,
 	returnSignState = returnSignState,
 	returnReflectorState = returnReflectorState,
-}) :: types.StatesModule
+})

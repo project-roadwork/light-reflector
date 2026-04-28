@@ -43,7 +43,7 @@ const reflectorGrid: types.Grid = grid.newGrid(1900)
 const signGrid: types.Grid = grid.newGrid(1900)
 
 -- SurfaceGui Object Pool
-const surfaceGuiPool: types.Pool = utils.initPool()
+const surfaceGuiPool: types.Pool<types.SurfaceGuiTemplate> = utils.initPool()
 
 -- Variables
 const scriptConnections: { [RBXScriptConnection]: boolean } = {}
@@ -478,7 +478,7 @@ const function _cacheSigns():  ()
 		end
 
 	else
-		for _: number, folder: Folder in signConfig.signsFolders :: {Folder} do
+		for _: number, folder: Instance in signConfig.signsFolders do
 			for _: number, part:Instance in folder:GetDescendants() do
 				addSign(part)
 			end
@@ -568,8 +568,8 @@ const function _cacheReflectors(): ()
 				addReflector(part)
 			end
 
-			const descendantAddedSignal:RBXScriptConnection = Folder.DescendantAdded:Connect(addReflector::any)
-			const DescendantRemovingSignal:RBXScriptConnection = Folder.DescendantRemoving:Connect(removeReflector::any)
+			const descendantAddedSignal:RBXScriptConnection = Folder.DescendantAdded:Connect(addReflector)
+			const DescendantRemovingSignal:RBXScriptConnection = Folder.DescendantRemoving:Connect(removeReflector)
 
 			scriptConnections[descendantAddedSignal] = true
 			scriptConnections[DescendantRemovingSignal] = true
@@ -630,10 +630,10 @@ const function init(): ()
 		generalConfig = NEW_CONFIG.General
 		signConfig = NEW_CONFIG.SignConfig
 
-		overlapDetectionParams.FilterDescendantsInstances = signConfig.signsFolders :: {Instance}
+		overlapDetectionParams.FilterDescendantsInstances = signConfig.signsFolders
 	end)
 
-	overlapDetectionParams.FilterDescendantsInstances = signConfig.signsFolders :: {Instance}
+	overlapDetectionParams.FilterDescendantsInstances = signConfig.signsFolders
 
 	_initDebugBox()
 
@@ -772,4 +772,4 @@ return table.freeze({
 
 	getPartsByRaycast = getPartsByRaycast,
 
-}) :: types.Register
+})

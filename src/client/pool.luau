@@ -81,21 +81,30 @@ ObjectPool.__index = ObjectPool
 local leakLogged: boolean = false
 
 export type Object = Instance
-export type Pool = {
-	Objects: {Object},
-	ActiveObjects: {Object},
-	HierarchicalPools: { [Object]: Pool },
-	ObjectTemplate: Object,
-	CreateObject: (Object) -> Object,
-	ResetObject: (Object) -> (),
-	MinSize: number, MaxSize: number,
+export type Pool<T> = {
+	Objects: {T},
+	ActiveObjects: {T},
+	HierarchicalPools: { [T]: Pool<T> },
+
+	ObjectTemplate: T,
+	CreateObject: (T) -> T,
+	ResetObject: (T) -> (),
+
+	MinSize: number,
+	MaxSize: number,
+
 	UsageMetrics: UsageMetrics,
-	Logger: any, Mutex: any,
-	ObjectTaken: any, ObjectReturned: any,
-	GetObject: (Pool) -> Object,
-	ReturnObject: (Pool, Object) -> (boolean, string?),
-	Prewarm: (Pool, number) -> (),
-	CreateLog: (Pool, string, string) -> (),
+	Logger: any,
+	Mutex: any,
+
+	ObjectTaken: any,
+	ObjectReturned: any,
+
+	GetObject: (Pool<T>) -> T?,
+	ReturnObject: (Pool<T>, T) -> (boolean, string?),
+
+	Prewarm: (Pool<T>, number) -> (),
+	CreateLog: (Pool<T>, string, string) -> (),
 }
 
 
@@ -112,7 +121,7 @@ export type Mutex = {
 
 type ObjectPoolClass = typeof(ObjectPool)
 
-type ObjectPoolInstance = Pool & {
+type ObjectPoolInstance = Pool<any> & {
 	__index: ObjectPoolClass,
 }
 
@@ -123,7 +132,7 @@ type UsageMetrics = {
 }
 const debugger: typeof(require("../shared/debugger")) = require("../shared/debugger")
 
-const mutex: Mutex = require("./mutex")
+const mutex = require("./mutex")
 
 --- Creates a new object pool.
 ---@param objectTemplate Object  The template object used to create new objects in the pool.
@@ -132,11 +141,11 @@ const mutex: Mutex = require("./mutex")
 ---@param minSize number  Minimum initial size of the pool (optional, default 10).
 ---@param maxSize number  Maximum size limit of the pool (optional, default 50).
 ---@return Pool New instance of ObjectPool.
-function ObjectPool.new(objectTemplate: Object, createObject: (Object) -> Object, resetObject: (Object) -> (), minSize: number, maxSize: number): Pool
+function ObjectPool.new(objectTemplate: Object, createObject: (Object) -> Object, resetObject: (Object) -> (), minSize: number, maxSize: number): Pool<any>
 	local self = setmetatable({
 		Objects = {} :: {Object},
 		ActiveObjects = {} :: {Object},
-		HierarchicalPools = {} :: {[Object]: Pool},
+		HierarchicalPools = {} :: {[Object]: Pool<any>},
 
 		ObjectTemplate = objectTemplate,
 		CreateObject = createObject,
@@ -151,7 +160,7 @@ function ObjectPool.new(objectTemplate: Object, createObject: (Object) -> Object
 			AvailableCount = 0,
 			PeakActive = 0,
 		} :: UsageMetrics,
-	}, ObjectPool) :: Pool -- these type errors are making me go insane :D
+	}, ObjectPool) :: Pool<any> -- these type errors are making me go insane :D
 
 	self.Objects = {}
 	self.ActiveObjects = {}
@@ -287,7 +296,7 @@ function ObjectPool:ReturnObject(obj: Object): (boolean, string?)
 			--	self.ObjectReturned:Fire(obj)
 		end
 		if self.HierarchicalPools[obj] then
-			local childPool: Pool = self.HierarchicalPools[obj]
+			local childPool: Pool<any> = self.HierarchicalPools[obj]
 			for _, child in ipairs(childPool.ActiveObjects) do
 				childPool:ReturnObject(child)
 			end

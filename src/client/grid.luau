@@ -74,7 +74,7 @@ export type Grid = {
 
 const jecs = require("../shared/jecs")
 
-export type EntityId = number | vector | jecs.Entity
+export type EntityId = jecs.Entity
 
 -- Constants
 const floor = math.floor
@@ -82,7 +82,7 @@ const ceil = math.ceil
 const clear = table.clear
 const COARSE_FACTOR: number = 4
 
-local function getIdKey(entityId: EntityId): number | string
+local function getIdKey(entityId: EntityId | number | vector): number | string
 	if typeof(entityId) == "number" then
 		return entityId
 	elseif typeof(entityId) == "vector" then
@@ -312,7 +312,7 @@ const function remove(grid: Grid, entityId: EntityId): ()
 end
 
 -- Public: Query nearby entities
-const function query(grid: Grid, pos: Vector3, radius: number?): {EntityId}
+const function query(grid: Grid, pos: Vector3, radius: number?): {jecs.Entity<nil>}
 	const results = grid._scratchIds
 	clear(results)
 

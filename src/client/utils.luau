@@ -376,7 +376,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function resetSurfaceGui(SurfaceGuiPool: types.Pool, gui: types.SurfaceGuiTemplate): ()
+const function resetSurfaceGui(SurfaceGuiPool: types.Pool<types.SurfaceGuiTemplate>, gui: types.SurfaceGuiTemplate): ()
 	if not gui then return end
 
 	--if gui:GetAttribute("InPool") == true then return end
@@ -495,7 +495,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function initPool(): types.Pool
+const function initPool(): types.Pool<types.SurfaceGuiTemplate>
 	local surfaceGuiTemplate:Instance? = ReplicatedStorage:FindFirstChild("ReflectorTemplate")
 
 	if not surfaceGuiTemplate then
@@ -523,7 +523,7 @@ const function initPool(): types.Pool
 		templateGui = surfaceGui
 	end
 
-	return pool.new(templateGui::SurfaceGui,
+	return pool.new(templateGui::types.SurfaceGuiTemplate,
 		function(template: Instance): Instance
 			const clone = template:Clone()
 			return clone
@@ -563,4 +563,4 @@ return table.freeze({
 	spawnDebugField = spawnDebugField,
 	resetSurfaceGui = resetSurfaceGui,
 	initPool = initPool,
-}) :: types.Utils
+})

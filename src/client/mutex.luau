@@ -47,7 +47,7 @@ type MutexClass = {
 }
 
 -- Variables and Class
-local Mutex: MutexClass = {} :: MutexClass
+local Mutex = {}
 Mutex.__index = Mutex
 
 --[=[
@@ -113,4 +113,4 @@ function Mutex:isLocked(): boolean
 end
 
 -- Return public API
-return table.freeze(Mutex) :: Mutex
+return table.freeze(Mutex)

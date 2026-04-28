@@ -340,4 +340,4 @@ return table.freeze({
 	init = init,
 	start = start,
 	safeCancelThread = safeCancelThread
-}) :: types.Render
+})

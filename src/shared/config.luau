@@ -181,7 +181,7 @@ const BASE_CONFIG = {
 		movingPartAttribute = "LRMoving",
 		-- ^ Attribute name to identify moving reflectors or signs
 
-		occlusionRaycastExclude = {},
+		occlusionRaycastExclude = {} :: {Instance?},
 		-- ^ Any additional instances you want to include in raycast exclusion
 
 		occlusionRaycastExcludeTransparent = true
@@ -238,7 +238,7 @@ const BASE_CONFIG = {
 		signsFolders = {
 		    workspace
 		   -- workspace.Signs
-		},
+		} :: {Instance},
 		-- ^ Set this to your own signs folders separated by a comma
 
 		isSign = function(part: BasePart)
@@ -283,7 +283,7 @@ const BASE_CONFIG = {
 		mainDecalName = "ACTUALMainDecal123",
 		-- ^ Set this to something unique that no other decal has since that identifies the main decal
 
-		isMainDecal = function(decal)
+		isMainDecal = function(decal: Decal)
 			local name = decal.Name
 			local isExcludedBottom = (name == "Decal" and decal.Face == Enum.NormalId.Bottom)
 
@@ -327,10 +327,10 @@ const BASE_CONFIG = {
 		--
 		--   If a part has this attribute, it WILL override the configuration default values.
 
-		reflectorsFolder = {
+		reflectorsFolders = {
 		    workspace
 	--	    workspace.Roads
-		},
+		} :: {Instance},
 		-- ^ Folders where your reflectors are, seperated by a comma. This will not be used if you have tags enabled.
 
 		isReflector = function(p: BasePart)

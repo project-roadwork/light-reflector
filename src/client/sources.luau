@@ -105,4 +105,4 @@ return table.freeze({
 	anyActive = anyActive,
 	register = register,
 	getAllActive = getAllActive,
-}) :: types.SourcesModule -- must add this since table.freeze destroys my strict typing >:(
+})

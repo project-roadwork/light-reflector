@@ -25,6 +25,7 @@ const grid: types.GridModule = require("./grid")
 const rangeTypes: { [types.RangeType]: boolean } = { near = true, far = true }
 const clamp: (number, number, number) -> number = math.clamp
 const raycast: (WorldRoot, Vector3, Vector3, RaycastParams) -> RaycastResult? = workspace.Raycast
+local lastExclusion: {any?} = {}
 
 const rayParams: RaycastParams = RaycastParams.new()
 rayParams.FilterType = Enum.RaycastFilterType.Exclude
@@ -38,9 +39,21 @@ const SAMPLE_POINTS: {Vector3} = {}
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function _computeOcclusion(part: BasePart, CFrame: CFrame, Size: Vector3, lightPos: Vector3, samplePoints: {Vector3}, rayParams: RaycastParams, config:types.BASE_CONFIG): number
+const function _computeOcclusion(part: BasePart, CFrame: CFrame, Size: Vector3, lightPos: Vector3, samplePoints: {Vector3}, rayParams: RaycastParams, config:types.BASE_CONFIG, source: types.LightSource): number
 	const total: number = #samplePoints
 	local hit: number = 0
+
+	const configCustomExclude: {Instance?} = config.General.occlusionRaycastExclude
+
+	if configCustomExclude ~= lastExclusion then
+	    lastExclusion = configCustomExclude
+
+	    if #configCustomExclude > 0 then
+			rayParams.FilterDescendantsInstances = if #configCustomExclude == 0 then {source.Owner} else {source.Owner, table.unpack(configCustomExclude)}
+		else
+		    rayParams.FilterDescendantsInstances = {source.Owner}
+		end
+	end
 
 	for _: number, offset: Vector3 in samplePoints do
 		const worldPoint: Vector3 = CFrame:PointToWorldSpace(offset * Size)
@@ -81,7 +94,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function computeReflectorIntensity(part: BasePart, state, source: types.LightSource, MPH: number, config: types.BASE_CONFIG): (number, number)
+const function computeReflectorIntensity(part: BasePart, state: types.ReflectorState, source: types.LightSource, MPH: number, config: types.BASE_CONFIG): (number, number)
 
 	--[[
 		             __________________________________________________________
@@ -118,8 +131,8 @@ const function computeReflectorIntensity(part: BasePart, state, source: types.Li
 
 	if state.isHybrid then
 		--maxDot =  math.cos(config.General.lightHalfAngle)
-		hybridFadeRange = state.hybridFadeRange
-		hybridMinDistance = state.hybridMinDistance
+		hybridFadeRange = state.hybridFadeRange or 0
+		hybridMinDistance = state.hybridMinDistance or 0
 		hybridTransparencyMultiplier = state.hybridTransparencyMultiplier
 
 		canHybridKeepColors = state.canHybridKeepColors
@@ -150,7 +163,7 @@ const function computeReflectorIntensity(part: BasePart, state, source: types.Li
 
 	local wedgeFactor: number = 1
 
-	if state.isWedge then
+	if state.isWedge and state.slopeNormalWorld then
 		const toLight: Vector3 = -toPart
 		const rawDot: number = state.slopeNormalWorld:Dot(toLight)
 		--	part:SetAttribute("RawDOT", rawDot) -- Kept as reference for debugging
@@ -166,7 +179,7 @@ const function computeReflectorIntensity(part: BasePart, state, source: types.Li
 		end
 	end
 
-	if face then
+	if face and state.faceNormalWorld then
 		if not utils.validFaces[face] then
 			debugger.warn("Warning", `Invalid Enum.NormalID face; got {face}.`)
 			--	continue
@@ -218,7 +231,7 @@ const function computeReflectorIntensity(part: BasePart, state, source: types.Li
 	intensity *= globalIntensityMultiplier
 
 	if config.ReflectorConfig.useRaycastForObstacles then
-		intensity *= _computeOcclusion(part, state.CFrame, part.Size, seatPos, SAMPLE_POINTS, rayParams, config)
+		intensity *= _computeOcclusion(part, state.CFrame, part.Size, seatPos, SAMPLE_POINTS, rayParams, config, source)
 	end
 
 	return clamp(intensity * baseIntensity, 0, 1), if intensity > 0 then clamp(finalTransparency*hybridTransparencyMultiplier, 0.5, 1) else 1
@@ -229,7 +242,13 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function computeSignIntensity(part : BasePart, state: types.SignEntity,  source: types.LightSource, decal: Decal, rangeType: types.RangeType, config: types.BASE_CONFIG)
+const function computeSignIntensity(part : BasePart, state: types.SignEntity,  source: types.LightSource, decal: Decal, rangeType: types.RangeType, config: types.BASE_CONFIG):
+    {
+		transparency: number,
+		brightness: number,
+		lightInfluence: number,
+		hasActiveLight: boolean
+	}
 
 	--[[
 			              			 ______________________________________________________________
@@ -311,6 +330,7 @@ const function computeSignIntensity(part : BasePart, state: types.SignEntity,  s
 			transparency = -1,
 			brightness = -0,
 			lightInfluence =-1,
+			hasActiveLight = false
 		}
 	end
 
@@ -318,15 +338,9 @@ const function computeSignIntensity(part : BasePart, state: types.SignEntity,  s
 	    intensity *= globalIntensityMultiplier
 
 		if config.SignConfig.useRaycastForObstacles then
-			const configCustomExclude: {Instance} = config.General.occlusionRaycastExclude :: {Instance}
 
-			if #configCustomExclude > 0 then
-				rayParams.FilterDescendantsInstances = {source.Owner, table.unpack(configCustomExclude)}
-			else
-				rayParams.FilterDescendantsInstances = {source.Owner}
-			end
 
-			intensity *= _computeOcclusion(part, state.CFrame, state.Size, seatPos, SAMPLE_POINTS, rayParams, config)
+			intensity *= _computeOcclusion(part, state.CFrame, state.Size, seatPos, SAMPLE_POINTS, rayParams, config, source)
 		end
 
 		transparency = (baseTransparency * proximityFactor * angleContribution) / intensity
@@ -363,7 +377,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function buildSamplePoints(quality: number)
+const function buildSamplePoints(quality: number): ()
 	for x: number = 0, quality do
 		for y: number = 0, quality do
 			table.insert(SAMPLE_POINTS,
@@ -383,4 +397,4 @@ return table.freeze({
 	computeSignIntensity = computeSignIntensity,
 	computeReflectorIntensity = computeReflectorIntensity,
 	buildSamplePoints = buildSamplePoints
-}) :: types.Equations
+})

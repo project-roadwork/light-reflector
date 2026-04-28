@@ -20,6 +20,7 @@
 ]]
 
 -- Config
+local logs = require(script.Parent.logs)
 const config: typeof(require("./config")) = require("./config")
 
 const Base: string = "[%s] %s%s%s"
@@ -38,7 +39,7 @@ const function format(id: string, trace: string, ...: any): string
 	assert(Data.Logs[id], `Invalid log ID: {id}`)
 	const Formatted: string = Base:format(
 		if Data.Name then Data.Name else "?",
-		(Data.Logs[id] :: string):format(...),
+		(Data.Logs[id]):format(...),
 		if Data.URL then `\nLearn more: {Data.URL}#{id:lower()}` else "",
 		`\n---- Trace ----\n{trace}`
 	):gsub("\n", "\n\t\t\t\t")
@@ -80,13 +81,13 @@ const function parse(error: string): Parsed
 	}
 end
 
-const function set(name: string, logs: {[string]: string}, url: string?)
+const function set(name: string, logs: typeof(logs.Ids), url: string?)
 	if game:GetService("RunService"):IsStudio() and url then
 	--if url then
-		Data.URL = url :: any
+		Data.URL = url
 	end
-	Data.Name = name :: any
-	Data.Logs = logs :: any
+	Data.Name = name
+	Data.Logs = logs
 end
 
 -- Types
@@ -96,7 +97,7 @@ export type Parsed = {
 	trace: string,
 }
 
-export type LogsTable = { [string]: string }
+export type LogsTable = typeof(logs.Ids)
 
 export type DataType = {
 	Logs: LogsTable?,

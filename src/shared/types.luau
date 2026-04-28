@@ -28,21 +28,32 @@ export type JecsModule = typeof(jecs)
 -- Pool Types
 export type PoolModule = typeof(pool)
 export type Object = Instance
-export type Pool = {
-	Objects: {Object},
-	ActiveObjects: {Object},
-	HierarchicalPools: { [Object]: Pool },
-	ObjectTemplate: Object,
-	CreateObject: (Object) -> Object,
-	ResetObject: (Object) -> (),
-	MinSize: number, MaxSize: number,
+
+
+export type Pool<T> = {
+	Objects: {T},
+	ActiveObjects: {T},
+	HierarchicalPools: { [T]: Pool<T> },
+
+	ObjectTemplate: T,
+	CreateObject: (T) -> T,
+	ResetObject: (T) -> (),
+
+	MinSize: number,
+	MaxSize: number,
+
 	UsageMetrics: {ActiveCount: number, AvailableCount: number, PeakActive: number},
-	Logger: any, Mutex: any,
-	ObjectTaken: any, ObjectReturned: any,
-	GetObject: (Pool) -> Object,
-	ReturnObject: (Pool, Object) -> (boolean, string?),
-	Prewarm: (Pool, number) -> (),
-	CreateLog: (Pool, string, string) -> (),
+	Logger: any,
+	Mutex: any,
+
+	ObjectTaken: any,
+	ObjectReturned: any,
+
+	GetObject: (Pool<T>) -> T?,
+	ReturnObject: (Pool<T>, T) -> (boolean, string?),
+
+	Prewarm: (Pool<T>, number) -> (),
+	CreateLog: (Pool<T>, string, string) -> (),
 }
 
 -- Debugger Types
@@ -62,7 +73,7 @@ export type BASE_CONFIG = typeof(baseConfig)
 -- Grid Types
 export type GridModule = typeof(require("../client/grid"))
 
-export type EntityId = number | vector | jecs.Entity
+export type EntityId = jecs.Entity<nil>
 type Key = string | number
 
 export type Grid = {
@@ -105,42 +116,40 @@ export type IntensityData = {
 }
 
 export type SourcesModule = {
-	name: string,
-	list: SourceList,
+	read name: string,
+	read list: SourceList,
 
-	create: (...any) -> LightSource,
-	add: (...any) -> LightSource,
-	register: (...any) -> LightSource,
+	read create: (...any) -> LightSource,
+	read add: (...any) -> LightSource,
+	read register: (...any) -> LightSource,
 
-	anyActive: (...any) -> boolean,
-	getAllActive: (...any) -> {LightSource},
+	read anyActive: (...any) -> boolean,
+	read getAllActive: (...any) -> {LightSource},
 }
 
 -- Utilities Types
 export type Utils = {
-	name: string,
+	read name: string,
 
-	deepMerge: (defaults: Dict, overrides: Dict, path: string?) -> (),
-	trackAncestryRemoval: (instance: Instance, callback: (Instance) -> ()) -> RBXScriptConnection,
-	configure: (userConfig: Dict) -> Configuration,
+	read trackAncestryRemoval: (instance: Instance, callback: (Instance) -> ()) -> RBXScriptConnection,
 
-	getSpeedMPH: (DriveSeat: VehicleSeat) -> number,
-	adaptiveWait: ((number?) -> number, minFPS: number, maxFPS: number, DriveSeat: VehicleSeat?) -> (number, number),
-	adaptiveWaitWithSourcesOverride: ((number?) -> number, minFPS: number, maxFPS: number, DriveSeat: VehicleSeat?) -> (number, number),
-	getFastestDriveSeat: (Vehicles: jecs.Cached_Query<Instance>) -> VehicleSeat?,
+	read getSpeedMPH: (DriveSeat: VehicleSeat) -> number,
+	read adaptiveWait: ((number?) -> number, minFPS: number, maxFPS: number, DriveSeat: VehicleSeat?) -> (number, number),
+	read adaptiveWaitWithSourcesOverride: ((number?) -> number, minFPS: number, maxFPS: number, DriveSeat: VehicleSeat?) -> (number, number),
+	read getFastestDriveSeat: (Vehicles: jecs.Cached_Query<Instance>) -> VehicleSeat?,
 
-	fixPartOrientation: (part: BasePart, decal: Decal) -> (),
-	normalizeBaseColor: (part: BasePart, isNormalizeEnabled: boolean) -> Color3,
-	resetSurfaceGui: (SurfaceGuiPool: Pool, gui: SurfaceGuiTemplate) -> (),
-	initPool: () -> Pool,
+	read fixPartOrientation: (part: BasePart, decal: Decal) -> (),
+	read normalizeBaseColor: (part: BasePart, isNormalizeEnabled: boolean) -> Color3,
+	read resetSurfaceGui: (SurfaceGuiPool: Pool<SurfaceGuiTemplate>, gui: SurfaceGuiTemplate) -> (),
+	read initPool: () -> Pool<SurfaceGuiTemplate>,
 
-	pcallRetry: ((...any) -> (...any), maxRetries: number, ...any) -> (boolean, string?),
-	areColorsEqual: (colorA: Color3, colorB: Color3, epsilon: number?) -> boolean,
-	renderWait: (waitTime: number?) -> number,
+	read pcallRetry: ((...any) -> (...any), maxRetries: number, ...any) -> (boolean, string?),
+	read areColorsEqual: (colorA: Color3, colorB: Color3, epsilon: number?) -> boolean,
+	read renderWait: (waitTime: number?) -> number,
 
-	spawnDebugField: (origin: Vector3, forward: Vector3, maxDot: number, radius: number, count: number, debugFolder: Instance) -> (),
+	read spawnDebugField: (origin: Vector3, forward: Vector3, maxDot: number, radius: number, count: number, debugFolder: Instance) -> (),
 
-	validFaces: { [string]: boolean },
+	read validFaces: { [string]: boolean },
 }
 
 
@@ -167,39 +176,37 @@ export type Components = {
 }
 
 export type Register = {
-	name: string,
+	read name: string,
 
-	getPartsByRaycast: () -> {[BasePart]: RangeType},
+	read getPartsByRaycast: () -> {[BasePart]: RangeType},
 
 
-	init: () -> (),
-	start: () -> (),
+	read init: () -> (),
+	read start: () -> (),
 
-	reflectorGrid: Grid,
-	signGrid: Grid,
-	surfaceGuiPool: Pool,
-	debugBoxTemplate: BasePart,
+	read reflectorGrid: Grid,
+	read signGrid: Grid,
+	read surfaceGuiPool: Pool<SurfaceGuiTemplate>,
+	read debugBoxTemplate: BasePart,
 
-	getWorldUtils: () -> (jecs.World, Components, {[Instance]: jecs.Entity}, CachedQueries),
+	read getWorldUtils: () -> (jecs.World, Components, {[Instance]: jecs.Entity}, CachedQueries),
 
-	scriptConnections: {[RBXScriptConnection]: boolean},
+	read addVehicle: (car: Instance & Vehicle, isEnabled: (Instance) -> boolean, getIntensity: (Instance) -> number) -> (),
+	read removeVehicle: (car: Vehicle & Instance) -> (),
+	read addReflector: (part: Instance) -> (),
+	read removeReflector: (part: BasePart) -> (),
+	read addSign: (part: Instance, rangeType: RangeType?) -> (),
+	read removeSign: (part: BasePart) -> (),
 
-	addVehicle: (car: Instance & Vehicle, isEnabled: (Instance) -> boolean, getIntensity: (Instance) -> number) -> (),
-	removeVehicle: (car: Vehicle & Instance) -> (),
-	addReflector: (part: Instance) -> (),
-	removeReflector: (part: BasePart) -> (),
-	addSign: (part: Instance, rangeType: RangeType?) -> (),
-	removeSign: (part: BasePart) -> (),
-
-	clearConnections: () -> (),
-	reset: () -> (),
+	read clearConnections: () -> (),
+	read reset: () -> (),
 }
 
 -- Equations Types
 export type Equations = {
-	name: string,
+	read name: string,
 
-	computeReflectorIntensity: (
+	read computeReflectorIntensity: (
 		part: BasePart,
 		state: ReflectorState,
 		source: LightSource,
@@ -207,7 +214,7 @@ export type Equations = {
 		config: BASE_CONFIG
 	) -> (number, number),
 
-	computeSignIntensity: (
+	read computeSignIntensity: (
 
 		part: BasePart,
 		state: SignEntity,
@@ -222,28 +229,28 @@ export type Equations = {
 		hasActiveLight: boolean
 	},
 
-	buildSamplePoints: (quality: number) -> (),
+	read buildSamplePoints: (quality: number) -> (),
 }
 
 -- Detector Types
 export type Detect = {
-	name: string,
-	currentDetectedEntities: {[jecs.Entity]: boolean},
-	activeReflectorEntities: {[jecs.Entity]: boolean },
-	init: () -> (),
-	start: () -> (),
-	reset: () -> (),
-	safeCancelThread: () -> (boolean, string?),
-	getDetectedEntities: () -> { [jecs.Entity]: boolean },
+	read name: string,
+	read currentDetectedEntities: {[jecs.Entity]: boolean},
+	read activeReflectorEntities: {[jecs.Entity]: boolean },
+	read init: () -> (),
+	read start: () -> (),
+	read reset: () -> (),
+	read safeCancelThread: () -> (boolean, string?),
+	read getDetectedEntities: () -> { [jecs.Entity]: boolean },
 }
 
 -- Renderer Types
 export type Render = {
-	name: string,
-	init: () -> (),
-	start: () -> (),
-	reset: () -> (),
-	safeCancelThread: () -> (boolean, string?),
+	read name: string,
+	read init: () -> (),
+	read start: () -> (),
+	read reset: () -> (),
+	read safeCancelThread: () -> (boolean, string?),
 }
 
 -- Misc Types
@@ -343,26 +350,27 @@ export type SignEntity = {
 	cellKey: { [number]: number },
 }
 
+-- Init module
 export type LightReflector = {
-	init: () -> (),
-	start: () -> (),
-	reset: () -> (),
-	config: Configuration,
-	register: Register,
-	utils: Utils,
+	read init: () -> (),
+	read start: () -> (),
+	read reset: () -> (),
+	read config: Configuration,
+	read register: Register,
+	read utils: Utils,
 }
 
 -- States module types
 export type StatesModule = {
-	name: string,
+	read name: string,
 
-	acquireDecalState: () -> DecalState,
-	acquireSignState: (part: BasePart, baseConfig: BASE_CONFIG) -> SignEntity,
-	acquireReflectorState: (part: BasePart, baseConfig: BASE_CONFIG, reflectorGrid: Grid) -> ReflectorState,
-	acquireSurfaceGuiState: () -> SurfaceGuiState,
+	read acquireDecalState: () -> DecalState,
+	read acquireSignState: (part: BasePart, baseConfig: BASE_CONFIG) -> SignEntity,
+	read acquireReflectorState: (part: BasePart, baseConfig: BASE_CONFIG, reflectorGrid: Grid) -> ReflectorState,
+	read acquireSurfaceGuiState: () -> SurfaceGuiState,
 
-	returnSignState: (state: SignEntity, surfaceGuiPool: Pool) -> (),
-	returnReflectorState: (state: ReflectorState) -> (),
+	read returnSignState: (state: SignEntity, surfaceGuiPool: Pool<SurfaceGuiTemplate>) -> (),
+	read returnReflectorState: (state: ReflectorState) -> (),
 }
 
 export type StatePools = {
