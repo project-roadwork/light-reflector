@@ -1,5 +1,6 @@
 --!native
 --!strict
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- USAGE: lightreflector/client/render.luau
 -- Rendering loop for Light Reflector
 
@@ -17,6 +18,7 @@
 ]]
 
 -- IMPORTANT: Modules
+local logs = require(ReplicatedStorage.Packages.lightreflector.shared.logs)
 const types = require("../shared/types")
 const config: types.Configuration = require("../shared/config")
 const jecs: types.JecsModule = require("../shared/jecs")
@@ -43,6 +45,19 @@ local currentDetectedEntities: { [jecs.Entity]: boolean } = {}
 local _runnerThread : thread?
 local hasInit: boolean = false
 
+local signLerpSpeed: number = 0
+local signLerpSpeedClamped: number = 0
+local reflectorLerpSpeed: number = 0
+local allInactive: boolean = true
+local deltaTime: number, MPH: number = 0, 0
+
+local RENDER_MIN_FPS: number = constraints.RENDER_MIN_FPS
+local RENDER_MAX_FPS: number = constraints.RENDER_MAX_FPS
+
+const renderWait: (number?) -> number = utils.renderWait
+const vehicleInstances: jecs.Cached_Query<Instance> = cachedQueries.VehicleInstances
+const reflectors: jecs.Cached_Query<BasePart, types.ReflectorState> = cachedQueries.Reflectors
+const signsPartsStates: jecs.Cached_Query<Instance, types.SignEntity> = cachedQueries.SignsPartsStates
 -- Miscellaneous
 const clamp: (number, number, number) -> number = math.clamp
 const abs: (number) -> number = math.abs
@@ -63,6 +78,13 @@ const function init(): ()
 		constraints = NEW_CONFIG.Constraints
 		reflectorConfig = NEW_CONFIG.ReflectorConfig
 		signConfig = NEW_CONFIG.SignConfig
+
+		reflectorLerpSpeed = reflectorConfig.lerpSpeed
+		signLerpSpeed = signConfig.lerpSpeed
+
+		RENDER_MIN_FPS = constraints.RENDER_MIN_FPS
+		RENDER_MAX_FPS = constraints.RENDER_MAX_FPS
+
 	end)
 
 	hasInit = true
@@ -74,34 +96,28 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function start(): ()
-	local allInactive: boolean = true
+	allInactive = true
 
 	_runnerThread = constraints.SPAWN(utils.pcallRetry, function()
 		-- pcall replaced with pcallRetry
 		while true do
 
-			const deltaTime: number, MPH: number = utils.adaptiveWait(utils.renderWait, constraints.RENDER_MIN_FPS, constraints.RENDER_MAX_FPS,
-				utils.getFastestDriveSeat(cachedQueries.VehicleInstances)) -- adaptive waiting based on fastest vehicle speed
+			deltaTime, MPH = utils.adaptiveWait(renderWait, RENDER_MIN_FPS, RENDER_MAX_FPS,
+				utils.getFastestDriveSeat(vehicleInstances)) -- adaptive waiting based on fastest vehicle speed
 			-- this should be in a higher FPS since it renders the fading
 			-- also utils.renderWait uses RunService.PreRender rather than RunService.Heartbeat which I think the task scheduler uses
 			-- render stepped / prerender runs on the client framerate so it would make sense to put the fading animations under that event,
-			--  also considering that the target time to wait which is around 1/45 - 1/60 could be higher than the actual client framerate, which is not ideal
+			--  also considering that the target time to wait which is around 1/45 - 1/60 could be higher than the actual client framerate, which is not idea
 
-			const isDark: boolean = dark()
-
-			if not isDark and allInactive then
+			if not dark() and allInactive then
 				task.wait(.5)
 				continue
 			end
 
 			currentDetectedEntities = detect.getDetectedEntities()
 
-			const reflectorConfig: types.ReflectorConfig = reflectorConfig
-
-			local lerpSpeed: number = reflectorConfig.lerpSpeed
-
 			if reflectorConfig.isEnabled then
-				for entity: jecs.Entity<nil>, part:BasePart, state: types.ReflectorState in cachedQueries.Reflectors do
+				for entity: jecs.Entity<nil>, part:BasePart, state: types.ReflectorState in reflectors do
 					if not activeReflectorEntities[entity] then
 						const BaseMaterial = reflectorConfig.inactiveMaterial
 						const baseColor: Color3 = state.baseColor
@@ -125,8 +141,8 @@ const function start(): ()
 						continue
 					end
 
-					const riseSpeed: number = reflectorConfig.lerpSpeed
-					const fallSpeed: number = reflectorConfig.lerpSpeed * 5
+					const riseSpeed: number = reflectorLerpSpeed
+					const fallSpeed: number = reflectorLerpSpeed * 5
 					const targetIntensity: number = state.targetIntensity
 
 					const f: number = exp(-riseSpeed * deltaTime)
@@ -139,7 +155,7 @@ const function start(): ()
 
 					if state.isHybrid then
 						state.currentTransparency += (state.targetTransparency - state.currentTransparency)
-							* clamp(lerpSpeed * deltaTime, 0, 1)
+							* clamp(reflectorLerpSpeed * deltaTime, 0, 1)
 
 						if abs(state.currentTransparency - state.lastTransparency) > 0.01 then
 							part.Transparency = state.currentTransparency
@@ -215,10 +231,9 @@ const function start(): ()
 			end
 
 			if signConfig.isEnabled then
-				lerpSpeed = signConfig.lerpSpeed
-				const speed: number = clamp(lerpSpeed * deltaTime, 0, 1)
+				signLerpSpeedClamped = clamp(signLerpSpeed * deltaTime, 0, 1)
 
-				for entity: jecs.Entity<nil>, part: Instance, signState: types.SignEntity in cachedQueries.SignsPartsStates do
+				for entity: jecs.Entity<nil>, part: Instance, signState: types.SignEntity in signsPartsStates do
 					if signState.partRenderMode == "SurfaceGui" then
 						const state: types.SurfaceGuiState? = signState.surfaceGuiState
 
@@ -235,13 +250,13 @@ const function start(): ()
 
 
 							if inPart then
-								state.currentTransparency += (state.targetTransparency - state.currentTransparency) * speed
-								state.currentBrightness += (state.targetBrightness - state.currentBrightness) * speed
-								state.currentLightInfluence += (state.targetLightInfluence - state.currentLightInfluence) * speed
+								state.currentTransparency += (state.targetTransparency - state.currentTransparency) * signLerpSpeedClamped
+								state.currentBrightness += (state.targetBrightness - state.currentBrightness) * signLerpSpeedClamped
+								state.currentLightInfluence += (state.targetLightInfluence - state.currentLightInfluence) * signLerpSpeedClamped
 							else
-								state.currentTransparency += (1 - state.currentTransparency) * speed
-								state.currentBrightness += (0 - state.currentBrightness) * speed
-								state.currentLightInfluence += (1 - state.currentLightInfluence) * speed
+								state.currentTransparency += (1 - state.currentTransparency) * signLerpSpeedClamped
+								state.currentBrightness += (0 - state.currentBrightness) * signLerpSpeedClamped
+								state.currentLightInfluence += (1 - state.currentLightInfluence) * signLerpSpeedClamped
 
 								if state.currentTransparency >= signConfig.inactiveTransparencyThreshold then
 									state.isPendingRemoval = true
@@ -287,9 +302,9 @@ const function start(): ()
 						const inPart: boolean = currentDetectedEntities[entity] ~= nil
 
 						if inPart then
-							state.currentBrightness += (state.targetBrightness - state.currentBrightness) * speed
+							state.currentBrightness += (state.targetBrightness - state.currentBrightness) * signLerpSpeedClamped
 						else
-							state.currentBrightness += (0 - state.currentBrightness) * speed
+							state.currentBrightness += (0 - state.currentBrightness) * signLerpSpeedClamped
 						end
 
 						const base: Color3 = state.baseColor
