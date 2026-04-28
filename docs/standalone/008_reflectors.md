@@ -1,48 +1,34 @@
-## Signs
+## Reflectors (generally)
 
 > [!NOTE]
 > All images herein are taken by Illinois_Roadbuff (both in real life and his games), and do not come from other sources.
 
 [Road] reflectors are safety devices that reflect by vehicle headlights.
 
-![Diagram](../../assets/images/external/commons/i55_i355_interchange.jpg)
+![Diagram](../../assets/images/external/noncommons/il171_i355_lockport_night.jpg)
 
-#### Clicking this picture will redirect you to Wikimedia Commons
+In games, it would usually be displayed as a neon or force field part.
 
-In games, it would usually be displayed as a part with an image.
+![Diagram](../../assets/images/external/crossroads/il171_i355_lockport_night_crossroads_stil.jpg)
 
-[![Diagram](../../assets/images/external/crossroads/i55_i355_interchange_crossroads_stil.jpg)](https://commons.wikimedia.org/wiki/File:Interstate_55_Gantries_and_Signs_at_Southbound_I-355_in_Bolingbrook,_Illinois_(October_2025).tif)
+## Hybrid Reflectors
 
-## Sign System
+Hybrid reflectors are a type of reflector in Light Reflector that *includes* the logic used in the `Sign` system. Since standard reflectors may transition unsmoothly when enlarged, the base reflector is cloned and uses `.Transparency` to transition smoothly. They are best for reflective traffic light shields, reflective flags, and non-decal signs; however, they should not be used on too many parts clustered in one area.
 
-The sign system processes signs and renders them via two render modes:
+![Diagram](../../assets/images/external/crossroads/il171_143st_lockport_night_crossroads_stil.jpg)
 
-1. Decal
-2. SurfaceGui
+*(highlighted in red includes hybrid reflectors)*
 
-### Decal Renderer
+Note that non-decal signs used as hybrid reflectors MUST have dark text (such as a standard U.S. MUTCD warning sign). Manipulating the brightness of `SurfaceGui`s, their accompanying `TextLabel`s, AND the sign part(s) itself concurrently will put a massive strain on performance.
 
-The decal renderer utilizes a `Decal` by itself to reflect by increasing the decal's base `Color3` above (255, 255, 255).
+![Diagram](../../assets/images/internal/figures/008_reflectors_fig1.png)
 
-**Benefits:**
-1. Appears more sharp when viewed at an angle
-2. Orientation is preserved on meshes or unions
-3. Probably more light-weight as no `SurfaceGui`s need to be created
+## Systems
 
-**Cons:**
-1.  Sign may appear overwhelmingly bright when faced uprfront
-2.  Materials such as `Metal` will make the decal appear distorted
+### Base Reflector System
+The base reflector system uses `.Color` and `.Material` on `BasePart`s to mimic reflectance. Before changing a part to neon, the original `BasePart` `Color3`'s are normalized into a lighter/darker color so dark-colored reflectors will not look too dark when the material is set to `Neon`, and vice versa for light-colored reflectors.
 
-### SurfaceGui Renderer
+### Hybrid Subsystem
+The hybrid subsytem works alongside the base reflector system, using `.Color`, `.Transparency` and `.Material` on reflector clones to mimic reflectance.
 
-The SurfaceGui renderer utilizes a `SurfaceGui` with an `ImageLabel` to reflect by using `.Brightness`, `.LightInfluence`, and `.ImageTransparency`.
-
-**Benefits:**
-1.  Prevents the sign from appearing extremely bright
-2.  Can be applied to every material
-
-**Cons:**
-1.  Appears slightly blurred when viewed at an angle
-2.  Orientation may be distorted or incorrect on meshes or unions
-
-### Next, learn about reflectors in general!
+### Next, learn about configuration overrides per part/entity!
