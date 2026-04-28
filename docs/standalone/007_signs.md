@@ -1,4 +1,4 @@
-## Signs
+## Signs (general)
 
 > [!NOTE]
 > All images herein are taken by Illinois_Roadbuff (both in real life and his games), and do not come from other sources.
