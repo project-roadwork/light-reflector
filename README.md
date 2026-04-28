@@ -105,7 +105,7 @@ end)
 **Other examples such as server pre-tagging and a vehicle handler are provided in the examples folder.**
 
 ## Systems Diagram
-![Diagram](assets/images/light_reflector_systems.png)
+![Diagram](assets/images/internal/figures/light_reflector_systems.png)
 
 ## Older YouTube Showcase
 ***Not up to date, uses 0.1.x***
