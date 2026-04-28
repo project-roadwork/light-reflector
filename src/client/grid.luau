@@ -82,7 +82,8 @@ const ceil = math.ceil
 const clear = table.clear
 const COARSE_FACTOR: number = 4
 
-local function getIdKey(entityId: EntityId | number | vector): number | string
+-- Public: Gets ID key
+const function getIdKey(entityId: EntityId | number | vector): number | string
 	if typeof(entityId) == "number" then
 		return entityId
 	elseif typeof(entityId) == "vector" then
@@ -188,6 +189,7 @@ const function updatePosition(grid: Grid, entityId: EntityId, pos: Vector3): ()
 	grid.Position[key] = pos
 	grid.Dirty[key] = true
 end
+
 -- Private: Remove entity from a cell
 const function _removeFromCell(grid: Grid, key: Key, x: number, z: number): ()
 
@@ -409,7 +411,7 @@ end
 
 
 -- Public: Returns the cell coordinates for an entity or a Vector3
-local function getCellKey(grid: Grid, entityIdOrPos: EntityId | Vector3): (number?, number?)
+const function getCellKey(grid: Grid, entityIdOrPos: EntityId | Vector3): (number?, number?)
 	if typeof(entityIdOrPos) == "Vector3" then
 		return getCellCoords(grid, entityIdOrPos)
 
