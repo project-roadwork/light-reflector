@@ -92,13 +92,13 @@ LightReflector.start()
 workspace.Cars.ChildAdded:Connect(function(car)
 	if car:IsA("Model") and car:FindFirstChildOfClass("VehicleSeat") then
 		print("Indexed Vehicle")
-		LightReflector.register.registerVehicle(car, true, determineIntensity) -- true is the placeholder of what "enables" the light source like a Headlight boolean value
+		LightReflector.register.addVehicle(car, true, determineIntensity) -- true is the placeholder of what "enables" the light source like a Headlight boolean value
 	end
 end)
 
 workspace.Cars.ChildRemoved:Connect(function(car)
 	if car:IsA("Model") and car:FindFirstChildOfClass("VehicleSeat") then
-		LightReflector.register.unregisterVehicle(car)
+		LightReflector.register.removeVehicle(car)
 	end
 end)
 ```
