@@ -411,13 +411,13 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-local function _buildBasis(forward: Vector3)
-	const up = math.abs(forward:Dot(Vector3.yAxis)) > 0.95
+const function _buildBasis(forward: Vector3): (Vector3, Vector3, Vector3)
+	const up: Vector3 = math.abs(forward:Dot(Vector3.yAxis)) > 0.95
 		and Vector3.xAxis
 		or Vector3.yAxis
 
-	const right = forward:Cross(up).Unit
-	const correctedUp = right:Cross(forward).Unit
+	const right: Vector3 = forward:Cross(up).Unit
+	const correctedUp: Vector3 = right:Cross(forward).Unit
 
 	return right, correctedUp, forward.Unit
 end
