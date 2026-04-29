@@ -96,11 +96,13 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function start(): ()
-	allInactive = true
+
 
 	_runnerThread = constraints.SPAWN(utils.pcallRetry, function()
 		-- pcall replaced with pcallRetry
 		while true do
+
+		    allInactive = true
 
 			deltaTime, MPH = utils.adaptiveWait(renderWait, RENDER_MIN_FPS, RENDER_MAX_FPS,
 				utils.getFastestDriveSeat(vehicleInstances)) -- adaptive waiting based on fastest vehicle speed
