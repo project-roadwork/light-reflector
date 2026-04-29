@@ -63,8 +63,8 @@ local maxColorScale: number = reflectorConfig.maxBrightness / 255
 
 local inactiveMaterial: Enum.Material = reflectorConfig.inactiveMaterial
 
-local riseMultiplier: number = exp(-reflectorLerpSpeed * deltaTime)
-local fallMultiplier: number = exp(-(reflectorLerpSpeed * 5) * deltaTime)
+local riseMultiplier: number = 0 -- do not use exp when module is required since it will already be set at init
+local fallMultiplier: number = 0
 
 const renderWait: (number?) -> number = utils.renderWait
 const vehicleInstances: jecs.Cached_Query<Instance> = cachedQueries.VehicleInstances
