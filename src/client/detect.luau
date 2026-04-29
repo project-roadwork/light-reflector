@@ -192,9 +192,9 @@ const function _processSign(entity: jecs.Entity, source: types.LightSource)
 		return
 	end
 
-	local finalTransparency:number = 1
-	local finalBrightness:number = 0
-	local finalLightInfluence:number = 1
+	local finalTransparency: number = 1
+	local finalBrightness: number = 0
+	local finalLightInfluence: number = 1
 
 	local signState: types.SignEntity? = world:get(entity, components.SignState)
 
@@ -489,14 +489,9 @@ const function start() : ()
 						end
 
 						_processSign(entity, source)
-
-
-
-
 					end
 				end
 			end
-
 
 			if signConfig.isEnabled then
 				for entity: jecs.Entity<nil>, signState: types.SignEntity in cachedQueries.SignStates do
@@ -513,8 +508,6 @@ const function start() : ()
 						signState.surfaceGuiState = nil
 						signState.mainDecal = nil
 					end
-
-
 				end
 			end
 
