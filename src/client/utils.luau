@@ -356,10 +356,10 @@ end
 const function areColorsEqual(colorA: Color3, colorB: Color3, epsilon: number?): boolean
 	epsilon = epsilon or 0.005
 
-	const aR, aG, aB = colorA.R, colorA.G, colorA.B
-	const bR, bG, bB = colorB.R, colorB.G, colorB.B
+	const aR: number, aG: number, aB: number = colorA.R, colorA.G, colorA.B
+	const bR: number, bG: number, bB: number = colorB.R, colorB.G, colorB.B
 
-	local d = aR - bR
+	local d: number = aR - bR
 	if d > epsilon or d < -epsilon then return false end
 
 	d = aG - bG
