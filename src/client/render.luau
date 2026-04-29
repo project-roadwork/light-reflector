@@ -284,9 +284,6 @@ const function start(): ()
 							if state.currentTransparency >= num then
 								state.isActive = false
 								state.isPendingRemoval = true
-							end
-
-							if state.currentTransparency < 0.999 then
 								allInactive = false
 							end
 
