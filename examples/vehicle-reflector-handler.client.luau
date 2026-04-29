@@ -21,6 +21,12 @@ local function determineIntensity(car:Instance)
   return finalIntensity
 end
 
+local function determineColor(car:Instance)
+  local color = Color3.fromRGB(211, 194, 151)
+-- logic to see if high beams are enabled or not (thus increase the intensity)
+  return vector.create(color.R, color.G, color.B)
+end
+
 local function CheckForRegLightValue(car:Model)
 	local Body = car.Body
 	local Headlight = Body:FindFirstChild("Headlight")
@@ -60,7 +66,7 @@ task.wait(2)
 for i, car in Cars:GetChildren() do
     if car:IsA("Model") and (car:FindFirstChildOfClass("VehicleSeat") or car:WaitForChild("DriveSeat",5)) then
 		print("Indexed Vehicle")
-		LightReflector.register.addVehicle(car, CheckForRegLightValue(car), determineIntensity)
+		LightReflector.register.addVehicle(car, CheckForRegLightValue(car), determineIntensity, determineColor)
 	end
 end
 
@@ -68,7 +74,7 @@ Cars.ChildAdded:Connect(function(car)
 	task.wait() -- a-chassis init reasons
 	if car:IsA("Model") and (car:FindFirstChildOfClass("VehicleSeat") or car:WaitForChild("DriveSeat",5)) then
 		print("Indexed Vehicle")
-		LightReflector.register.addVehicle(car, CheckForRegLightValue(car), determineIntensity)
+		LightReflector.register.addVehicle(car, CheckForRegLightValue(car), determineIntensity, determineColor)
 	end
 end)
 

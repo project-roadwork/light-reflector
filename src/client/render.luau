@@ -186,14 +186,19 @@ const function start(): ()
 						newMaterial = reflectorConfig.activeMaterial
 
 						const baseColor: Color3 = state.baseColor
+						local lightColor: Color3 = state.neutralizedColor
 						const minScale: number = reflectorConfig.minBrightness / 255
 						const maxScale: number = reflectorConfig.maxBrightness / 255
 
 						const scale: number = minScale + (maxScale - minScale) * intensity
 
-						const r: number = clamp(baseColor.R * scale, 0, 1)
-						const g: number = clamp(baseColor.G * scale, 0, 1)
-						const b: number = clamp(baseColor.B * scale, 0, 1)
+						--const r: number = clamp(baseColor.R * scale, 0, 1)
+						--const g: number = clamp(baseColor.G * scale, 0, 1)
+					--	const b: number = clamp(baseColor.B * scale, 0, 1)
+					--
+					local r = baseColor.R * lightColor.R * scale
+local g = baseColor.G * lightColor.G * scale
+local b = baseColor.B * lightColor.B * scale
 
 						newColor = Color3.new(r, g, b)
 					else
@@ -288,6 +293,10 @@ const function start(): ()
 							if state.currentTransparency < 0.999 then
 								allInactive = false
 							end
+
+							if gui.ImageLabel.ImageColor3 ~= signState.neutralizedColor then
+							    gui.ImageLabel.ImageColor3 = signState.neutralizedColor
+							end
 						end
 					elseif signState.partRenderMode == "Decal" then
 						const state: types.DecalState? = signState.decalState
@@ -308,13 +317,29 @@ const function start(): ()
 						end
 
 						const base: Color3 = state.baseColor
+						local light: Color3 = signState.neutralizedColor
 						const scale: number = 1+ ((clamp(state.currentBrightness, 0, 4)) * signConfig.decalIntensityMultiplier) -- multiply to better match up the brightness with the SurfaceGui rendering mode
 
-						const r: number = base.R * scale
-						const g: number = base.G * scale
-						const b: number = base.B * scale
 
-						decal.Color3 = Color3.new(r, g, b)
+						const fadeStart: number = 0.05
+						const brightness: number = state.currentBrightness
+
+						const r: number = base.R * light.R * scale
+						const g: number = base.G * light.G * scale
+						const b: number = base.B * light.B * scale
+
+						const litColor: Color3 = Color3.new(r, g, b)
+
+						if not inPart then
+						    if brightness < fadeStart then
+                                const t: number = math.clamp(brightness / fadeStart, 0, 1)
+                                decal.Color3 = litColor:Lerp(state.baseColor, 1 - t)
+                            else
+                                decal.Color3 = litColor
+							end
+						else
+						    decal.Color3 = litColor
+						end
 
 						if state.currentBrightness > 0.001 then
 							allInactive = false

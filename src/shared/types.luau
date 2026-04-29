@@ -106,6 +106,7 @@ export type LightSource = {
 	getDirection: () -> Vector3,
 	isActive: () -> boolean | () -> number,
 	getIntensity: (Instance) -> number,
+	getColor: (Instance) -> vector
 }
 
 export type SourceList = { LightSource }
@@ -191,7 +192,7 @@ export type Register = {
 
 	read getWorldUtils: () -> (jecs.World, Components, {[Instance]: jecs.Entity}, CachedQueries),
 
-	read addVehicle: (car: Instance & Vehicle, isEnabled: (Instance) -> boolean, getIntensity: (Instance) -> number) -> (),
+	read addVehicle: (car: Instance & Vehicle, isEnabled: (Instance) -> boolean, getIntensity: (Instance) -> number, getColor: (Instance) -> vector) -> (),
 	read removeVehicle: (car: Vehicle & Instance) -> (),
 	read addReflector: (part: Instance) -> (),
 	read removeReflector: (part: BasePart) -> (),
@@ -333,8 +334,11 @@ export type ReflectorState = {
 	faceAttributeName: string?,
 	slopeNormalWorld: Vector3?,
 	faceNormalWorld: Vector3?,
-}
 
+	neutralizedColor: Color3,
+	colorAccum: vector,
+	intensityAccum: number
+}
 
 export type SignEntity = {
 	_inPool: boolean,
@@ -348,6 +352,10 @@ export type SignEntity = {
 	decalState: DecalState?,
 	mainDecal: Decal?,
 	cellKey: { [number]: number },
+
+	neutralizedColor: Color3,
+	colorAccum: vector,
+	intensityAccum: number
 }
 
 -- Init module

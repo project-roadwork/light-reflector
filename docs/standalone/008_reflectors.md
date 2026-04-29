@@ -5,6 +5,10 @@
 
 [Road] reflectors are safety devices that reflect by vehicle headlights.
 
+| ![space-1.jpg](../../assets/images/external/noncommons/il171_i355_lockport_night.jpg) | 
+|:--:| 
+| *Space* |
+
 ![Diagram](../../assets/images/external/noncommons/il171_i355_lockport_night.jpg)
 
 In games, it would usually be displayed as a neon or force field part.

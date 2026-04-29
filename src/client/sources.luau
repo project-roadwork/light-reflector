@@ -30,7 +30,8 @@ const function create(car: Instance | types.Vehicle,
 	getPosition: () -> Vector3,
 	getDirection: () -> Vector3,
 	getEnabled: (() -> boolean | () -> number),
-	intensity: ((Instance) -> number)?
+	intensity: ((Instance) -> number)?,
+	getColor: ((Instance) -> vector)?
 ): types.LightSource
 
 	return {
@@ -39,6 +40,7 @@ const function create(car: Instance | types.Vehicle,
 		getDirection = getDirection,
 		isActive = getEnabled or function() return true end,
 		getIntensity = if intensity then intensity else function(car) return 1 end,
+		getColor = if getColor then getColor else function(car) return vector.create(1, 1, 1) end,
 	}
 end
 
@@ -61,10 +63,11 @@ const function register(car: Instance | types.Vehicle,
 	getPosition: () -> Vector3,
 	getDirection: () -> Vector3,
 	getEnabled: () -> boolean | () -> number,
-	intensity: ((Instance) -> number)?
+	intensity: ((Instance) -> number)?,
+    getColor: ((Instance) -> vector)?
 ): types.LightSource
 
-	return add(create(car, getPosition, getDirection, getEnabled, intensity))
+	return add(create(car, getPosition, getDirection, getEnabled, intensity, getColor))
 end
 
 --[=[

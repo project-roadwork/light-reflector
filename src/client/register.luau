@@ -133,7 +133,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function addVehicle(car: Instance & types.Vehicle, isEnabled: (Instance) -> boolean, getIntensity: (Instance) -> number): ()
+const function addVehicle(car: Instance & types.Vehicle, isEnabled: (Instance) -> boolean, getIntensity: (Instance) -> number, getColor: (Instance) -> vector): ()
 	-- could have asserted but would flood the output with errors
 
 	if car == nil then
@@ -182,7 +182,7 @@ const function addVehicle(car: Instance & types.Vehicle, isEnabled: (Instance) -
 			else
 				return (type(isEnabled) == "boolean" and isEnabled) or (type(isEnabled) == "number" and isEnabled > 0)
 			end
-		end, getIntensity
+		end, getIntensity, getColor
 	)
 
 	if not trackedAncestryInstances[car] then

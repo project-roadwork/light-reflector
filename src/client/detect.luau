@@ -152,6 +152,11 @@ const function _processReflector(entity: jecs.Entity, source: types.LightSource,
 
 	const intensity: number, transparency: number = equations.computeReflectorIntensity(part, state, source, MPH, baseConfig)
 
+	const color: vector = source.getColor(source.Owner)
+
+	state.colorAccum += color * intensity
+	state.intensityAccum += intensity
+
 	if transparency < 0 then
 		return
 	end -- A negative number would mean that the function returned mid-way because the source was not facing the reflector
@@ -160,6 +165,13 @@ const function _processReflector(entity: jecs.Entity, source: types.LightSource,
 	if state.isHybrid then
 		state.targetTransparency = min(state.targetTransparency, transparency)
 	end
+
+    if state.intensityAccum > 0 then
+        const avg: vector = state.colorAccum / state.intensityAccum
+        state.neutralizedColor = Color3.new(avg.x, avg.y, avg.z)
+    else
+        state.neutralizedColor = state.baseColor
+    end
 end
 
 --[=[
@@ -265,6 +277,11 @@ const function _processSign(entity: jecs.Entity, source: types.LightSource)
 		finalTransparency = min(finalTransparency, signData.transparency)
 		finalBrightness += signData.brightness
 		finalLightInfluence = min(finalLightInfluence, signData.lightInfluence)
+
+		const color: vector = source.getColor(source.Owner)
+
+        signState.colorAccum += color * signData.brightness
+        signState.intensityAccum += signData.brightness
 	else
 		finalTransparency = 1
 		finalBrightness = 0
@@ -349,6 +366,11 @@ const function _processSign(entity: jecs.Entity, source: types.LightSource)
 
 		_detectedEntitiesThisFrame[entity] = true
 	end
+
+	if signState.intensityAccum > 0 then
+        const avg: vector = signState.colorAccum / signState.intensityAccum
+        signState.neutralizedColor = Color3.new(avg.x, avg.y, avg.z)
+    end
 end
 
 --[=[
@@ -467,6 +489,10 @@ const function start() : ()
 						end
 
 						_processSign(entity, source)
+
+
+
+
 					end
 				end
 			end
@@ -487,6 +513,8 @@ const function start() : ()
 						signState.surfaceGuiState = nil
 						signState.mainDecal = nil
 					end
+
+
 				end
 			end
 
