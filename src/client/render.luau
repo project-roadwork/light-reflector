@@ -1,6 +1,5 @@
 --!native
 --!strict
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- USAGE: lightreflector/client/render.luau
 -- Rendering loop for Light Reflector
 
@@ -18,7 +17,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 ]]
 
 -- IMPORTANT: Modules
-local logs = require(ReplicatedStorage.Packages.lightreflector.shared.logs)
 const types = require("../shared/types")
 const config: types.Configuration = require("../shared/config")
 const jecs: types.JecsModule = require("../shared/jecs")
@@ -45,6 +43,7 @@ local currentDetectedEntities: { [jecs.Entity]: boolean } = {}
 local _runnerThread : thread?
 local hasInit: boolean = false
 
+-- Micro Optimizations (Variables)
 local signLerpSpeed: number = 0
 local signLerpSpeedClamped: number = 0
 local reflectorLerpSpeed: number = 0
@@ -58,6 +57,7 @@ const renderWait: (number?) -> number = utils.renderWait
 const vehicleInstances: jecs.Cached_Query<Instance> = cachedQueries.VehicleInstances
 const reflectors: jecs.Cached_Query<BasePart, types.ReflectorState> = cachedQueries.Reflectors
 const signsPartsStates: jecs.Cached_Query<Instance, types.SignEntity> = cachedQueries.SignsPartsStates
+
 -- Miscellaneous
 const clamp: (number, number, number) -> number = math.clamp
 const abs: (number) -> number = math.abs
@@ -249,7 +249,6 @@ const function start(): ()
 						if gui and gui.Parent then
 							const inPart: boolean = currentDetectedEntities[entity] ~= nil
 
-
 							if inPart then
 								state.currentTransparency += (state.targetTransparency - state.currentTransparency) * signLerpSpeedClamped
 								state.currentBrightness += (state.targetBrightness - state.currentBrightness) * signLerpSpeedClamped
@@ -317,8 +316,7 @@ const function start(): ()
 
 						const base: Color3 = state.baseColor
 						local light: Color3 = signState.neutralizedColor
-						const scale: number = 1+ ((clamp(state.currentBrightness, 0, 4)) * signConfig.decalIntensityMultiplier) -- multiply to better match up the brightness with the SurfaceGui rendering mode
-
+						const scale: number = 1 + ((clamp(state.currentBrightness, 0, 4)) * signConfig.decalIntensityMultiplier) -- multiply to better match up the brightness with the SurfaceGui rendering mode
 
 						const fadeStart: number = 0.05
 						const brightness: number = state.currentBrightness
