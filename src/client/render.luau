@@ -189,8 +189,8 @@ const function start(): ()
 
 					const intensity: number = state.currentIntensity
 
-					local newColor: Color3?
-					local newMaterial: Enum.Material?
+					local newColor: Color3? = nil
+					local newMaterial: Enum.Material? = nil
 
 					if intensity >= reflectorConfig.neonActivationIntensity or state.isHybrid == true then
 						newMaterial = reflectorConfig.activeMaterial
