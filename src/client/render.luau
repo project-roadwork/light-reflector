@@ -43,6 +43,11 @@ local currentDetectedEntities: { [jecs.Entity]: boolean } = {}
 local _runnerThread : thread?
 local hasInit: boolean = false
 
+-- Equations
+const clamp: (number, number, number) -> number = math.clamp
+const abs: (number) -> number = math.abs
+const exp: (number) -> number = math.exp
+
 -- Micro Optimizations (Variables)
 local signLerpSpeed: number = 0
 local signLerpSpeedClamped: number = 0
@@ -58,15 +63,13 @@ local maxColorScale: number = reflectorConfig.maxBrightness / 255
 
 local inactiveMaterial: Enum.Material = reflectorConfig.inactiveMaterial
 
+local riseMultiplier: number = exp(-reflectorLerpSpeed * deltaTime)
+local fallMultiplier: number = exp(-(reflectorLerpSpeed * 5) * deltaTime)
+
 const renderWait: (number?) -> number = utils.renderWait
 const vehicleInstances: jecs.Cached_Query<Instance> = cachedQueries.VehicleInstances
 const reflectors: jecs.Cached_Query<BasePart, types.ReflectorState> = cachedQueries.Reflectors
 const signsPartsStates: jecs.Cached_Query<Instance, types.SignEntity> = cachedQueries.SignsPartsStates
-
--- Miscellaneous
-const clamp: (number, number, number) -> number = math.clamp
-const abs: (number) -> number = math.abs
-const exp: (number) -> number = math.exp
 
 --[=[
 	Public: Initialize
@@ -94,7 +97,13 @@ const function init(): ()
 		maxColorScale = reflectorConfig.maxBrightness / 255
 
 		inactiveMaterial = reflectorConfig.inactiveMaterial
+
+		riseMultiplier = exp(-reflectorLerpSpeed * deltaTime)
+		fallMultiplier = exp(-(reflectorLerpSpeed * 5) * deltaTime)
 	end)
+
+	riseMultiplier = exp(-reflectorLerpSpeed * deltaTime)
+	fallMultiplier = exp(-(reflectorLerpSpeed * 5) * deltaTime)
 
 	hasInit = true
 end
@@ -148,16 +157,13 @@ const function start(): ()
 						continue
 					end
 
-					const riseSpeed: number = reflectorLerpSpeed
-					const fallSpeed: number = reflectorLerpSpeed * 5
 					const targetIntensity: number = state.targetIntensity
 
-					const f: number = exp(-riseSpeed * deltaTime)
 					state.currentIntensity =
-						targetIntensity + (state.currentIntensity - targetIntensity) * f
+						targetIntensity + (state.currentIntensity - targetIntensity) * riseMultiplier
 
 					if targetIntensity <= 0 then
-						state.currentIntensity *= exp(-fallSpeed * deltaTime)
+						state.currentIntensity *= fallMultiplier
 					end
 
 					if state.isHybrid then
@@ -208,7 +214,7 @@ const function start(): ()
 
 						const t: number = clamp((intensity - fadeStart) / (fadeEnd - fadeStart), 0, 1)
 
-						newMaterial = if intensity > 0 then Enum.Material.Plastic else reflectorConfig.inactiveMaterial
+						newMaterial = if intensity > 0 then Enum.Material.Plastic else inactiveMaterial
 
 						newColor = state.baseColor:Lerp(
 							reflectorConfig.partialDimmingBaseColor,
@@ -281,9 +287,7 @@ const function start(): ()
 								state.lastLightInfluence = state.currentLightInfluence
 							end
 
-							const num: number = signConfig.inactiveTransparencyThreshold
-
-							if state.currentTransparency >= num then
+							if state.currentTransparency >= signConfig.inactiveTransparencyThreshold then
 								state.isActive = false
 								state.isPendingRemoval = true
 							end
