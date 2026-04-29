@@ -101,9 +101,6 @@ const function start(): ()
 	_runnerThread = constraints.SPAWN(utils.pcallRetry, function()
 		-- pcall replaced with pcallRetry
 		while true do
-
-		    allInactive = true
-
 			deltaTime, MPH = utils.adaptiveWait(renderWait, RENDER_MIN_FPS, RENDER_MAX_FPS,
 				utils.getFastestDriveSeat(vehicleInstances)) -- adaptive waiting based on fastest vehicle speed
 			-- this should be in a higher FPS since it renders the fading
@@ -115,6 +112,8 @@ const function start(): ()
 				task.wait(.5)
 				continue
 			end
+
+			allInactive = true
 
 			currentDetectedEntities = detect.getDetectedEntities()
 
