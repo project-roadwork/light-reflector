@@ -72,6 +72,12 @@ const function renderWait(waitTime: number?): number
 	end
 end
 
+--[=[
+	Private: Printing function for `trackAncestryRemoval`
+	@private
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
 const function _trackAncestryRemovalPrint(message: string): ()
 	if config.FLAGS.TRACK_ANCESTRY_CONNECTIONS then
 		print(`:: TrackAncestryRemoval :: {message}`) -- using luau print
@@ -84,9 +90,6 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function trackAncestryRemoval(instance: Instance, callback: (Instance) -> ()): RBXScriptConnection
-	debugger.assert(typeof(instance) == "Instance", "onRemovedFromWorkspace: 'instance' must be a Roblox Instance")
-	debugger.assert(typeof(callback) == "function", "onRemovedFromWorkspace: 'callback' must be a function")
-
 	if instance.Parent == nil or not instance:IsDescendantOf(workspace) then
 		pcall(callback, instance) -- no yield
 	end
@@ -440,7 +443,7 @@ const function _randomConeVector(forward: Vector3, cosAngle: number): Vector3
 	const x: number  = sinT * math.cos(theta)
 	const y: number  = sinT * math.sin(theta)
 
-	local right: Vector3, up: Vector3, fwd: Vector3 = _buildBasis(forward)
+	const right: Vector3, up: Vector3, fwd: Vector3 = _buildBasis(forward)
 
 	return (right * x + up * y + fwd * z).Unit
 end
