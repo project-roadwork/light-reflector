@@ -63,7 +63,7 @@ local maxColorScale: number = reflectorConfig.maxBrightness / 255
 
 local inactiveMaterial: Enum.Material = reflectorConfig.inactiveMaterial
 
-local riseMultiplier: number = 0 -- do not use exp when module is required since it will already be set at init
+local riseMultiplier: number = 0
 local fallMultiplier: number = 0
 
 const renderWait: (number?) -> number = utils.renderWait
@@ -97,13 +97,7 @@ const function init(): ()
 		maxColorScale = reflectorConfig.maxBrightness / 255
 
 		inactiveMaterial = reflectorConfig.inactiveMaterial
-
-		riseMultiplier = exp(-reflectorLerpSpeed * deltaTime)
-		fallMultiplier = exp(-(reflectorLerpSpeed * 5) * deltaTime)
 	end)
-
-	riseMultiplier = exp(-reflectorLerpSpeed * deltaTime)
-	fallMultiplier = exp(-(reflectorLerpSpeed * 5) * deltaTime)
 
 	hasInit = true
 end
@@ -134,6 +128,9 @@ const function start(): ()
 			currentDetectedEntities = detect.getDetectedEntities()
 
 			if reflectorConfig.isEnabled then
+		    	riseMultiplier = exp(-reflectorLerpSpeed * deltaTime)
+				fallMultiplier = exp(-(reflectorLerpSpeed * 5) * deltaTime)
+
 				for entity: jecs.Entity<nil>, part:BasePart, state: types.ReflectorState in reflectors do
 					if not activeReflectorEntities[entity] then
 						const baseColor: Color3 = state.baseColor
