@@ -49,6 +49,7 @@ local currentDetectedEntities: { [jecs.Entity]: boolean } = {}
 local areStatesDeactivated: boolean = false
 local _detectedEntitiesThisFrame: { [jecs.Entity]: boolean } = {}
 local _runnerThread: thread?
+local _frameId: number = 0
 local hasInit: boolean = false
 const min: (number, number) -> number = math.min
 
@@ -122,6 +123,12 @@ const function _processReflector(entity: jecs.Entity, source: types.LightSource,
 	if not state then
 		return -- have to add this because of type checker
 	end
+
+	if state.lastFrame ~= _frameId then
+        state.colorAccum = vector.zero
+        state.intensityAccum = 0
+        state.lastFrame = _frameId
+    end
 
 	if state.doesReflectorMove then
 		const newCFrame: CFrame = part.CFrame
@@ -440,6 +447,7 @@ const function start() : ()
 
 			if reflectorConfig.isEnabled then
 				for entity: jecs.Entity<nil>, state: types.ReflectorState in cachedQueries.ReflectorStates do
+
 					if state then
 						if state.targetIntensity ~= 0 then
 							state.targetIntensity = 0
@@ -449,6 +457,12 @@ const function start() : ()
 							state.targetTransparency = 1
 						end
 
+		    if not activeReflectorEntities[entity] then
+
+        state.colorAccum = vector.zero
+        state.intensityAccum = 0
+        state.neutralizedColor = state.baseColor
+    end
 					end
 				end
 			end
@@ -498,6 +512,12 @@ const function start() : ()
 					if not signState then
 						continue
 					end
+
+	    if not _detectedEntitiesThisFrame[entity] then
+        signState.colorAccum = vector.zero
+        signState.intensityAccum = 0
+        signState.neutralizedColor = Color3.fromRGB(255,255,255) -- or baseColor if you have one
+    end
 
 					const surfaceGuiState: types.SurfaceGuiState? = signState.surfaceGuiState
 

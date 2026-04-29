@@ -339,7 +339,9 @@ export type ReflectorState = {
 
 	neutralizedColor: Color3,
 	colorAccum: vector,
-	intensityAccum: number
+	intensityAccum: number,
+
+	lastFrame: number,
 }
 
 export type SignEntity = {
@@ -357,7 +359,9 @@ export type SignEntity = {
 
 	neutralizedColor: Color3,
 	colorAccum: vector,
-	intensityAccum: number
+	intensityAccum: number,
+
+	lastFrame: number,
 }
 
 -- Init module

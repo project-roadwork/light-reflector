@@ -60,6 +60,7 @@ const SIGN_STATE_TEMPLATE: types.SignEntity = {
 	neutralizedColor = Color3.new(1, 1, 1),
 	colorAccum = vector.zero,
 	intensityAccum = 0,
+	lastFrame = 0
 } -- Casting is required to avoid the `table.freeze` type error
 
 const DECAL_STATE_TEMPLATE: types.DecalState = {
@@ -127,6 +128,8 @@ const REFLECTOR_STATE_TEMPLATE: types.ReflectorState = {
 	neutralizedColor = Color3.new(1, 1, 1),
 	colorAccum = vector.zero,
 	intensityAccum = 0,
+
+	lastFrame = 0,
 }
 
 -- IMPORTANT: Pools
