@@ -96,8 +96,6 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function start(): ()
-
-
 	_runnerThread = constraints.SPAWN(utils.pcallRetry, function()
 		-- pcall replaced with pcallRetry
 		while true do
