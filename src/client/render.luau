@@ -109,14 +109,14 @@ end
 ]=]
 const function start(): ()
 	_runnerThread = constraints.SPAWN(utils.pcallRetry, function()
-		-- pcall replaced with pcallRetry
 		while true do
 			deltaTime, MPH = utils.adaptiveWait(renderWait, RENDER_MIN_FPS, RENDER_MAX_FPS,
 				utils.getFastestDriveSeat(vehicleInstances)) -- adaptive waiting based on fastest vehicle speed
-			-- this should be in a higher FPS since it renders the fading
-			-- also utils.renderWait uses RunService.PreRender rather than RunService.Heartbeat which I think the task scheduler uses
-			-- render stepped / prerender runs on the client framerate so it would make sense to put the fading animations under that event,
-			--  also considering that the target time to wait which is around 1/45 - 1/60 could be higher than the actual client framerate, which is not idea
+
+			-- This should run in a higher FPS than the detect the module since it renders fading. Also, utils.renderWait uses RunService.PreRender
+			-- rather than RunService.Heartbeat which I think the task sceduler uses.
+
+			-- Render stepped / prerender runs on the client framerate, so it would make sense to put the fading under that event.
 
 			if not dark() and allInactive then
 				task.wait(.5)

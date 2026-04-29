@@ -61,7 +61,7 @@ const SIGN_STATE_TEMPLATE: types.SignEntity = {
 	colorAccum = vector.zero,
 	intensityAccum = 0,
 	lastFrame = 0
-} -- Casting is required to avoid the `table.freeze` type error
+}
 
 const DECAL_STATE_TEMPLATE: types.DecalState = {
 	_inPool = false,
