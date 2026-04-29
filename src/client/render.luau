@@ -192,13 +192,9 @@ const function start(): ()
 
 						const scale: number = minScale + (maxScale - minScale) * intensity
 
-						--const r: number = clamp(baseColor.R * scale, 0, 1)
-						--const g: number = clamp(baseColor.G * scale, 0, 1)
-					--	const b: number = clamp(baseColor.B * scale, 0, 1)
-					--
-					local r = baseColor.R * lightColor.R * scale
-local g = baseColor.G * lightColor.G * scale
-local b = baseColor.B * lightColor.B * scale
+					    const r: number = baseColor.R * lightColor.R * scale
+					    const g: number = baseColor.G * lightColor.G * scale
+						const b: number = baseColor.B * lightColor.B * scale
 
 						newColor = Color3.new(r, g, b)
 					else
@@ -295,7 +291,9 @@ local b = baseColor.B * lightColor.B * scale
 							end
 
 							if gui.ImageLabel.ImageColor3 ~= signState.neutralizedColor then
-							    gui.ImageLabel.ImageColor3 = signState.neutralizedColor
+							    if not utils.areColorsEqual(gui.ImageLabel.ImageColor3, signState.neutralizedColor, 0.01) then
+									gui.ImageLabel.ImageColor3 = signState.neutralizedColor
+								end
 							end
 						end
 					elseif signState.partRenderMode == "Decal" then
