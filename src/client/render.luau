@@ -53,6 +53,11 @@ local deltaTime: number, MPH: number = 0, 0
 local RENDER_MIN_FPS: number = constraints.RENDER_MIN_FPS
 local RENDER_MAX_FPS: number = constraints.RENDER_MAX_FPS
 
+local minColorScale: number = reflectorConfig.minBrightness / 255
+local maxColorScale: number = reflectorConfig.maxBrightness / 255
+
+local inactiveMaterial: Enum.Material = reflectorConfig.inactiveMaterial
+
 const renderWait: (number?) -> number = utils.renderWait
 const vehicleInstances: jecs.Cached_Query<Instance> = cachedQueries.VehicleInstances
 const reflectors: jecs.Cached_Query<BasePart, types.ReflectorState> = cachedQueries.Reflectors
@@ -85,6 +90,10 @@ const function init(): ()
 		RENDER_MIN_FPS = constraints.RENDER_MIN_FPS
 		RENDER_MAX_FPS = constraints.RENDER_MAX_FPS
 
+		minColorScale = reflectorConfig.minBrightness / 255
+		maxColorScale = reflectorConfig.maxBrightness / 255
+
+		inactiveMaterial = reflectorConfig.inactiveMaterial
 	end)
 
 	hasInit = true
@@ -118,14 +127,13 @@ const function start(): ()
 			if reflectorConfig.isEnabled then
 				for entity: jecs.Entity<nil>, part:BasePart, state: types.ReflectorState in reflectors do
 					if not activeReflectorEntities[entity] then
-						const BaseMaterial = reflectorConfig.inactiveMaterial
 						const baseColor: Color3 = state.baseColor
 						const lastColor: Color3 = state.lastColor
 
 						if baseColor then
-							if state.lastMaterial ~= BaseMaterial then -- reducing writes
-								part.Material = BaseMaterial
-								state.lastMaterial = BaseMaterial
+							if state.lastMaterial ~= inactiveMaterial then -- reducing writes
+								part.Material = inactiveMaterial
+								state.lastMaterial = inactiveMaterial
 							end
 
 							if lastColor ~= baseColor then
@@ -186,10 +194,8 @@ const function start(): ()
 
 						const baseColor: Color3 = state.baseColor
 						local lightColor: Color3 = state.neutralizedColor
-						const minScale: number = reflectorConfig.minBrightness / 255
-						const maxScale: number = reflectorConfig.maxBrightness / 255
 
-						const scale: number = minScale + (maxScale - minScale) * intensity
+						const scale: number = minColorScale + (maxColorScale - minColorScale) * intensity
 
 					    const r: number = baseColor.R * lightColor.R * scale
 					    const g: number = baseColor.G * lightColor.G * scale
@@ -240,8 +246,6 @@ const function start(): ()
 						if not state then
 							continue
 						end
-
-						if signConfig.isEnabled == false then break end
 
 						const gui: (SurfaceGui & { ImageLabel: ImageLabel })? = state.gui
 
@@ -329,7 +333,7 @@ const function start(): ()
 
 						if not inPart then
 						    if brightness < fadeStart then
-                                const t: number = math.clamp(brightness / fadeStart, 0, 1)
+                                const t: number = clamp(brightness / fadeStart, 0, 1)
                                 newColor = litColor:Lerp(state.baseColor, 1 - t)
                             else
                                 newColor = litColor
