@@ -216,7 +216,7 @@ const function start(): ()
 						state.lastMaterial = newMaterial
 					end
 
-					if state.lastColor ~= newColor then
+					if state.lastColor ~= newColor then -- reduce areColorsEqual calls
 						if not utils.areColorsEqual(state.lastColor, newColor, 0.01) then
 							part.Color = newColor
 							state.lastColor = newColor
@@ -284,12 +284,16 @@ const function start(): ()
 							if state.currentTransparency >= num then
 								state.isActive = false
 								state.isPendingRemoval = true
+							end
+
+							if state.currentTransparency < 0.999 then
 								allInactive = false
 							end
 
-							if gui.ImageLabel.ImageColor3 ~= signState.neutralizedColor then
-							    if not utils.areColorsEqual(gui.ImageLabel.ImageColor3, signState.neutralizedColor, 0.01) then
+							if state.lastColor3 ~= signState.neutralizedColor then
+							    if not utils.areColorsEqual(state.lastColor3, signState.neutralizedColor, 0.01) then
 									gui.ImageLabel.ImageColor3 = signState.neutralizedColor
+									state.lastColor3 = signState.neutralizedColor
 								end
 							end
 						end
@@ -323,17 +327,25 @@ const function start(): ()
 						const g: number = base.G * light.G * scale
 						const b: number = base.B * light.B * scale
 
+						local newColor: Color3? = nil
 						const litColor: Color3 = Color3.new(r, g, b)
 
 						if not inPart then
 						    if brightness < fadeStart then
                                 const t: number = math.clamp(brightness / fadeStart, 0, 1)
-                                decal.Color3 = litColor:Lerp(state.baseColor, 1 - t)
+                                newColor = litColor:Lerp(state.baseColor, 1 - t)
                             else
-                                decal.Color3 = litColor
+                                newColor = litColor
 							end
 						else
-						    decal.Color3 = litColor
+						    newColor = litColor
+						end
+
+						if state.lastColor3 ~= newColor then
+						    if not utils.areColorsEqual(state.lastColor3, newColor, 0.01) then
+								decal.Color3 = newColor
+								state.lastColor3 = newColor
+							end
 						end
 
 						if state.currentBrightness > 0.001 then

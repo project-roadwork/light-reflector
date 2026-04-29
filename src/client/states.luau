@@ -67,6 +67,7 @@ const DECAL_STATE_TEMPLATE: types.DecalState = {
 	currentBrightness = 0,
 	targetBrightness = 0,
 	baseColor = Color3.new(0, 0, 0),
+	lastColor3 = Color3.new(0, 0, 0)
 }
 
 const SURFACE_GUI_STATE_TEMPLATE: types.SurfaceGuiState = {
@@ -80,6 +81,7 @@ const SURFACE_GUI_STATE_TEMPLATE: types.SurfaceGuiState = {
 	lastTransparency = 1,
 	lastBrightness = 0,
 	lastLightInfluence = 1,
+	lastColor3 = Color3.new(0, 0, 0),
 
 	targetTransparency = 1,
 	targetBrightness = 0,

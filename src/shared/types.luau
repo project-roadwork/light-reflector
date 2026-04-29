@@ -288,6 +288,7 @@ export type SurfaceGuiState = {
 	lastTransparency: number,
 	lastBrightness: number,
 	lastLightInfluence: number,
+	lastColor3: Color3
 }
 
 export type DecalState = {
@@ -295,6 +296,7 @@ export type DecalState = {
 	baseColor: Color3,
 	currentBrightness: number,
 	targetBrightness: number,
+	lastColor3: Color3
 }
 
 export type SurfaceGuiTemplate = SurfaceGui & {
