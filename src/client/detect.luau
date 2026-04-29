@@ -49,7 +49,6 @@ local currentDetectedEntities: { [jecs.Entity]: boolean } = {}
 local areStatesDeactivated: boolean = false
 local _detectedEntitiesThisFrame: { [jecs.Entity]: boolean } = {}
 local _runnerThread: thread?
-local _frameId: number = 0
 local hasInit: boolean = false
 const min: (number, number) -> number = math.min
 
