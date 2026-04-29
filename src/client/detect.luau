@@ -457,12 +457,11 @@ const function start() : ()
 							state.targetTransparency = 1
 						end
 
-		    if not activeReflectorEntities[entity] then
-
-        state.colorAccum = vector.zero
-        state.intensityAccum = 0
-        state.neutralizedColor = state.baseColor
-    end
+		                if not activeReflectorEntities[entity] then
+							state.colorAccum = vector.zero
+                            state.intensityAccum = 0
+                            state.neutralizedColor = state.baseColor
+						end
 					end
 				end
 			end
@@ -513,11 +512,11 @@ const function start() : ()
 						continue
 					end
 
-	    if not _detectedEntitiesThisFrame[entity] then
-        signState.colorAccum = vector.zero
-        signState.intensityAccum = 0
-        signState.neutralizedColor = Color3.fromRGB(255,255,255) -- or baseColor if you have one
-    end
+	                if not _detectedEntitiesThisFrame[entity] then
+                        signState.colorAccum = vector.zero
+                        signState.intensityAccum = 0
+                        signState.neutralizedColor = Color3.fromRGB(255,255,255)
+                    end
 
 					const surfaceGuiState: types.SurfaceGuiState? = signState.surfaceGuiState
 
