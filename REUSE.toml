@@ -36,9 +36,24 @@ SPDX-License-Identifier = "MPL-2.0 OR CC-BY-SA-4.0"
 
 [[annotations]]
 path = [
+    "NOTICE",
+    "roblox-test.project.json",
+    "standalone.project.json"
+]
+SPDX-FileCopyrightText = [
+"2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>",
+"2025-2026 Project Roadwork and Contributors"]
 
-    "assets/images/external/**",
+SPDX-License-Identifier = "MPL-2.0"
+
+[[annotations]]
+path = [
+
+    "assets/images/external/crossroads/**",
+    "assets/images/external/noncommons/**",
     "assets/images/internal/figures/**",
+
+    "assets/images/external/commons/i55_i355_interchange.jpg",
 
 ]
 SPDX-FileCopyrightText = [
@@ -49,12 +64,12 @@ SPDX-License-Identifier = "CC-BY-SA-4.0"
 
 [[annotations]]
 path = [
-    "NOTICE",
-    "roblox-test.project.json",
-    "standalone.project.json"
+
+    "assets/images/external/commons/New_Traffic_Signals_in_Lockport,_Illinois_(November_2025)_02.jpg",
+
 ]
 SPDX-FileCopyrightText = [
 "2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>",
-"2025-2026 Project Roadwork and Contributors"]
+]
 
-SPDX-License-Identifier = "MPL-2.0"
+SPDX-License-Identifier = "CC-BY-4.0"
