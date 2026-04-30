@@ -26,7 +26,26 @@ local function determineIntensity(vehicle: Model)
 end
 ```
 
-*2. Add a function that returns the `ValueBase` that determines if any headlight is on in the provided vehicle:*
+*2. Add a function returning the color of the light source in a `vector`:*
+```luau
+local function determineColor(vehicle: Model): vector
+    local color: Color3?
+
+    if vehicle.Model == "Car1" then
+        color = Color3.fromRGB(211, 194, 151)
+    end
+
+    -- continue on....
+
+    if not color then
+        color = Color3.fromRGB(255, 255, 255)
+    end 
+    
+    return vector.create(color.R, color.G, color.B)
+end
+```
+
+*3. Add a function that returns the `ValueBase` that determines if any headlight is on in the provided vehicle:*
 ```luau
 -- Assuming this is an A-Chassis vehicle
 local function CheckForRegLightValue(vehicle: Model)
@@ -46,7 +65,7 @@ local function CheckForRegLightValue(vehicle: Model)
 end
 ```
 
-*3. Add a function that determines if a provided model is actually a vehicle:*
+*4. Add a function that determines if a provided model is actually a vehicle:*
 ```luau
 local function isAVehicle(model: Model)
 
@@ -91,7 +110,7 @@ local vehicles: Folder = workspace.Vehicle
 -- Find cars that are already existing
 for index: number, vehicle: Instance in vehicles:GetChildren() do
     if isAVehicle(vehicle) then
-        lightreflector.register.addVehicle(vehicle, CheckForRegLightValue(vehicle), determineIntensity)
+        lightreflector.register.addVehicle(vehicle, CheckForRegLightValue(vehicle), determineIntensity, determineColor)
     end
 end
 
@@ -100,7 +119,7 @@ vehicles.ChildAdded:Connect(function(vehicle)
 	task.wait() -- a-chassis init reasons
 	if isAVehicle(vehicle) then
 		print("Indexed vehicle")
-		lightreflector.register.addVehicle(vehicle, CheckForRegLightValue(vehicle), determineIntensity)
+		lightreflector.register.addVehicle(vehicle, CheckForRegLightValue(vehicle), determineIntensity, determineColor)
 	end
 end)
 ```

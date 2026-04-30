@@ -23,7 +23,7 @@ end
 
 local function determineColor(car:Instance)
   local color = Color3.fromRGB(211, 194, 151)
--- logic to see if high beams are enabled or not (thus increase the intensity)
+
   return vector.create(color.R, color.G, color.B)
 end
 
