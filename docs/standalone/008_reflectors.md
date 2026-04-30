@@ -51,4 +51,4 @@ The hybrid subsytem extends the base system by incorporating `.Color`, `.Transpa
 
 ---
 
-[Previous Page](docs\standalone\007_signs.md) | [Next Page](docs\standalone\009_overrides.md)
+[Previous Page](../007_signs.md) | [Next Page](../009_overrides.md)
