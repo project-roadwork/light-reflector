@@ -1,0 +1,36 @@
+## Configuration
+
+As noted previously, although you can modify the base configuration, it is best to apply overrides during runtime since you do not have to change every value once you upgrade Light Reflector.
+
+## Applying Configuration During Runtime
+```luau
+-- Light Reflector Handler
+-- handler.client.luau
+
+local ReplicatedStorage: ReplicatedStorage = game:GetService("ReplicatedStorage")
+local lightreflector = require(ReplicatedStorage.Packages.lightreflector)
+
+lightreflector.config.applyOverrides({
+    -- This is just an example! You may want to configure more values than this.
+    -- See the config module for reference
+	SignConfig = {
+		signsFolders = {workspace.Signs}
+	}
+})
+```
+
+## Finding the module
+You may find the configuration module at `lightreflector.luau/shared/config.luau`.
+
+## Values
+Since the config module may change by every release, it would be best to not list every single configuration value in this document.
+
+Instead, you may look at the config module and its values in [config.luau](../../src/shared/config.luau), and modify it at your discretion.
+
+Additionally, descriptors for each configuration value are provided.
+
+## Next, learn about configuration overrides per part/entity!
+
+---
+
+[Previous Page](./008_reflectors.md) | [Next Page](./010_overrides.md)

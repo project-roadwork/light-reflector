@@ -10,7 +10,7 @@
 | *Real-world example: North Illinois Route 171 during night in Lockport, Illinois (March 2026)* |
 | Image by Illinois_Roadbuff, under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.en) |
 
-In games, it may usually be displayed as using glowing materials.
+In games, it may usually be displayed using glowing materials.
 
 | ![il171_i355_lockport_night_crossroads_stil.jpg](../../assets/images/external/crossroads/il171_i355_lockport_night_crossroads_stil.jpg) | 
 |:--:| 
@@ -39,6 +39,16 @@ Note that non-decal signs used as hybrid reflectors MUST have dark text (such as
 
 ![Diagram](../../assets/images/internal/figures/008_reflectors_fig1.png)
 
+### Adding Hybrids
+
+To add a hybrid, add a boolean attribute to a `BasePart` called `LRHybrid` and set the value to true.
+
+You must also add a string attribute called `LRFace` and set the value to the main/primary face of the reflector.
+
+To determine what face best works for you, add a `Decal` to the BasePart and keep adjusting the `Face` property until you reach your desired face. Then, add the name of the `Face` property into the attribute.
+
+The face attribute must be a valid `Enum.NormalId` value: `Front`, `Back`, `Right`, `Left`, `Top`, `Bottom`.
+
 ## Systems
 
 ### Base Reflector System
@@ -51,4 +61,4 @@ The hybrid subsytem extends the base system by incorporating `.Color`, `.Transpa
 
 ---
 
-[Previous Page](./007_signs.md) | [Next Page](./009_overrides.md)
+[Previous Page](./007_signs.md) | [Next Page](./009_config.md)
