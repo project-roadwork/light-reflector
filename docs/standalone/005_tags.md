@@ -57,7 +57,7 @@ for index: number, part: Instance in roadFolder:GetDescendants() do
     end
 end
 ```
-***A completed sample can be found at `root/examples/tag-reflector.server.luau`!***
+***A completed sample can be found at [examples/tag-reflector.server.luau](../../examples/tag-reflector.server.luau)!***
 
 ## Next, learn about registering signs and reflectors without tags!
 

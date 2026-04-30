@@ -119,7 +119,7 @@ vehicles.ChildRemoved:Connect(function(vehicle)
 	end
 end)
 ```
-***A completed sample can be found at `root/examples/vehicle-reflector-handler.client.luau`!***
+***A completed sample can be found at [examples/vehicle-reflector-handler.client.luau](../../examples/vehicle-reflector-handler.client.luau)!***
 
 ## Next, learn how to tag reflectors and signs, as well as how to register or unregister them!
 
