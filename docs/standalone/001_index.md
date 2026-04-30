@@ -42,3 +42,9 @@ Light Reflector is a `luau` vehicle-based light reflector system that reflects `
 2. Uses `.Color`, `.Material`, AND `.Transparency` with similar equations to the Sign/Gantry System
 3. Face (`Enum.NormalId`) selection
 4. Best for reflective traffic light shields, non-decal signs, etc.
+
+## Next, learn about installing the module!
+
+---
+
+[Next Page](./002_installation.md)

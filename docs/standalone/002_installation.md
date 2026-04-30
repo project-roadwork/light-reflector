@@ -42,3 +42,9 @@ Then, type this into your terminal and press enter:
 ```bash
 wally install
 ```
+
+## Next, learn about initializing and starting the module!
+
+---
+
+[Previous Page](./001_index.md) | [Next Page](./003_init.md)

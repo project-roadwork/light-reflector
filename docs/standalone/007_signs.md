@@ -45,4 +45,8 @@ The SurfaceGui renderer utilizes a `SurfaceGui` with an `ImageLabel` to reflect 
 1.  Appears slightly blurred when viewed at an angle
 2.  Orientation may be distorted or incorrect on meshes or unions
 
-### Next, learn about reflectors in general!
+## Next, learn about reflectors in general!
+
+---
+
+[Previous Page](./006_nontags.md) | [Next Page](./008_reflectors.md)

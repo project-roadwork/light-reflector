@@ -72,4 +72,8 @@ for index: number, part: Instance in roadsFolders:GetDescendants() do
 end
 ```
 
-### Next, learn about signs in general!
+## Next, learn about signs in general!
+
+---
+
+[Previous Page](./005_tags.md) | [Next Page](./007_signs.md)

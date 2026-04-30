@@ -57,7 +57,10 @@ for index: number, part: Instance in roadFolder:GetDescendants() do
     end
 end
 ```
-
-### Next, learn about registering signs and reflectors without tags!
-
 ***A completed sample can be found at `root/examples/tag-reflector.server.luau`!***
+
+## Next, learn about registering signs and reflectors without tags!
+
+---
+
+[Previous Page](./004_vehicles.md) | [Next Page](./006_nontags.md)
