@@ -39,10 +39,10 @@ lightreflector.config.applyOverrides({
 lightreflector.start()
 ```
 
+***A completed sample can be found at `root/examples/vehicle-reflector-handler.client.luau`!***
+
 ## Next, learn about registering vehicles!
 
 ---
 
 [Previous Page](./002_installation.md) | [Next Page](./004_vehicles.md)
-
-***A completed sample can be found at `root/examples/vehicle-reflector-handler.client.luau`!***
