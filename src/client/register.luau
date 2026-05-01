@@ -631,9 +631,6 @@ const function init(): ()
 		signConfig = NEW_CONFIG.SignConfig
 
 		overlapDetectionParams.FilterDescendantsInstances = signConfig.signsFolders
-
-		print("change")
-		print(constraints.SIGNS_PRIMARY_RENDER_MODE)
 	end)
 
 	overlapDetectionParams.FilterDescendantsInstances = signConfig.signsFolders
