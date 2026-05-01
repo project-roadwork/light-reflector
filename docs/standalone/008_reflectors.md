@@ -49,6 +49,8 @@ To determine what face best works for you, add a `Decal` to the BasePart and kee
 
 The face attribute must be a valid `Enum.NormalId` value: `Front`, `Back`, `Right`, `Left`, `Top`, `Bottom`.
 
+![Diagram](../../assets/images/internal/figures/008_reflectors_fig2.png)
+
 ## Systems
 
 ### Base Reflector System
