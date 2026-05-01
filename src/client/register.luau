@@ -731,18 +731,17 @@ const function reset(): ()
 
 	local toDelete: {jecs.Entity} = {}
 
-	--for entity: jecs.Entity in world:query() do
 	for instance: Instance, entity: jecs.Entity in instanceToEntityId do
 		table.insert(toDelete, entity)
 	end
 
 	for _: number, entity: jecs.Entity in toDelete do
-		print("delete  ent")
 		world:delete(entity)
 	end
 
 	table.clear(trackedAncestryInstances)
 	table.clear(instanceToEntityId)
+	table.clear(toDelete)
 end
 
 -- Return API and variables
