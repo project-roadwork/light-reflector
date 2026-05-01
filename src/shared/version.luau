@@ -58,30 +58,30 @@ const function checkVersion(): ()
 		return
 	end
 
+	const function fetch(url: string)
+		const success: boolean, result: string = pcall(HttpService.GetAsync, HttpService, url)
+
+		if not success then
+			return nil
+		end
+
+		const ok: boolean, data: any? = pcall(HttpService.JSONDecode, HttpService, result)
+
+		return ok and data or nil
+	end
+
+	const function normalizeVersion(v: string): string
+		v = string.gsub(v, "^%s+", "")
+		v = string.gsub(v, "%s+$", "")
+
+		if string.match(v, "^[vV]%d") then
+			v = string.sub(v, 2)
+		end
+
+		return v
+	end
+
 	task.defer(function()
-		const function fetch(url: string)
-			const success: boolean, result: string = pcall(HttpService.GetAsync, HttpService, url)
-
-			if not success then
-				return nil
-			end
-
-			const ok: boolean, data: any? = pcall(HttpService.JSONDecode, HttpService, result)
-
-			return ok and data or nil
-		end
-
-		const function normalizeVersion(v: string): string
-			v = string.gsub(v, "^%s+", "")
-			v = string.gsub(v, "%s+$", "")
-
-			if string.match(v, "^[vV]%d") then
-				v = string.sub(v, 2)
-			end
-
-			return v
-		end
-
 		const tags: {any}? = fetch(CodebergTags)
 		if not tags or not tags[1] then
 			return
@@ -92,8 +92,8 @@ const function checkVersion(): ()
 			return
 		end
 
-		const latestVersion = normalizeVersion(rawLatest)
-		const currentVersion = normalizeVersion(_versionToString(version))
+		const latestVersion: string = normalizeVersion(rawLatest)
+		const currentVersion: string = normalizeVersion(_versionToString(version))
 
 		if latestVersion ~= currentVersion then
 			warn(`[Light Reflector] New version available! Current: {currentVersion} | Latest: {latestVersion}`)
