@@ -371,7 +371,6 @@ export type LightReflector = {
 	read reset: () -> (),
 	read config: Configuration,
 	read register: Register,
-	read utils: Utils,
 }
 
 -- States module types

@@ -130,5 +130,4 @@ return table.freeze({
 	reset = reset,
 	config = config,
 	register = register,
-	utils = utils,
 })
