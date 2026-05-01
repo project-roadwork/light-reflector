@@ -41,7 +41,6 @@ const config: types.Configuration = require("@self/shared/config")
 const register: types.Register = require("@self/client/register")
 const detect: types.Detect = require("@self/client/detect")
 const render: types.Render = require("@self/client/render")
-const utils: types.Utils = require("@self/client/utils")
 
 -- Local Variables
 local isRunning: boolean = false
