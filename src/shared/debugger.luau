@@ -20,7 +20,7 @@
 ]]
 
 -- Config
-local logs = require(script.Parent.logs)
+const logs = require(script.Parent.logs)
 const config: typeof(require("./config")) = require("./config")
 
 const Base: string = "[%s] %s%s%s"
