@@ -729,7 +729,7 @@ const function reset(): ()
 	grid.empty(reflectorGrid)
 	grid.empty(signGrid)
 
-	local toDelete: {jecs.Entity} = {}
+	const toDelete: {jecs.Entity} = {}
 
 	for instance: Instance, entity: jecs.Entity in instanceToEntityId do
 		table.insert(toDelete, entity)
