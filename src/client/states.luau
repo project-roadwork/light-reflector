@@ -174,6 +174,9 @@ const function acquireSignState(part: BasePart, baseConfig: types.BASE_CONFIG): 
 	local partRenderMode: "Decal" | "SurfaceGui" = attributes[signConfig.partRenderModeAttributeName]
 	partRenderMode = partRenderMode or constraints.SIGNS_PRIMARY_RENDER_MODE :: "Decal" | "SurfaceGui"
 
+	print(constraints.SIGNS_PRIMARY_RENDER_MODE)
+	print(partRenderMode)
+
 	const baseIntensity:number = attributes[constraints.BASE_INTENSITY_ATTRIBUTE] or 1
 
 	const state: types.SignEntity = table.remove(pools.SignState) or table.clone(SIGN_STATE_TEMPLATE)

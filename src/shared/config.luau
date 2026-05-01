@@ -470,19 +470,24 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function _deepMerge(defaults: Dict, overrides: Dict, path: string?): ()
-	path = if path then path else ""
+	path = path or ""
 
 	for key, value in next, overrides do
-		if typeof(key) == "string" and defaults[key] == nil then
-			const fullPath: string = if path ~= "" then (`{path}.{key}`) else tostring(key)
-			_warn(`Unknown configuration key: -> {fullPath} <-; are you sure it is spelled or capitalized correctly?`)
+		if typeof(key) ~= "string" then
+			continue
+		end
 
-			if typeof(value) == "table" and typeof(defaults[key]) == "table" then
-				const nextPath: string = if path ~= "" then (`{path}.{key}`) else tostring(key)
-				_deepMerge(defaults[key] :: Dict, value :: Dict, nextPath)
-			else
-				defaults[key] = value
-			end
+		const fullPath: string = if path ~= "" then `{path}.{key}` else tostring(key)
+
+		if defaults[key] == nil then
+			_warn(`Unknown configuration key: -> {fullPath} <-; are you sure it is spelled or capitalized correctly?`)
+			continue
+		end
+
+		if typeof(value) == "table" and typeof(defaults[key]) == "table" then
+			_deepMerge(defaults[key] :: Dict, value :: Dict, fullPath)
+		else
+			defaults[key] = value
 		end
 	end
 end
