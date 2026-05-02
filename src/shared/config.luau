@@ -150,12 +150,12 @@ const BASE_CONFIG = {
 		--   Higher valies reduce artifacts from small obstacles (e.g. poles); however, they increase
 		--   raycast cost.
 
-		BOUNDS = game, -- (No recommendation)
+		BOUNDS = game, -- (No recommendation; default -> game)
 		-- ^ If a part is not a descendant of the BOUNDS variable, it means that it should be removed
 		-- Use `workspace` if your sources, reflectors, or signs are under `workspace`
 		-- Use `game` if any of your sources, reflectors, or signs are not under `workspace`, but may be in a different service
 		--
-		LOOK_VECTOR_VISUALS = false -- (No recommendation)
+		LOOK_VECTOR_VISUALS = false -- (No recommendation; default -> false)
 		-- DEBUG: Use this to show whether your source is orientated correctly or not
 
 	},

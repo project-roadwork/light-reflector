@@ -146,7 +146,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function addSource(source: BasePart?, isEnabled: (BasePart) -> boolean, getIntensity: (BasePart) -> number, getColor: (BasePart) -> vector, trackAncestry: boolean?): ()
+const function addSource(source: BasePart?, model: Model?, isEnabled: (BasePart) -> boolean, getIntensity: (BasePart) -> number, getColor: (BasePart) -> vector, trackAncestry: boolean?): ()
 	-- could have asserted but would flood the output with errors
 	if source == nil then
 		debugger.warn("Warning", "Vehicle (1st argument) CANNOT be nil.")
@@ -179,6 +179,7 @@ const function addSource(source: BasePart?, isEnabled: (BasePart) -> boolean, ge
 
 	sources.register(
 		source,
+		model,
 		function() return source.Position + generalConfig.vehicleSeatOffset end,
 		function() return source.CFrame.LookVector end,
 		isEnabled, getIntensity, getColor

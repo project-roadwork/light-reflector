@@ -40,7 +40,7 @@ const SAMPLE_POINTS: {Vector3} = {}
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function _computeOcclusion(part: BasePart, CFrame: CFrame, Size: Vector3, lightPos: Vector3, samplePoints: {Vector3}, rayParams: RaycastParams, config:types.BASE_CONFIG, source: types.LightSource): number
-	const total: number = #samplePoints
+    const total: number = #samplePoints
 	local hit: number = 0
 
 	const configCustomExclude: {Instance} = config.General.occlusionRaycastExclude
@@ -48,10 +48,18 @@ const function _computeOcclusion(part: BasePart, CFrame: CFrame, Size: Vector3, 
 	if configCustomExclude ~= lastExclusion then
 	    lastExclusion = configCustomExclude
 
-	    if #configCustomExclude > 0 then
-			rayParams.FilterDescendantsInstances = if #configCustomExclude == 0 then {source.Owner} else {source.Owner, table.unpack(configCustomExclude)}
+	    if #configCustomExclude > 1 then
+			if source.Model then
+			    rayParams.FilterDescendantsInstances = {part, source.Model, table.unpack(configCustomExclude)}
+			else
+			    rayParams.FilterDescendantsInstances = {part, table.unpack(configCustomExclude)}
+		    end
 		else
-		    rayParams.FilterDescendantsInstances = {source.Owner}
+		    if source.Model then
+		        rayParams.FilterDescendantsInstances = {part, source.Model}
+			else
+				rayParams.FilterDescendantsInstances = {part}
+			end
 		end
 	end
 

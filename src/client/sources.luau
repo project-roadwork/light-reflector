@@ -27,6 +27,7 @@ const list : types.SourceList = {}
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function create(source: BasePart,
+    model: Model?,
 	getPosition: () -> Vector3,
 	getDirection: () -> Vector3,
 	getEnabled: ((BasePart) -> boolean),
@@ -36,6 +37,7 @@ const function create(source: BasePart,
 
 	return {
 		Owner = source,
+		Model = model,
 		getPosition = getPosition,
 		getDirection = getDirection,
 		isActive = getEnabled,
@@ -60,6 +62,7 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function register(source: BasePart,
+    model: Model?,
 	getPosition: () -> Vector3,
 	getDirection: () -> Vector3,
 	getEnabled: (BasePart) -> boolean,
@@ -67,7 +70,7 @@ const function register(source: BasePart,
     getColor: ((BasePart) -> vector)?
 ): types.LightSource
 
-	return add(create(source, getPosition, getDirection, getEnabled, intensity, getColor))
+	return add(create(source, model, getPosition, getDirection, getEnabled, intensity, getColor))
 end
 
 --[=[

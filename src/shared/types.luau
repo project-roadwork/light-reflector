@@ -102,6 +102,7 @@ export type Grid = {
 -- Sources Types
 export type LightSource = {
 	Owner: BasePart,
+	Model: Model?,
 	getPosition: () -> Vector3,
 	getDirection: () -> Vector3,
 	isActive: (BasePart) -> boolean,
@@ -192,7 +193,7 @@ export type Register = {
 
 	read getWorldUtils: () -> (jecs.World, Components, {[Instance]: jecs.Entity}, CachedQueries),
 
-	read addSource: (source: BasePart?, isEnabled: (BasePart) -> boolean, getIntensity: (BasePart) -> number, getColor: (BasePart) -> vector, trackAncestry: boolean?) -> (),
+	read addSource: (source: BasePart?, model: Model?, isEnabled: (BasePart) -> boolean, getIntensity: (BasePart) -> number, getColor: (BasePart) -> vector, trackAncestry: boolean?) -> (),
 	read removeSource: (source: BasePart) -> (),
 	read addReflector: (part: Instance) -> (),
 	read removeReflector: (part: BasePart) -> (),
