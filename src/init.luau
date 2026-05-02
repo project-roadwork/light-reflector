@@ -53,7 +53,7 @@ const function init(): ()
 		return
 	end
 
-	debugger.print("Info", "[Init Module] 🟡 Initializing Light Reflector...")
+	debugger.print("Info", "[INIT] 🟡 Initializing Light Reflector...")
 
 	register.init()
 	detect.init()
@@ -61,7 +61,7 @@ const function init(): ()
 
 	hasInit = true
 
-	debugger.print("Info", "[Init Module] 🟢 Light Reflector Initialized!")
+	debugger.print("Info", "[INIT] 🟢 Light Reflector Initialized!")
 end
 --[=[
 	Public: Starts the module
@@ -79,7 +79,7 @@ const function start() : ()
 
 	isRunning = true
 
-	debugger.print("Info","[Init Module] 🟡 Starting...")
+	debugger.print("Info","[INIT] 🟡 Starting...")
 
 	init() -- Backwards compatibility
 
@@ -89,7 +89,7 @@ const function start() : ()
 	detect.start()
 	render.start()
 	-- ^ two separate loops since both are in different frequencies
-	debugger.print("Info","[Init Module] 🟢 Successfully started!")
+	debugger.print("Info","[INIT] 🟢 Successfully started!")
 
 	debug.profileend()
 end
@@ -104,9 +104,9 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function reset(): ()
-	debugger.assert(isRunning, "Warning", "Cleanup called before Start().")
+	debugger.assert(isRunning, "Warning", "[INIT] Cleanup called before Start().")
 
-	debugger.print("Info","Cleaning up!")
+	debugger.print("Info","[INIT] Cleaning up!")
 
 	register.clearConnections()
 

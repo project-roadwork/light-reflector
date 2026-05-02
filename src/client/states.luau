@@ -104,6 +104,7 @@ const REFLECTOR_STATE_TEMPLATE: types.ReflectorState = {
 
 	baseColor = Color3.new(0, 0, 0),
 	lastColor = Color3.new(0, 0, 0),
+	origColor = Color3.new(0, 0, 0),
 	lastMaterial = Enum.Material.SmoothPlastic,
 
 	isWedge = false,
@@ -252,6 +253,7 @@ const function acquireReflectorState(part: BasePart, baseConfig: types.BASE_CONF
 
 	state.cellKey = {cellX or 0, cellZ or 0}
 	state.baseColor = attributes["BaseColor"] or state.baseColor
+	state.origColor = attributes["OrigColor"] or state.origColor
 	state.isWedge = isWedge
 	state.isHybrid = isHybrid
 	state.CFrame = partCFrame

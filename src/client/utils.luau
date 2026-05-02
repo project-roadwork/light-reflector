@@ -85,12 +85,14 @@ const function _trackAncestryRemovalPrint(message: string): ()
 end
 
 --[=[
-	Public: Tracks a part and calls a callback if it leaves workspace
+	Public: Tracks a part and calls a callback if it leaves workspace or game
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function trackAncestryRemoval(instance: Instance, callback: (Instance) -> ()): RBXScriptConnection
-	if instance.Parent == nil or not instance:IsDescendantOf(workspace) then
+    const BOUNDS: Instance = constraints.BOUNDS
+
+	if instance.Parent == nil or not instance:IsDescendantOf(BOUNDS) then
 		pcall(callback, instance) -- no yield
 	end
 
@@ -103,7 +105,7 @@ const function trackAncestryRemoval(instance: Instance, callback: (Instance) -> 
 			return
 		end
 
-		if not instance:IsDescendantOf(workspace) then
+		if not instance:IsDescendantOf(BOUNDS) then
 			pcall(callback, instance)
 			conn:Disconnect()
 			_trackAncestryRemovalPrint("[🔴 REMOVE] Disconnected via IsDescendantOf check")
@@ -121,8 +123,8 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function getSpeedMPH(DriveSeat: VehicleSeat): number
-	const v: Vector3 = DriveSeat.AssemblyLinearVelocity
+const function getSpeedMPH(source: BasePart): number
+	const v: Vector3 = source.AssemblyLinearVelocity
 	-- converts studs to MPH based on the mphScale config
 
 	return (v.X*v.X + v.Y*v.Y + v.Z*v.Z)^0.5 * _MPH_SCALE -- maybe faster than .Magnitude?
@@ -133,13 +135,13 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function adaptiveWait(waitFunction: (number?) -> number, minFPS: number, maxFPS: number, DriveSeat: VehicleSeat?): (number, number)
+const function adaptiveWait(waitFunction: (number?) -> number, minFPS: number, maxFPS: number, source: BasePart?): (number, number)
 	-- faster VehicleSeat velocity = more FPS and vice versa
-	if not DriveSeat then
+	if not source then
 		return waitFunction(1 / maxFPS), 50
 	end
 
-	const speedMph: number = getSpeedMPH(DriveSeat)
+	const speedMph: number = getSpeedMPH(source)
 
 	const targetFPS: number = math.clamp(speedMph * _INV * maxFPS, minFPS, maxFPS)
 
@@ -151,27 +153,24 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function getFastestDriveSeat(Vehicles: jecs.Cached_Query<Instance>): VehicleSeat?
+const function getFastestSource(sources: jecs.Cached_Query<BasePart>): BasePart?
 	-- ^ since the package is no longer tailored towards one vehicle, it needs to get the fastest drive seat out of all of the
 	--    vehicles
-	local fastestSeat: VehicleSeat? = nil
+	local fastestSource: BasePart? = nil
 	local maxSpeed: number = 0
 
-	for entity, car:Instance in Vehicles do
+	for entity, source: BasePart in sources do
 
-		if not car then continue end
+		if not source then continue end
 
-		const seat: VehicleSeat? = car:FindFirstChildOfClass("VehicleSeat")
-		if seat then
-			const speed: number = seat.AssemblyLinearVelocity.Magnitude
-			if speed > maxSpeed then
-				maxSpeed = speed
-				fastestSeat = seat
-			end
+		const speed: number = source.AssemblyLinearVelocity.Magnitude
+		if speed > maxSpeed then
+			maxSpeed = speed
+			fastestSource = source
 		end
 	end
 
-	return fastestSeat
+	return fastestSource
 end
 
 --[=[
@@ -220,7 +219,7 @@ const function adaptiveWaitWithSourcesOverride(
 	waitFunction: (number?) -> number,
 	minFPS: number,
 	maxFPS: number,
-	DriveSeat: VehicleSeat?
+	source: BasePart?
 	--onSourcesChanged: (types.SourceList) -> ()
 ): (number, number)
 
@@ -242,10 +241,10 @@ const function adaptiveWaitWithSourcesOverride(
 
 	if changed then
 		--elapsed = waitFunction(0)
-		speedMph = if DriveSeat then getSpeedMPH(DriveSeat) else 50
+		speedMph = if source then getSpeedMPH(source) else 50
 		_lastSources = _currentSources
 	else
-		elapsed, speedMph = adaptiveWait(waitFunction, minFPS, maxFPS, DriveSeat)
+		elapsed, speedMph = adaptiveWait(waitFunction, minFPS, maxFPS, source)
 	end
 
 	return elapsed, speedMph
@@ -284,12 +283,15 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function normalizeBaseColor(part: BasePart, isNormalizeEnabled: boolean): Color3
-	-- if a reflector color is too low, it would barely light up at all. If it is too high, it would blind one's eyes
+    -- if a reflector color is too low, it would barely light up at all. If it is too high, it would blind one's eyes
+	const existing: any? = part:GetAttribute("BaseColor")
+	if typeof(existing) == "Color3" then
+		return existing
+	end
+
 	local color: Color3 = part.Color
 
-	if part:GetAttribute("BaseColor") then return color end
-
-	if isNormalizeEnabled == false then
+	if not isNormalizeEnabled then
 		part:SetAttribute("BaseColor", color)
 		return color
 	end
@@ -315,6 +317,7 @@ const function normalizeBaseColor(part: BasePart, isNormalizeEnabled: boolean): 
 	end
 
 	part:SetAttribute("BaseColor", color)
+	part:SetAttribute("OrigColor", part.Color)
 	return color
 end
 
@@ -556,7 +559,7 @@ return table.freeze({
 	getSpeedMPH = getSpeedMPH,
 	adaptiveWait = adaptiveWait,
 	adaptiveWaitWithSourcesOverride = adaptiveWaitWithSourcesOverride,
-	getFastestDriveSeat = getFastestDriveSeat,
+	getFastestSource = getFastestSource,
 	fixPartOrientation = fixPartOrientation,
 	normalizeBaseColor = normalizeBaseColor,
 	pcallRetry = pcallRetry,

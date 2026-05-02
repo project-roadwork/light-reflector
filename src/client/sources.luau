@@ -26,21 +26,21 @@ const list : types.SourceList = {}
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function create(car: Instance | types.Vehicle,
+const function create(source: BasePart,
 	getPosition: () -> Vector3,
 	getDirection: () -> Vector3,
-	getEnabled: (() -> boolean | () -> number),
-	intensity: ((Instance) -> number)?,
-	getColor: ((Instance) -> vector)?
+	getEnabled: ((BasePart) -> boolean),
+	intensity: ((BasePart) -> number)?,
+	getColor: ((BasePart) -> vector)?
 ): types.LightSource
 
 	return {
-		Owner = car :: Instance,
+		Owner = source,
 		getPosition = getPosition,
 		getDirection = getDirection,
-		isActive = getEnabled or function() return true end,
-		getIntensity = if intensity then intensity else function(car) return 1 end,
-		getColor = if getColor then getColor else function(car) return vector.create(1, 1, 1) end,
+		isActive = getEnabled,
+		getIntensity = if intensity then intensity else function(source) return 1 end,
+		getColor = if getColor then getColor else function(source) return vector.create(1, 1, 1) end,
 	}
 end
 
@@ -49,9 +49,9 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function add(source: types.LightSource): types.LightSource
-	table.insert(list, source)
-	return source
+const function add(lightSource: types.LightSource): types.LightSource
+	table.insert(list, lightSource)
+	return lightSource
 end
 
 --[=[
@@ -59,15 +59,15 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function register(car: Instance | types.Vehicle,
+const function register(source: BasePart,
 	getPosition: () -> Vector3,
 	getDirection: () -> Vector3,
-	getEnabled: () -> boolean | () -> number,
-	intensity: ((Instance) -> number)?,
-    getColor: ((Instance) -> vector)?
+	getEnabled: (BasePart) -> boolean,
+	intensity: ((BasePart) -> number)?,
+    getColor: ((BasePart) -> vector)?
 ): types.LightSource
 
-	return add(create(car, getPosition, getDirection, getEnabled, intensity, getColor))
+	return add(create(source, getPosition, getDirection, getEnabled, intensity, getColor))
 end
 
 --[=[
@@ -76,8 +76,8 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function anyActive(): boolean
-	for _, source in list do
-		if source.isActive() then
+	for _: number, lightSource: types.LightSource in list do
+		if lightSource.isActive(lightSource.Owner) then
 			return true
 		end
 	end
@@ -90,10 +90,10 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function getAllActive(): {types.LightSource}
-	const activeSources = {}
-	for _, source in list do
-		if source.isActive() then
-			table.insert(activeSources, source)
+	const activeSources: {types.LightSource} = {}
+	for _: number, lightSource: types.LightSource in list do
+		if lightSource.isActive(lightSource.Owner) then
+			table.insert(activeSources, lightSource)
 		end
 	end
 	return activeSources

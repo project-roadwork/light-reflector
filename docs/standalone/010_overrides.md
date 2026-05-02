@@ -7,7 +7,7 @@ Overrides are ways to temporarily change behavior of a certain sign or part wiht
 | Name | Type | Description |
 | -------- | -------- | ---- |
 | LRBaseIntensity | `number` | Controls how reflective the sign or reflector is |
-| LRMoving | `boolean` | Lets the system know if sign or reflector moves |
+| LRMoving | `boolean` | Lets the system know if a sign or reflector moves |
 
 ### Sign Overrides
 

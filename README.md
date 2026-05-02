@@ -8,6 +8,9 @@
 > **Use the [main repository in Codeberg](https://codeberg.org/project-roadwork/light-reflector.git) for issues, pull requests, and contributions.**
 > **The [GitHub repository](https://github.com/project-roadwork/light-reflector) is a *read-only* mirror, and pull requests are not supported.**
 
+> [!NOTE]
+> ***You must have the new Luau type solver enabled in `Workspace` in order to recieve proper types.***
+
 ## Features
 * Supports `Decal` and `BasePart` reflectors
 * Distance-based falloff

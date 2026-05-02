@@ -61,17 +61,17 @@ const world: jecs.World = jecs.world()
 
 -- Components
 const components: types.Components = {
-	VehicleInstance = world:component() :: jecs.Id<Instance>,
-	VehicleDebugBox = world:component() :: jecs.Id<BasePart>,
+	SourceInstance = world:component() :: jecs.Id<BasePart>,
+	SourceDebugBox = world:component() :: jecs.Id<BasePart>,
 	Reflector = world:component() :: jecs.Id<BasePart>,
-	Sign = world:component() :: jecs.Id<Instance>,
+	Sign = world:component() :: jecs.Id<BasePart>,
 	ReflectorState = world:component() :: jecs.Id<types.ReflectorState>,
 	SignState = world:component() :: jecs.Id<types.SignEntity>,
 	SignInRange = world:component() :: jecs.Id<types.RangeType> ,
 }
 
 const cachedQueries: types.CachedQueries = {
-	VehicleInstances = world:query(components.VehicleInstance):cached(),
+	SourceInstances = world:query(components.SourceInstance):cached(),
 	Signs = world:query(components.Sign, components.SignInRange):cached(),
 	Reflectors = world:query(components.Reflector, components.ReflectorState):cached(),
 	SignStates = world:query(components.SignState):cached(),
@@ -88,44 +88,57 @@ overlapDetectionParams.FilterType = Enum.RaycastFilterType.Include
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function removeVehicle(car: (types.Vehicle & Instance)): ()
-	const entityId: jecs.Entity<nil>? = instanceToEntityId[car]
+const function removeSource(source: BasePart): ()
+    if not source then
+        return
+    end
+
+	const entityId: jecs.Entity<nil>? = instanceToEntityId[source]
 
 	if not entityId then
-		debugger.warn("Warning", "Cannot find vehicle in vehicle map.")
+		debugger.warn("Warning", "[REGISTER] Cannot find source in source map.")
 		return
 	end
 
-	const vehicle: Instance? = world:get(entityId, components.VehicleInstance)
-	--	local instance = world:get(entityId, components.Instance)
+	const sourceEntity: BasePart? = world:get(entityId, components.SourceInstance)
 
-	if car and typeof(car) == "Instance" and car ~= vehicle then
-		debugger.warn("Warning", "Cannot find vehicle in vehicle map.")
+	if not sourceEntity then
+		debugger.warn("Warning", "[REGISTER] Cannot find matching source in source map.")
+		return
+	end
+
+	if source ~= sourceEntity then
+		debugger.warn("Warning", "[REGISTER] Cannot find matching source in source map.")
 		return
 	end
 
 	const sourcesList: types.SourceList = sources.list
-	--registeredVehicles[car] = nil
 
 	for i = #sourcesList, 1, -1 do
-		if sourcesList[i].Owner == vehicle then
-			debugger.print("Info", "Found car")
+		if sourcesList[i].Owner == sourceEntity then
+			debugger.print("Info", `[REGISTER] Unregistering {sourceEntity.Name}`)
 			table.remove(sourcesList, i)
 			break
 		end
 	end
 
-	const box: BasePart? = world:get(entityId, components.VehicleDebugBox)
+	if constraints.LOOK_VECTOR_VISUALS then
+	    const coneHandle: Instance? = source:FindFirstChild("_LR_DEBUG_CONE")
+
+	    if coneHandle then
+			coneHandle:Destroy()
+		end
+	end
+
+	const box: BasePart? = world:get(entityId, components.SourceDebugBox)
+
 	if box then
 		box:Destroy()
-		--vehicleDebugBoxes[car] = nil
 	end
 
 	world:delete(entityId)
 
-	if typeof(car) == "Instance" then
-		instanceToEntityId[car] = nil
-	end
+	instanceToEntityId[sourceEntity] = nil
 end
 
 --[=[
@@ -133,23 +146,24 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function addVehicle(car: Instance & types.Vehicle, isEnabled: (Instance) -> boolean, getIntensity: (Instance) -> number, getColor: (Instance) -> vector): ()
+const function addSource(source: BasePart?, isEnabled: (BasePart) -> boolean, getIntensity: (BasePart) -> number, getColor: (BasePart) -> vector, trackAncestry: boolean?): ()
 	-- could have asserted but would flood the output with errors
-
-	if car == nil then
+	if source == nil then
 		debugger.warn("Warning", "Vehicle (1st argument) CANNOT be nil.")
 		return
 	end
 
-	if instanceToEntityId[car] then
-		debugger.warn("Warning", "Vehicle already indexed in vehicle map.")
-		return
+	if source and not source:IsA("BasePart") then
+        debugger.warn("Warning", `[REGISTER] Source MUST be an BasePart; got {source.ClassName}`)
+        return
 	end
 
-	const seat: VehicleSeat? = car:FindFirstChildOfClass("VehicleSeat")
+	if not source then
+        return -- have to add this again because of type checker
+	end
 
-	if not seat then
-		debugger.warn("Warning", "Failed to find VehicleSeat in vehicle (1st argument). Did you ensure that the VehicleSeat instance exists before calling RegisterVehicle?")
+	if instanceToEntityId[source] then
+		debugger.warn("Warning", "Vehicle already indexed in vehicle map.")
 		return
 	end
 
@@ -158,42 +172,43 @@ const function addVehicle(car: Instance & types.Vehicle, isEnabled: (Instance) -
 		return
 	end
 
-	if type(isEnabled) ~= "boolean"
-		and type(isEnabled) ~= "number"
-		and not (typeof(isEnabled) == "Instance" and isEnabled:IsA("ValueBase")) then
-
-		debugger.warn("Warning", "Enabled (2nd argument) MUST be a boolean, number, or a ValueBase like IntValue, etc.")
-		return
-	end
-
 	const entity: jecs.Entity<nil> = world:entity()
 
-	world:set(entity, components.VehicleInstance, car)
-	instanceToEntityId[car] = entity
+	world:set(entity, components.SourceInstance, source)
+	instanceToEntityId[source] = entity
 
 	sources.register(
-		car,
-		function() return seat.Position + generalConfig.vehicleSeatOffset end,
-		function() return seat.CFrame.LookVector end,
-		function()
-			if typeof(isEnabled) == "Instance" and isEnabled:IsA("ValueBase") then
-				const v: any = isEnabled.Value
-				return (type(v) == "boolean" and v) or (type(v) == "number" and v > 0)
-			else
-				return (type(isEnabled) == "boolean" and isEnabled) or (type(isEnabled) == "number" and isEnabled > 0)
-			end
-		end, getIntensity, getColor
+		source,
+		function() return source.Position + generalConfig.vehicleSeatOffset end,
+		function() return source.CFrame.LookVector end,
+		isEnabled, getIntensity, getColor
 	)
 
-	if not trackedAncestryInstances[car] then
-		const connection: RBXScriptConnection = utils.trackAncestryRemoval(car, function()
-			trackedAncestryInstances[car] = nil
-			removeVehicle(car)
-		end)
+	if constraints.LOOK_VECTOR_VISUALS then
+	    const coneHandle: ConeHandleAdornment = Instance.new("ConeHandleAdornment")
 
-		scriptConnections[connection] = true
-		trackedAncestryInstances[car] = true
+		coneHandle.CFrame = CFrame.new(0, 0, -1)
+		coneHandle.Height = 2
+		coneHandle.AdornCullingMode = Enum.AdornCullingMode.Automatic
+		coneHandle.Adornee = source
+		coneHandle.Radius = 0.75
+		coneHandle.Parent = source
+		coneHandle.Name = "_LR_DEBUG_CONE"
 	end
+
+	if trackAncestry and trackAncestry == true then
+	    if not trackedAncestryInstances[source] then
+		    const connection: RBXScriptConnection = utils.trackAncestryRemoval(source, function()
+			    trackedAncestryInstances[source] = nil
+			    removeSource(source)
+		    end)
+
+		    scriptConnections[connection] = true
+			trackedAncestryInstances[source] = true
+	    end
+	end
+
+	debugger.print("Info", `[REGISTER] Registered {source.Name}`)
 end
 
 --[=[
@@ -357,7 +372,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function removeReflector(part:BasePart): ()
+const function removeReflector(part: BasePart): ()
 	if reflectorConfig.isReflector(part) or part:HasTag(reflectorConfig.tagName) then
 		if instanceToEntityId[part] then
 			const entity: jecs.Entity<nil> = instanceToEntityId[part]
@@ -393,9 +408,13 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function addSign(part:Instance, rangeType: string?): ()
+const function addSign(part: Instance, rangeType: string?): ()
 	if instanceToEntityId[part] then
 		return
+	end
+
+	if not part:IsA("BasePart") then
+        return
 	end
 
 	const entity: jecs.Entity<nil> = world:entity()
@@ -403,10 +422,6 @@ const function addSign(part:Instance, rangeType: string?): ()
 	world:set(entity, components.Sign, part)
 	world:set(entity, components.SignInRange, (if rangeType ~= nil then rangeType else "near"):: types.RangeType)
 	instanceToEntityId[part] = entity
-
-	if not part:IsA("BasePart") then
-        return
-	end
 
 	const hasTag: boolean = reflectorConfig.isTagsEnabled and part:HasTag(signConfig.tagName)
 	const isSign_nontag: boolean? = signConfig.isTagsEnabled == false and signConfig.isSign(part)
@@ -433,7 +448,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function removeSign(part:Instance): ()
+const function removeSign(part: Instance): ()
 	if instanceToEntityId[part] then
 		const entity: jecs.Entity<nil>? = instanceToEntityId[part]
 		if entity and world:contains(entity) then
@@ -508,7 +523,7 @@ end
 const function getPartsByRaycast(): {[BasePart]: types.RangeType}
 	const partsDictionary: {[BasePart]: types.RangeType} = {}
 
-	for entity: jecs.Entity<nil>, car:Instance in cachedQueries.VehicleInstances do
+	for entity: jecs.Entity<nil>, car:Instance in cachedQueries.SourceInstances do
 		const DriveSeat: VehicleSeat? = car:FindFirstChildOfClass("VehicleSeat")
 
 		if not DriveSeat then continue end
@@ -517,11 +532,11 @@ const function getPartsByRaycast(): {[BasePart]: types.RangeType}
 		const boxCF: CFrame = seatCF * signConfig.raycastBoxOffset
 
 		if signConfig.isDebugBoxEnabled then
-			local vehicleDebugBox: BasePart? = world:get(entity, components.VehicleDebugBox)
+			local vehicleDebugBox: BasePart? = world:get(entity, components.SourceDebugBox)
 
 			if not vehicleDebugBox then
 				vehicleDebugBox = debugBoxTemplate:Clone()
-				world:set(entity, components.VehicleDebugBox, vehicleDebugBox)
+				world:set(entity, components.SourceDebugBox, vehicleDebugBox)
 			end
 
 			if not vehicleDebugBox then continue end -- have to add this because of type checker
@@ -564,7 +579,7 @@ const function _cacheReflectors(): ()
 		scriptConnections[instanceRemovedSignal] = true
 	else
 		for _: number, Folder: any in reflectorConfig.reflectorsFolders do
-			for _: number, part:Instance in Folder:GetDescendants() do
+			for _: number, part: Instance in Folder:GetDescendants() do
 				addReflector(part)
 			end
 
@@ -695,7 +710,6 @@ const function reset(): ()
 	end
 
 	for entity: jecs.Entity<nil>, part: BasePart, state: types.ReflectorState in cachedQueries.Reflectors do
-		const Material: Enum.Material = part.Material
 		const Color: Color3 = part.Color
 
 		const newColor: Color3 = state.baseColor
@@ -719,9 +733,9 @@ const function reset(): ()
 	if not config.SignConfig.debugBoxFolder and debugFolder then
 		debugFolder:Destroy()
 	else
-		for entity: jecs.Entity<nil>, vehicleDebugBox: BasePart in world:query(components.VehicleDebugBox) do
-			if vehicleDebugBox then
-				vehicleDebugBox:Destroy()
+		for entity: jecs.Entity<nil>, sourceDebugBox: BasePart in world:query(components.SourceDebugBox) do
+			if sourceDebugBox then
+				sourceDebugBox:Destroy()
 			end
 		end
 	end
@@ -759,8 +773,8 @@ return table.freeze({
 
 	getWorldUtils = getWorldUtils,
 
-	addVehicle = addVehicle,
-	removeVehicle = removeVehicle,
+	addSource = addSource,
+	removeSource = removeSource,
 	addReflector = addReflector,
 	removeReflector = removeReflector,
 	addSign = addSign,

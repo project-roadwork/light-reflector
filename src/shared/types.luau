@@ -101,12 +101,12 @@ export type Grid = {
 
 -- Sources Types
 export type LightSource = {
-	Owner: Instance,
+	Owner: BasePart,
 	getPosition: () -> Vector3,
 	getDirection: () -> Vector3,
-	isActive: () -> boolean | () -> number,
-	getIntensity: (Instance) -> number,
-	getColor: (Instance) -> vector
+	isActive: (BasePart) -> boolean,
+	getIntensity: (BasePart) -> number,
+	getColor: (BasePart) -> vector
 }
 
 export type SourceList = { LightSource }
@@ -134,10 +134,10 @@ export type Utils = {
 
 	read trackAncestryRemoval: (instance: Instance, callback: (Instance) -> ()) -> RBXScriptConnection,
 
-	read getSpeedMPH: (DriveSeat: VehicleSeat) -> number,
-	read adaptiveWait: ((number?) -> number, minFPS: number, maxFPS: number, DriveSeat: VehicleSeat?) -> (number, number),
-	read adaptiveWaitWithSourcesOverride: ((number?) -> number, minFPS: number, maxFPS: number, DriveSeat: VehicleSeat?) -> (number, number),
-	read getFastestDriveSeat: (Vehicles: jecs.Cached_Query<Instance>) -> VehicleSeat?,
+	read getSpeedMPH: (source: BasePart) -> number,
+	read adaptiveWait: ((number?) -> number, minFPS: number, maxFPS: number, source: BasePart?) -> (number, number),
+	read adaptiveWaitWithSourcesOverride: ((number?) -> number, minFPS: number, maxFPS: number, source: BasePart?) -> (number, number),
+	read getFastestSource: (sources: jecs.Cached_Query<BasePart>) -> BasePart?,
 
 	read fixPartOrientation: (part: BasePart, decal: Decal) -> (),
 	read normalizeBaseColor: (part: BasePart, isNormalizeEnabled: boolean) -> Color3,
@@ -158,19 +158,19 @@ export type Utils = {
 export type VehicleMap = {[Instance & Vehicle]: any}
 
 export type CachedQueries = {
-	VehicleInstances: jecs.Cached_Query<Instance>,
-	Signs: jecs.Cached_Query<Instance, RangeType>,
+	SourceInstances: jecs.Cached_Query<BasePart>,
+	Signs: jecs.Cached_Query<BasePart, RangeType>,
 	Reflectors: jecs.Cached_Query<BasePart, ReflectorState>,
 	SignStates: jecs.Cached_Query<SignEntity>,
-	SignsPartsStates: jecs.Cached_Query<Instance, SignEntity>,
+	SignsPartsStates: jecs.Cached_Query<BasePart, SignEntity>,
 	ReflectorStates: jecs.Cached_Query<ReflectorState>,
 }
 
 export type Components = {
-	VehicleInstance: jecs.Id<Instance>,
-	VehicleDebugBox: jecs.Id<BasePart>,
+	SourceInstance: jecs.Id<BasePart>,
+	SourceDebugBox: jecs.Id<BasePart>,
 	Reflector: jecs.Id<BasePart>,
-	Sign: jecs.Id<Instance>,
+	Sign: jecs.Id<BasePart>,
 	ReflectorState: jecs.Id<ReflectorState>,
 	SignState: jecs.Id<SignEntity>,
 	SignInRange: jecs.Id<RangeType>,
@@ -192,12 +192,12 @@ export type Register = {
 
 	read getWorldUtils: () -> (jecs.World, Components, {[Instance]: jecs.Entity}, CachedQueries),
 
-	read addVehicle: (car: Instance & Vehicle, isEnabled: (Instance) -> boolean, getIntensity: (Instance) -> number, getColor: (Instance) -> vector) -> (),
-	read removeVehicle: (car: Vehicle & Instance) -> (),
+	read addSource: (source: BasePart?, isEnabled: (BasePart) -> boolean, getIntensity: (BasePart) -> number, getColor: (BasePart) -> vector, trackAncestry: boolean?) -> (),
+	read removeSource: (source: BasePart) -> (),
 	read addReflector: (part: Instance) -> (),
 	read removeReflector: (part: BasePart) -> (),
 	read addSign: (part: Instance, rangeType: RangeType?) -> (),
-	read removeSign: (part: BasePart) -> (),
+	read removeSign: (part: Instance) -> (),
 
 	read clearConnections: () -> (),
 	read reset: () -> (),
@@ -210,7 +210,7 @@ export type Equations = {
 	read computeReflectorIntensity: (
 		part: BasePart,
 		state: ReflectorState,
-		source: LightSource,
+		lightSource: LightSource,
 		MPH: number,
 		config: BASE_CONFIG
 	) -> (number, number),
@@ -219,7 +219,7 @@ export type Equations = {
 
 		part: BasePart,
 		state: SignEntity,
-		source: LightSource,
+		lightSource: LightSource,
 		decal: Decal,
 		rangeType: RangeType,
 		config: BASE_CONFIG
@@ -315,6 +315,7 @@ export type ReflectorState = {
 	baseIntensity: number,
 
 	baseColor: Color3,
+	origColor: Color3,
 	isActive: boolean?,
 
 	lastMaterial: Enum.Material,

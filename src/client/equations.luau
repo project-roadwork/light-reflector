@@ -43,7 +43,7 @@ const function _computeOcclusion(part: BasePart, CFrame: CFrame, Size: Vector3, 
 	const total: number = #samplePoints
 	local hit: number = 0
 
-	const configCustomExclude: {Instance?} = config.General.occlusionRaycastExclude
+	const configCustomExclude: {Instance} = config.General.occlusionRaycastExclude
 
 	if configCustomExclude ~= lastExclusion then
 	    lastExclusion = configCustomExclude
@@ -94,7 +94,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function computeReflectorIntensity(part: BasePart, state: types.ReflectorState, source: types.LightSource, MPH: number, config: types.BASE_CONFIG): (number, number)
+const function computeReflectorIntensity(part: BasePart, state: types.ReflectorState, lightSource: types.LightSource, MPH: number, config: types.BASE_CONFIG): (number, number)
 
 	--[[
 		             __________________________________________________________
@@ -138,8 +138,8 @@ const function computeReflectorIntensity(part: BasePart, state: types.ReflectorS
 		canHybridKeepColors = state.canHybridKeepColors
 	end -- Added isHybrid if-block since :GetAttribute() calls may be expensive?
 
-	const seatPos: Vector3 = source.getPosition()
-	const dir:Vector3 = source.getDirection()
+	const seatPos: Vector3 = lightSource.getPosition()
+	const dir:Vector3 = lightSource.getDirection()
 
 	const predictionFactor: number = 0.5
 
@@ -147,7 +147,7 @@ const function computeReflectorIntensity(part: BasePart, state: types.ReflectorS
 
 	const pos: Vector3 = seatPos + dir * offset
 
-	const lightIntensity: number = source.getIntensity(source.Owner)  or 1
+	const lightIntensity: number = lightSource.getIntensity(lightSource.Owner) or 1
 
 	const change: Vector3 = partPosition - pos
 
@@ -196,7 +196,7 @@ const function computeReflectorIntensity(part: BasePart, state: types.ReflectorS
 		end
 	end
 
-	const proximityFactor = (dist < config.ReflectorConfig.minDistance) and (dist / config.ReflectorConfig.minDistance) or 1
+	const proximityFactor: number = (dist < config.ReflectorConfig.minDistance) and (dist / config.ReflectorConfig.minDistance) or 1
 
 	intensity += (dot * (coneFactor)) * distFactor * wedgeFactor * proximityFactor * (lightIntensity or 1)
 
@@ -209,19 +209,12 @@ const function computeReflectorIntensity(part: BasePart, state: types.ReflectorS
 			return -1, -1
 		end
 
-		const distanceFactor: number = clamp(1 - (dist / hybridFadeRange), 0, 1)
+		local coneFade: number = clamp((dot - maxDot)/0.05, 0, 1)
+		coneFade = coneFade * coneFade * (3 - 2 * coneFade)
 
-		const angleFade: number = math.sqrt(1 - dot)
-		const baseTransparency: number = (dot <= 0.1) and 1 or
-			(distFade * 0.2 + angleFade * 0.8)
+		intensity *= coneFade
 
-		const proximityFactor: number = (dist < hybridMinDistance) and (dist /  hybridMinDistance) or 1
-
-		const dotClamped: number = clamp((dot - maxDot) / (1 - maxDot), 0, 1)
-		const angleContribution: number = 1 - dotClamped
-		const distContribution: number = baseTransparency
-
-		local weightedTransparency: number = (baseTransparency * proximityFactor * angleContribution)
+		local weightedTransparency: number = 1 - coneFade
 
 		weightedTransparency += (1 - weightedTransparency) * distFade
 
@@ -231,7 +224,7 @@ const function computeReflectorIntensity(part: BasePart, state: types.ReflectorS
 	intensity *= globalIntensityMultiplier
 
 	if config.ReflectorConfig.useRaycastForObstacles then
-		intensity *= _computeOcclusion(part, state.CFrame, part.Size, seatPos, SAMPLE_POINTS, rayParams, config, source)
+		intensity *= _computeOcclusion(part, state.CFrame, part.Size, seatPos, SAMPLE_POINTS, rayParams, config, lightSource)
 	end
 
 	return clamp(intensity * baseIntensity, 0, 1), if intensity > 0 then clamp(finalTransparency*hybridTransparencyMultiplier, 0.5, 1) else 1
@@ -242,7 +235,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function computeSignIntensity(part : BasePart, state: types.SignEntity,  source: types.LightSource, decal: Decal, rangeType: types.RangeType, config: types.BASE_CONFIG):
+const function computeSignIntensity(part : BasePart, state: types.SignEntity,  lightSource: types.LightSource, decal: Decal, rangeType: types.RangeType, config: types.BASE_CONFIG):
     {
 		transparency: number,
 		brightness: number,
@@ -289,9 +282,9 @@ const function computeSignIntensity(part : BasePart, state: types.SignEntity,  s
 	local hasActiveLight: boolean = false
 	const maxDot: number = math.cos(config.General.lightHalfAngle)
 
-	const seatPos: Vector3 = source.getPosition()
-	const carLook: Vector3 = source.getDirection()
-	local intensity: number = source.getIntensity(source.Owner) or 1
+	const seatPos: Vector3 = lightSource.getPosition()
+	const carLook: Vector3 = lightSource.getDirection()
+	local intensity: number = lightSource.getIntensity(lightSource.Owner) or 1
 
 	const dist: number = (seatPos - partPosition).Magnitude
 
@@ -338,9 +331,7 @@ const function computeSignIntensity(part : BasePart, state: types.SignEntity,  s
 	    intensity *= globalIntensityMultiplier
 
 		if config.SignConfig.useRaycastForObstacles then
-
-
-			intensity *= _computeOcclusion(part, state.CFrame, state.Size, seatPos, SAMPLE_POINTS, rayParams, config, source)
+			intensity *= _computeOcclusion(part, state.CFrame, state.Size, seatPos, SAMPLE_POINTS, rayParams, config, lightSource)
 		end
 
 		transparency = (baseTransparency * proximityFactor * angleContribution) / intensity
@@ -360,6 +351,12 @@ const function computeSignIntensity(part : BasePart, state: types.SignEntity,  s
 		task.defer(utils.spawnDebugField, seatPos, carLook, maxDot,
 			120,
 			100,
+			config.SignConfig.debugBoxFolder or workspace
+		)
+
+		task.defer(utils.spawnDebugField, seatPos, carLook, maxDot,
+			5,
+			15,
 			config.SignConfig.debugBoxFolder or workspace
 		)
 	end

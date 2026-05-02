@@ -84,9 +84,17 @@ const function _deactivateAllStates(): ()
 		state.targetIntensity = 0
 		state.isActive = false
 
-		if state.baseColor then
-			part.Color = state.baseColor
+		if state.origColor then
+			part.Color = state.origColor
 			part.Material = reflectorConfig.inactiveMaterial
+		end
+
+		if state.isHybrid then
+		    if state.lastTransparency ~= 1 then
+				--state.currentTransparency = 1
+				state.lastTransparency = 1
+				part.Transparency = 1
+			end
 		end
 	end
 end
@@ -170,7 +178,7 @@ const function _processReflector(entity: jecs.Entity, source: types.LightSource,
         const avg: vector = state.colorAccum / state.intensityAccum
         state.neutralizedColor = Color3.new(avg.x, avg.y, avg.z)
     else
-        state.neutralizedColor = state.baseColor
+        state.neutralizedColor = state.origColor
     end
 end
 
@@ -406,7 +414,7 @@ const function start() : ()
 		while true do
 
 			const deltaTime: number, MPH: number = utils.adaptiveWaitWithSourcesOverride(task.wait, constraints.BOUNDARY_MIN_FPS,
-				constraints.BOUNDARY_MAX_FPS, utils.getFastestDriveSeat(cachedQueries.VehicleInstances))
+				constraints.BOUNDARY_MAX_FPS, utils.getFastestSource(cachedQueries.SourceInstances))
 			-- task.wait uses .Heartbeat if I remember correctly, so I don't need a separate module
 			-- ^ adaptive waiting based on vehicle speed. This only indexes parts in the area rather than renders,
 			--    so the FPS numbers should be low

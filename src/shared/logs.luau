@@ -20,7 +20,7 @@ return {
 	Ids = {
 		FatalInit = "Init errored: %s",
 		Fatal = "Fatal error: %s",
-		AlreadyStarting = "Light Reflector is already starting",
+		AlreadyStarting = "[INIT] Light Reflector is already starting",
 		InvalidType = "Expected type %s; got '%s'",
 		InvalidInstance = "Expected type %s; got '%s'",
 		Info = "Info: %s",

@@ -67,9 +67,9 @@ local riseMultiplier: number = 0
 local fallMultiplier: number = 0
 
 const renderWait: (number?) -> number = utils.renderWait
-const vehicleInstances: jecs.Cached_Query<Instance> = cachedQueries.VehicleInstances
+const sourceInstances: jecs.Cached_Query<BasePart> = cachedQueries.SourceInstances
 const reflectors: jecs.Cached_Query<BasePart, types.ReflectorState> = cachedQueries.Reflectors
-const signsPartsStates: jecs.Cached_Query<Instance, types.SignEntity> = cachedQueries.SignsPartsStates
+const signsPartsStates: jecs.Cached_Query<BasePart, types.SignEntity> = cachedQueries.SignsPartsStates
 
 --[=[
 	Public: Initialize
@@ -111,7 +111,7 @@ const function start(): ()
 	_runnerThread = constraints.SPAWN(utils.pcallRetry, function()
 		while true do
 			deltaTime, MPH = utils.adaptiveWait(renderWait, RENDER_MIN_FPS, RENDER_MAX_FPS,
-				utils.getFastestDriveSeat(vehicleInstances)) -- adaptive waiting based on fastest vehicle speed
+				utils.getFastestSource(sourceInstances)) -- adaptive waiting based on fastest vehicle speed
 
 			-- This should run in a higher FPS than the detect the module since it renders fading. Also, utils.renderWait uses RunService.PreRender
 			-- rather than RunService.Heartbeat which I think the task sceduler uses.
@@ -133,7 +133,7 @@ const function start(): ()
 
 				for entity: jecs.Entity<nil>, part:BasePart, state: types.ReflectorState in reflectors do
 					if not activeReflectorEntities[entity] then
-						const baseColor: Color3 = state.baseColor
+						const baseColor: Color3 = state.origColor
 						const lastColor: Color3 = state.lastColor
 
 						if baseColor then
@@ -150,6 +150,15 @@ const function start(): ()
 							end
 
 						end
+
+						if state.isHybrid then
+						    if state.lastTransparency ~= 1 then
+								--state.currentTransparency = 1
+								state.lastTransparency = 1
+								part.Transparency = 1
+							end
+						end
+
 						world:remove(entity, components.ReflectorState)
 						continue
 					end
@@ -189,34 +198,69 @@ const function start(): ()
 
 					const intensity: number = state.currentIntensity
 
-					local newColor: Color3? = nil
-					local newMaterial: Enum.Material? = nil
+					const neonCenter: number = reflectorConfig.neonActivationIntensity
+					const neonWidth: number = 0.55
 
-					if intensity >= reflectorConfig.neonActivationIntensity or state.isHybrid == true then
-						newMaterial = reflectorConfig.activeMaterial
+					const neonStart: number = neonCenter - neonWidth
+					const neonEnd: number = neonCenter + neonWidth
 
-						const baseColor: Color3 = state.baseColor
-						local lightColor: Color3 = state.neutralizedColor
+					local t: number = clamp((intensity - neonStart) / (neonEnd - neonStart), 0, 1)
 
-						const scale: number = minColorScale + (maxColorScale - minColorScale) * intensity
+					t = t * t * (3 - 2 * t)
 
-					    const r: number = baseColor.R * lightColor.R * scale
-					    const g: number = baseColor.G * lightColor.G * scale
-						const b: number = baseColor.B * lightColor.B * scale
+					const baseColor: Color3 = state.baseColor
+					const lightColor: Color3 = state.neutralizedColor
 
-						newColor = Color3.new(r, g, b)
+					const scale: number = minColorScale + (maxColorScale - minColorScale) * intensity
+
+					local nr: number = baseColor.R * lightColor.R * scale
+					local ng: number = baseColor.G * lightColor.G * scale
+					local nb: number = baseColor.B * lightColor.B * scale
+
+					local maxChannel: number = nr
+
+					if ng > maxChannel then maxChannel = ng end
+					if nb > maxChannel then maxChannel = nb end
+
+					if maxChannel > 1 then
+						const inv: number = 1 / maxChannel
+						nr *= inv
+						ng *= inv
+						nb *= inv
+					end
+
+					const neonColor: Color3 = Color3.new(nr, ng, nb)
+
+					const fadeStart: number = 0.15
+					const fadeEnd: number = 0.6
+
+					const tPlastic: number = clamp((intensity - fadeStart) / (fadeEnd - fadeStart), 0, 1)
+
+					const plasticColor: Color3 = state.baseColor:Lerp(
+						state.origColor,
+						tPlastic
+					)
+
+					local newColor: Color3 = plasticColor:Lerp(neonColor, t)
+					local newMaterial: Enum.Material
+
+					if t > 0.5 or state.isHybrid then
+						newMaterial = reflectorConfig.activeMaterial -- Neon
 					else
-						const fadeStart: number = 0.15
-						const fadeEnd: number = 0.6
+						newMaterial = reflectorConfig.inactiveMaterial
+						newColor = state.origColor
+					end
 
-						const t: number = clamp((intensity - fadeStart) / (fadeEnd - fadeStart), 0, 1)
+					const r: number, g: number, b: number = newColor.R, newColor.G, newColor.B
 
-						newMaterial = if intensity > 0 then Enum.Material.Plastic else inactiveMaterial
+					maxChannel = r
 
-						newColor = state.baseColor:Lerp(
-							reflectorConfig.partialDimmingBaseColor,
-							t
-						)
+					if g > maxChannel then maxChannel = g end
+					if b > maxChannel then maxChannel = b end
+
+					if maxChannel > 1 then
+						const inv = 1 / maxChannel
+						newColor = Color3.new(r * inv, g * inv, b * inv)
 					end
 
 					if state.lastMaterial ~= newMaterial then
