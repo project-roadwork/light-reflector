@@ -15,11 +15,19 @@
 2. Distance fall-off
 3. Angle-based brightness
 4. Multi-vehicle support
-5. Non-tweened fading/transitions for gradual brightness
+5. Fading/transitions for gradual brightness
 6. Option to use `Tags` with `CollectionService`
 7. Uses Entity Component System via [JECS](https://github.com/Ukendio/jecs.git)
 
-[Showcase (View on YouTube) (Outdated)](https://www.youtube.com/watch?v=YK-_NzeLqjI)
+***[Showcase (View on YouTube) (Outdated) ➚](https://www.youtube.com/watch?v=YK-_NzeLqjI)***
+
+## Installation
+You may get the `.rbxm` file directly from [Codeberg Releases]((https://codeberg.org/project-roadwork/light-reflector/releases)), or [install via Wally or Pesde]((./docs/standalone/002_installation.md)).
+
+For more information, *read the [installation guide](./docs/standalone/002_installation.md).*
+
+## Documentation
+For more information about its usage, *you may read the [standalone documentation](./docs/standalone/001_index.md).*
 
 ## Contributing
 **This section exists due to the file-level copyleft nature of the Mozilla Public License 2.0.**
