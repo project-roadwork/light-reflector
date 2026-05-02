@@ -123,12 +123,6 @@ const function _processReflector(entity: jecs.Entity, source: types.LightSource,
 		return -- have to add this because of type checker
 	end
 
-	if state.lastFrame ~= _frameId then
-        state.colorAccum = vector.zero
-        state.intensityAccum = 0
-        state.lastFrame = _frameId
-    end
-
 	if state.doesReflectorMove then
 		const newCFrame: CFrame = part.CFrame
 

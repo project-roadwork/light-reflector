@@ -2,11 +2,11 @@
 
  **A vehicle-based light reflector system that reflects `Decals` and `BaseParts` at long distances on roads.**
 
-[![License: MPL 2.0](https://img.shields.io/badge/MPL_2.0-License-gray.svg?logo=mozilla&labelColor=28733f)](https://opensource.org/licenses/MPL-2.0) [![Codeberg](https://img.shields.io/badge/Codeberg-Main%20Repository-white?logo=codeberg)](https://codeberg.org/project-roadwork/light-reflector.git) [![GitHub](https://img.shields.io/badge/GitHub-Mirror/Backup%20Repository-darkgrey?logo=github)](https://github.com/project-roadwork/light-reflector.git) 
+[![License: MPL 2.0](https://img.shields.io/badge/MPL_2.0-License-gray.svg?logo=mozilla&labelColor=28733f)](https://opensource.org/licenses/MPL-2.0) [![Codeberg](https://img.shields.io/badge/Codeberg-Main%20Repository-white?logo=codeberg)](https://codeberg.org/project-roadwork/light-reflector.git) [![GitHub](https://img.shields.io/badge/GitHub-Mirror/Backup%20Repository-darkgrey?logo=github)](https://github.com/project-roadwork/light-reflector.git) [![Documentation](https://img.shields.io/static/v1?label=&message=Documentation&color=informational)](./docs/standalone)
 
 > [!IMPORTANT]
-> **Use the [main repository](https://codeberg.org/project-roadwork/light-reflector.git) for issues, pull requests, and contributions.**
-> **The GitHub repository is a *read-only* mirror, and pull requests are not supported.**
+> **Use the [main repository in Codeberg](https://codeberg.org/project-roadwork/light-reflector.git) for issues, pull requests, and contributions.**
+> **The [GitHub repository](https://github.com/project-roadwork/light-reflector) is a *read-only* mirror, and pull requests are not supported.**
 
 ## Features
 * Supports `Decal` and `BasePart` reflectors
