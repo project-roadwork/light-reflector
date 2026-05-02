@@ -180,7 +180,7 @@ const BASE_CONFIG = {
 		-- ^ Half of the angle of the light cone in radians
 
 		-- [OFFSETS]
-		vehicleSeatOffset = Vector3.new(0,2,0), -- (recommended -> Vector3.new(0,2,0))
+		vehicleSeatOffset = Vector3.new(0, 2, 0), -- (recommended -> Vector3.new(0,2,0))
 		-- ^ Offset of the vehicle seat
 
 		GetPartsInBox = workspace.GetPartBoundsInBox,
