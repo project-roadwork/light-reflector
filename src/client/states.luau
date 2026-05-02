@@ -40,7 +40,6 @@
 -- IMPORTANT: Modules
 const types = require("../shared/types")
 const config: types.Configuration = require("../shared/config")
-const jecs: types.JecsModule = require("../shared/jecs")
 const utils: types.Utils = require("./utils")
 const grid: types.GridModule = require("./grid")
 

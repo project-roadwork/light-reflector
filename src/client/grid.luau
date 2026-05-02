@@ -77,9 +77,9 @@ const function getIdKey(entityId: EntityId | number | vector): number | string
 	if typeof(entityId) == "number" then
 		return entityId
 	elseif typeof(entityId) == "vector" then
-		return entityId.x .. ":" .. entityId.y
+		return entityId.x .. ":" .. entityId.y .. ":" .. entityId.z
 	elseif typeof(entityId) == "Vector3" then
-		return entityId.X .. ":" .. entityId.Y
+		return entityId.X .. ":" .. entityId.Y .. ":" .. entityId.z
 	end
 	error("Invalid EntityId type: ".. typeof(entityId))
 end
@@ -180,11 +180,15 @@ const function spawn(grid: Grid, entityId: EntityId, pos: Vector3): ()
 	const idx: number = #cell + 1
 	cell[idx] = key
 
-	grid.CellIndex[key] = {
-		x = x,
-		z = z,
-		i = idx,
-	}
+	const indexData: IndexData = grid.CellIndex[key]
+
+	if indexData then
+		indexData.x = x
+		indexData.z = z
+		indexData.i = idx
+	else
+		grid.CellIndex[key] = { x = x, z = z, i = idx }
+	end
 
 	grid.Dirty[key] = false
 end
@@ -219,18 +223,15 @@ const function _removeFromCell(grid: Grid, key: Key, x: number, z: number): ()
 	if not indexData then return end
 
 	const idx: number = indexData.i
-	const lastKey: number = cell[#cell]
 
-	cell[idx] = lastKey
+	if idx ~= #cell then
+		const lastKey: number = cell[#cell]
+		cell[idx] = lastKey
+		grid.CellIndex[lastKey].i = idx
+	end
 
-	grid.CellIndex[lastKey] = {
-		x = x,
-		z = z,
-		i = idx,
-	}
-
-	cell[#cell] = nil
-	grid.CellIndex[key] = nil
+    cell[#cell] = nil
+    grid.CellIndex[key] = nil
 
 	if #cell == 0 then
 		column[z] = nil
@@ -302,11 +303,15 @@ const function _reconcile(grid: Grid, key: Key): ()
 	const idx: number = #cell + 1
 	cell[idx] = key
 
-	grid.CellIndex[key] = {
-		x = x,
-		z = z,
-		i = idx,
-	}
+	const indexData: IndexData = grid.CellIndex[key]
+
+	if indexData then
+		indexData.x = x
+		indexData.z = z
+		indexData.i = idx
+	else
+		grid.CellIndex[key] = { x = x, z = z, i = idx }
+	end
 
 	if old then
 		old.X = x
@@ -343,7 +348,7 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/spatial-grid.git)
 ]=]
 const function query(grid: Grid, pos: Vector3, radius: number?): {jecs.Entity<nil>}
-	const results: {} = grid._scratchIds
+	const results: {} = grid._scratchIds -- This may get mutated over time
 	clear(results)
 
 	clear(grid._ReconciledThisQuery)

@@ -259,7 +259,7 @@ const function start(): ()
 					if b > maxChannel then maxChannel = b end
 
 					if maxChannel > 1 then
-						const inv = 1 / maxChannel
+						const inv: number = 1 / maxChannel
 						newColor = Color3.new(r * inv, g * inv, b * inv)
 					end
 

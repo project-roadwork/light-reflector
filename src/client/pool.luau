@@ -239,7 +239,7 @@ function ObjectPool:GetObject(): Object
 		if self.UsageMetrics.ActiveCount > 350 and leakLogged == false then
 			leakLogged = true
 			debugger.warn("Warning",
-				"Object pool exceeded 350 in active count."
+				"[POOL] Object pool exceeded 350 in active count."
 			);
 		end
 	end
