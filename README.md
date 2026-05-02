@@ -43,7 +43,7 @@ Should you need additional support, *you may join my [Discord server](https://di
 
 > [!NOTE]
 > ### Mozilla Public License 2.0 Summary
-> **Warning: This summary does NOT act as a subsitute for the entire legal text. This is also not legal advice**
+> **Warning: This summary does NOT act as a substitute for the entire legal text. This is also not legal advice**
 > 
 > **The Mozilla Public License 2.0 (MPL-2.0) is a weak copyleft license.**
 > 
