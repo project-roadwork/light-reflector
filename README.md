@@ -1,23 +1,20 @@
 # Light Reflector 
 
- **A vehicle-based light reflector system that reflects `Decals` and `BasePart` reflectors at long distances on roads.**
+ **A vehicle-based light reflector system that reflects `Decals` and `BaseParts` at long distances on roads.**
 
 [![License: MPL 2.0](https://img.shields.io/badge/MPL_2.0-License-gray.svg?logo=mozilla&labelColor=28733f)](https://opensource.org/licenses/MPL-2.0) [![Codeberg](https://img.shields.io/badge/Codeberg-Main%20Repository-white?logo=codeberg)](https://codeberg.org/project-roadwork/light-reflector.git) [![GitHub](https://img.shields.io/badge/GitHub-Mirror/Backup%20Repository-darkgrey?logo=github)](https://github.com/project-roadwork/light-reflector.git) 
 
 > [!IMPORTANT]
-> ****Please use the [main repository](https://codeberg.org/project-roadwork/light-reflector.git) especially with contributions or commits!*** *Additionally, please **DO NOT** make any changes in the mirrored repository as it cannot be pulled into the main repo.**
-> 
-> **The main repository is in Codeberg; however, I provided a *push* mirror on GitHub (pulls are not supported).**
+> **Use the [main repository](https://codeberg.org/project-roadwork/light-reflector.git) for issues, pull requests, and contributions.**
+> **The GitHub repository is a *read-only* mirror, and pull requests are not supported.**
 
 ## Features
-1. Adaptive waiting on performance-critical functions
-2. Sign and reflector support
-2. Distance fall-off
-3. Angle-based brightness
-4. Multi-vehicle support
-5. Fading/transitions for gradual brightness
-6. Option to use `Tags` with `CollectionService`
-7. Uses Entity Component System via [JECS](https://github.com/Ukendio/jecs.git)
+* Supports `Decal` and `BasePart` reflectors
+* Distance-based falloff
+* Angle-based brightness
+* Multi-vehicle support
+* `CollectionService` tag integration
+* ECS architecture via [JECS](https://github.com/Ukendio/jecs.git)
 
 ***[Showcase (View on YouTube) (Outdated) ➚](https://www.youtube.com/watch?v=YK-_NzeLqjI)***
 
@@ -26,18 +23,20 @@ You may get the `.rbxm` file directly from [Codeberg Releases]((https://codeberg
 
 For more information, *read the [installation guide](./docs/standalone/002_installation.md).*
 
-## Documentation
-For more information about its usage, *you may read the [standalone documentation](./docs/standalone/001_index.md).*
+## Getting Started
+
+After installation, follow the usage guide in the [documentation](./docs/standalone/001_index.md) or check the accompanying examples in [./examples](./examples).
+
+### Additional Support
+Should you need additional support, *you may join my [Discord server](https://discord.gg/sd4XfAqNF9) and create a support post in the forum channel `#oss-support`.*
 
 ## Contributing
-**This section exists due to the file-level copyleft nature of the Mozilla Public License 2.0.**
-
 *By contributing to this project, you agree that your contributions may be redistributed and relicensed under other open-source and/or open-content licenses.*
 
 **View the reason why this clause exists in [./CONTRIBUTING.md](CONTRIBUTING.md)**
 
 ## License
-**License: [Mozilla Public License 2.0](https://mozilla.org/MPL/2.0/)** 
+**License: [Mozilla Public License 2.0](https://mozilla.org/MPL/2.0/) (MPL-2.0)** 
 
 <details>
   <summary>MPL 2.0 summary (not legal advice)</summary>
