@@ -357,31 +357,79 @@ const function query(grid: Grid, pos: Vector3, radius: number?): {jecs.Entity<ni
 	const cs: number = grid.CellSize
 
 	const cellRadius: number = if radius then ceil(radius / cs) else 1
+
 	const r2: number? = if radius then radius * radius else nil
 
 	const px: number, pz: number = pos.X, pos.Z
 
-	for x: number = cx - cellRadius, cx + cellRadius do
-		const col: {} = grid.Cells[x]
-		if col then
-			for z: number = cz - cellRadius, cz + cellRadius do
-				const cell: {} = col[z]
-				if cell then
-					for i: number = 1, #cell do
-						const id: number = cell[i]
-						-- reconcile if dirty
-						if grid.Dirty[id] and not grid._ReconciledThisQuery[id] then
-							grid._ReconciledThisQuery[id] = true
-							_reconcile(grid, id)
+	if cellRadius <= COARSE_FACTOR then
+		for x: number = cx - cellRadius, cx + cellRadius do
+			const col: {} = grid.Cells[x]
+			if col then
+				for z: number = cz - cellRadius, cz + cellRadius do
+					const cell: {} = col[z]
+					if cell then
+						for i: number = 1, #cell do
+							const id: Key = cell[i]
+							-- reconcile if dirty
+							if grid.Dirty[id] and not grid._ReconciledThisQuery[id] then
+								grid._ReconciledThisQuery[id] = true
+								_reconcile(grid, id)
+							end
+
+							const p: Vector3 = grid.Position[id]
+							if p then
+								const dx: number = p.X - px
+								const dz: number = p.Z - pz
+
+								if not r2 or (dx * dx + dz * dz) <= r2 then
+									results[#results + 1] = grid.EntityMap[id]
+								end
+							end
 						end
+					end
+				end
+			end
+		end
+	else
+		const ccx: number = floor(cx / COARSE_FACTOR)
+		const ccz: number = floor(cz / COARSE_FACTOR)
 
-						const p: Vector3 = grid.Position[id]
-						if p then
-							const dx: number = p.X - px
-							const dz: number = p.Z - pz
+        const coarseRadius: number = ceil(cellRadius / COARSE_FACTOR)
 
-							if not r2 or (dx * dx + dz * dz) <= r2 then
-								results[#results + 1] = grid.EntityMap[id]
+        for icx: number = ccx - coarseRadius, ccx + coarseRadius do
+			for icz: number = ccz - coarseRadius, ccz + coarseRadius do
+				const ck: number = _coarseKey(icx, icz)
+				const coarse: {[number]: {x: number, z: number}}? = grid.Coarse[ck]
+
+				if coarse then
+					for _, coord: {x: number, z: number} in pairs(coarse) do
+						const x: number = coord.x
+						const z: number = coord.z
+
+						const col: {[number]: {Key}}? = grid.Cells[x]
+						if col then
+							const cell: {Key}? = col[z]
+							if cell then
+								for i: number = 1, #cell do
+									const id: Key = cell[i]
+
+									-- reconcile if dirty
+									if grid.Dirty[id] and not grid._ReconciledThisQuery[id] then
+										grid._ReconciledThisQuery[id] = true
+										_reconcile(grid, id)
+									end
+
+									const p: Vector3 = grid.Position[id]
+									if p then
+										const dx: number = p.X - px
+										const dz: number = p.Z - pz
+
+										if not r2 or (dx * dx + dz * dz) <= r2 then
+											results[#results + 1] = grid.EntityMap[id]
+										end
+									end
+								end
 							end
 						end
 					end
@@ -389,61 +437,8 @@ const function query(grid: Grid, pos: Vector3, radius: number?): {jecs.Entity<ni
 			end
 		end
 	end
-
 	return results
 end
-
---[=[
-    Public: Query all entities in a given radius
-
-	[Git Repository](https://codeberg.org/project-roadwork/spatial-grid.git)
-]=]
-const function queryAllInRadius(grid: Grid, pos: Vector3, radius: number): {EntityId}
-	const results: {} = grid._scratchIds
-	clear(results)
-
-	clear(grid._ReconciledThisQuery)
-
-	const cx: number, cz: number = getCellCoords(grid, pos)
-	const cs: number = grid.CellSize
-
-	const cellRadius: number = ceil(radius / cs)
-	const r2: number = radius * radius
-
-	const px: number, pz: number = pos.X, pos.Z
-
-	for x: number = cx - cellRadius, cx + cellRadius do
-		const col: {} = grid.Cells[x]
-		if col then
-			for z: number = cz - cellRadius, cz + cellRadius do
-				const cell: {} = col[z]
-				if cell then
-					for i: number = 1, #cell do
-						const id: number = cell[i]
-						-- reconcile dirty entities once per query
-						if grid.Dirty[id] and not grid._ReconciledThisQuery[id] then
-							grid._ReconciledThisQuery[id] = true
-							_reconcile(grid, id)
-						end
-
-						const p: Vector3 = grid.Position[id]
-						if p then
-							const dx: number = p.X - px
-							const dz: number = p.Z - pz
-
-							if (dx * dx + dz * dz) <= r2 then
-								results[#results + 1] = grid.EntityMap[id]
-							end
-						end
-					end
-				end
-			end
-		end
-	end
-
-	return results
-end
-
 
 --[=[
     Public: Returns the cell coordinates for an entity or a Vector3
@@ -505,7 +500,6 @@ return table.freeze({
 	getCellKey = getCellKey,
 	remove = remove,
 	query = query,
-	queryAllInRadius = queryAllInRadius,
 	empty = empty,
 	destroy = destroy,
 })

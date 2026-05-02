@@ -471,7 +471,7 @@ const function start() : ()
 				const pos: Vector3 = source.getPosition()
 
 				if reflectorConfig.isEnabled then
-					const nearbyReflectors: {jecs.Entity<nil>}? = grid.query(reflectorGrid, pos)
+					const nearbyReflectors: {jecs.Entity<nil>}? = grid.query(reflectorGrid, pos, 2000)
 
 					if not nearbyReflectors then
 						continue
@@ -489,7 +489,7 @@ const function start() : ()
 				end
 
 				if signConfig.isEnabled then
-					const nearbySigns: {jecs.Entity<nil>}? = grid.query(signGrid, pos)
+					const nearbySigns: {jecs.Entity<nil>}? = grid.query(signGrid, pos, 2350)
 
 					if not nearbySigns then
 						continue

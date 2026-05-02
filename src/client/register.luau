@@ -39,8 +39,8 @@ local generalConfig: types.GeneralConfig = baseConfig.General
 local signConfig: types.SignConfig = baseConfig.SignConfig
 
 -- Grids
-const reflectorGrid: types.Grid = grid.newGrid(1900)
-const signGrid: types.Grid = grid.newGrid(1900)
+const reflectorGrid: types.Grid = grid.newGrid(300)
+const signGrid: types.Grid = grid.newGrid(600)
 
 -- SurfaceGui Object Pool
 const surfaceGuiPool: types.Pool<types.SurfaceGuiTemplate> = utils.initPool()
