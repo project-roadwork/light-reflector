@@ -252,7 +252,7 @@ const BASE_CONFIG = {
 		} :: {Instance},
 		-- ^ Set this to your own signs folders separated by a comma
 
-		isSign = function(part: BasePart)
+		isSign = function(part: BasePart): boolean
 			if part.Name == "Sign" then
 			    return true
 			else
@@ -294,9 +294,9 @@ const BASE_CONFIG = {
 		mainDecalName = "ACTUALMainDecal123",
 		-- ^ Set this to something unique that no other decal has since that identifies the main decal
 
-		isMainDecal = function(decal: Decal)
-			local name = decal.Name
-			local isExcludedBottom = (name == "Decal" and decal.Face == Enum.NormalId.Bottom)
+		isMainDecal = function(decal: Decal): boolean
+			local name: string = decal.Name
+			local isExcludedBottom: boolean = (name == "Decal" and decal.Face == Enum.NormalId.Bottom)
 
 			return (name == "Front" or name == "F") or (name ~= "Back" and name ~= "B" and name ~= "Images/Metal Lined" and not isExcludedBottom)
 		end,
@@ -344,8 +344,12 @@ const BASE_CONFIG = {
 		} :: {Instance},
 		-- ^ Folders where your reflectors are, seperated by a comma. This will not be used if you have tags enabled.
 
-		isReflector = function(p: BasePart)
-			return p.Parent and typeof(p.Parent) == "Instance" and p.Parent.Name == "P" and not p:IsA("MeshPart")
+		isReflector = function(p: BasePart): boolean
+		    if p.Name == "Reflector" then
+				return true
+			else
+			    return (p.Parent and typeof(p.Parent) == "Instance" and p.Parent.Name == "P" and not p:IsA("MeshPart")) == true
+			end
 		end,
 		-- ^ Condition of what makes a BasePart a "reflector"
 		--   NOTE: If you have tags enabled, this function WILL be overriden should the part have the respective
@@ -458,7 +462,7 @@ const BASE_CONFIG = {
 	@private
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function _warn(message: string)
+const function _warn(message: string): ()
 	if BASE_CONFIG.General.showWarnings then
 		warn(`[Light Reflector {BASE_CONFIG.Constraints.VERSION} -> Config] Warning: {message}`)
 	end
