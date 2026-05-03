@@ -79,7 +79,7 @@ const function getIdKey(entityId: EntityId | number | vector): number | string
 	elseif typeof(entityId) == "vector" then
 		return entityId.x .. ":" .. entityId.y .. ":" .. entityId.z
 	elseif typeof(entityId) == "Vector3" then
-		return entityId.X .. ":" .. entityId.Y .. ":" .. entityId.z
+		return entityId.X .. ":" .. entityId.Y .. ":" .. entityId.Z
 	end
 	error("Invalid EntityId type: ".. typeof(entityId))
 end
@@ -158,9 +158,9 @@ const function spawn(grid: Grid, entityId: EntityId, pos: Vector3): ()
 	end
 	grid.Cells[x] = column
 
-	local cell: {} = column[z]
+	local cell: {Key}? = column[z]
 	if not cell then
-		cell = {}
+		cell = {} :: {Key}
 		column[z] = cell
 
 		const cx: number = floor(x / COARSE_FACTOR)
@@ -176,6 +176,8 @@ const function spawn(grid: Grid, entityId: EntityId, pos: Vector3): ()
 
 		coarse[x * 10000 + z] = { x = x, z = z }
 	end
+
+	if not cell then return end -- adding this because of type checker
 
 	const idx: number = #cell + 1
 	cell[idx] = key
@@ -216,7 +218,7 @@ const function _removeFromCell(grid: Grid, key: Key, x: number, z: number): ()
 	const column: {[number]: {Key}} = grid.Cells[x]
 	if not column then return end
 
-	const cell: {} = column[z]
+	const cell: {Key}?  = column[z]
 	if not cell then return end
 
 	const indexData: IndexData = grid.CellIndex[key]
@@ -225,7 +227,7 @@ const function _removeFromCell(grid: Grid, key: Key, x: number, z: number): ()
 	const idx: number = indexData.i
 
 	if idx ~= #cell then
-		const lastKey: number = cell[#cell]
+		const lastKey: Key = cell[#cell]
 		cell[idx] = lastKey
 		grid.CellIndex[lastKey].i = idx
 	end
@@ -244,7 +246,7 @@ const function _removeFromCell(grid: Grid, key: Key, x: number, z: number): ()
 		const cz: number = floor(z / COARSE_FACTOR)
 		const ck: number = _coarseKey(cx, cz)
 
-		const coarse: {} = grid.Coarse[ck]
+		const coarse: {[number]: {x: number, z: number}}? = grid.Coarse[ck]
 		if coarse then
 			coarse[x * 10000 + z] = nil
 			if next(coarse) == nil then
@@ -276,29 +278,35 @@ const function _reconcile(grid: Grid, key: Key): ()
 		_removeFromCell(grid, key, old.X, old.Y)
 	end
 
-	local column: {} = grid.Cells[x]
+	local column: {[number]: {Key}}? = grid.Cells[x]
 	if not column then
-		column = {}
+		column = {} :: {[number]: {Key}}
 		grid.Cells[x] = column
 	end
 
-	local cell: {} = column[z]
+	if not column then return end -- adding this because of type checker
+
+	local cell: {Key}? = column[z]
 	if not cell then
-		cell = {}
+		cell = {} :: {Key}
 		column[z] = cell
 
 		const cx: number = floor(x / COARSE_FACTOR)
 		const cz: number = floor(z / COARSE_FACTOR)
 		const ck: number = _coarseKey(cx, cz)
 
-		local coarse: {} = grid.Coarse[ck]
+		local coarse: {[number]: {x: number, z: number}}? = grid.Coarse[ck]
 		if not coarse then
-			coarse = {}
+			coarse = {} :: {[number]: {x: number, z: number}}
 			grid.Coarse[ck] = coarse
 		end
 
+		if not coarse then return end -- have to add this because of types
+
 		coarse[x * 10000 + z] = { x = x, z = z }
 	end
+
+	if not cell then return end -- have to add this again because of type checker
 
 	const idx: number = #cell + 1
 	cell[idx] = key
@@ -348,7 +356,7 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/spatial-grid.git)
 ]=]
 const function query(grid: Grid, pos: Vector3, radius: number?): {jecs.Entity<nil>}
-	const results: {} = grid._scratchIds -- This may get mutated over time
+	const results: {[number]: EntityId} = grid._scratchIds -- This may get mutated over time
 	clear(results)
 
 	clear(grid._ReconciledThisQuery)
@@ -364,10 +372,10 @@ const function query(grid: Grid, pos: Vector3, radius: number?): {jecs.Entity<ni
 
 	if cellRadius <= COARSE_FACTOR then
 		for x: number = cx - cellRadius, cx + cellRadius do
-			const col: {} = grid.Cells[x]
+			const col: {[number]: {Key}}? = grid.Cells[x]
 			if col then
 				for z: number = cz - cellRadius, cz + cellRadius do
-					const cell: {} = col[z]
+					const cell: {Key}? = col[z]
 					if cell then
 						for i: number = 1, #cell do
 							const id: Key = cell[i]
