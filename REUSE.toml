@@ -27,6 +27,7 @@ path = [
 
     "README.md",
     "docs/standalone/**",
+    "assets/images/internal/branding/**",
 ]
 SPDX-FileCopyrightText = [
 "2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>",
