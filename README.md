@@ -52,7 +52,6 @@ Should you need additional support, *you may join my [Discord server](https://di
 <details>
   <summary>MPL 2.0 summary (not legal advice)</summary>
 
-> [!NOTE]
 > ### Mozilla Public License 2.0 Summary
 > **Warning: This summary does NOT act as a substitute for the entire legal text. This is also not legal advice**
 > 
@@ -68,6 +67,7 @@ Should you need additional support, *you may join my [Discord server](https://di
 > * MPL-covered code must remain in separate files
 > 
 > **In short:** You can use MPL code in closed-source and/or commercial projects; however, any changes to MPL-covered files must stay open under MPL.
+>
 > **Compared to GPL/GNU licenses:**
 > * **GPL:** May require the entire project (like games) to be fully open-sourced under GPL if GPL code is included
 > * **LGPL:** Allows use in proprietary projects, but requires that users can modify and swap out LGPL-covered code and still run the project with it, which is not very feasible with games and closed-source binary platforms such as ROBLOX. Additionally, this license allows users to reverse engineer entire projects
@@ -79,10 +79,12 @@ Should you need additional support, *you may join my [Discord server](https://di
 | ------------------------ | ------ | ---------- | ------------- | ------------------------ |
 | **Permissive**           | ✅      | ✅          | ℹ️ Partial    | ❌                        |
 | **Patent Clause**         | ❌      | ✅          | ✅             | ✅                        |
-| **Proprietary Use OK**   | ✅      | ✅          | ✅¹           | ❌  (Must release whole source)                       |
-| **Roblox Asset Usage**   | ✅      | ✅          | ℹ️ Depends; must share any changes    | ❌ May violate terms      |
+| **Proprietary Use**   | ✅      | ✅          | ℹ️¹           | ❌  (Must release whole source)                       |
+| **ROBLOX Asset Usage**   | ✅      | ✅          | ℹ️ Depends; must share any changes    | ❌ May violate terms      |
 
 * ¹ Proprietary use in MPL is permitted (allowed) as long as the MPL-covered files remain open souce.
+
+Note that some individual files may be under a different license; however, the overall project is under the MPL-2.0 license.
 
 </details>
 
