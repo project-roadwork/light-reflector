@@ -1,7 +1,7 @@
 <br>
 
 <div align="center">
-    <img src=".\assets\images\internal\branding\large-logo-svg.svg" alt="light reflector logo" width="200" />
+    <img src="./assets\images\internal\branding\large-logo-svg.svg" alt="light reflector logo" width="400" />
 </div>
 
 <br>
