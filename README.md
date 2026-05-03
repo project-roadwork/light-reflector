@@ -25,7 +25,7 @@
 * `CollectionService` tag integration
 * Reflection beyond the 120 stud limit
 * Designed for vehicles, but accepts any `BasePart` as a light source
-* States and caching; [view benchmarks ➚](./docs/standalone/997_benchmarks.md)
+* States and caching; [view benchmarks (WIP) ➚](./docs/standalone/997_benchmarks.md)
 * [ECS](https://en.wikipedia.org/wiki/Entity_component_system) architecture via [Jecs](https://github.com/Ukendio/jecs.git)
 
 ***[Showcase (View on YouTube) (Outdated) ➚](https://www.youtube.com/watch?v=YK-_NzeLqjI)***
@@ -65,9 +65,10 @@ Should you need additional support, *you may join my [Discord server](https://di
 > * Use the code commercially (including games and/or proprietary software)
 >
 > **Under the following conditions:**
-> * Any files originally from MPL that you modify must remain licensed under MPL
-> * You must make the source code of MPL-licensed files publicly available
-> * MPL-covered code must remain in separate files
+> * You must make the source code of MPL-licensed files available to recipients *(Section 3.3)*
+> * MPL applies on a file-by-file basis; any files originally from MPL that you modify must remain licensed under MPL *(Section 3.2)*
+> * You must keep the existing copyright, license, or attribution notices intact *(Section 3.4)*
+> * Include a copy of the license or link to it, and clearly state that the MPL-covered code is provided under MPL terms *(Section 3.1)*
 > 
 > **In short:** You can use MPL code in closed-source and/or commercial projects; however, any changes to MPL-covered files must stay open under MPL.
 >
@@ -89,12 +90,38 @@ Should you need additional support, *you may join my [Discord server](https://di
 
 </details>
 
-Note that some individual files may be under differing licenses; as a whole, the project is under the [Mozille Public License 2.0](https://mozilla.org/MPL/2.0/).
+> [!NOTE]
+> ### I want to distribute MPL-licensed sorce code that I have modified. What do I have to do?
+>
+> **To see the full legal requirements, refer to the license text. In general, you must do the following:**
+>
+> **Inform recipients that the code is licensed under the MPL**
+>
+> * Include a copy of the license or a link to it, and clearly state that the source code is provided under MPL terms *(Section 3.1)*.
+>
+> **Grant the same rights that you have received to the recipients** 
+>
+> * This includes the rights to use, modify, and distribute the code, along with any applicable patent grants *(Section 2.1)*.
+>
+> **Keep existing notices intact**
+>
+> * Do not remove or alter copyright, license, or attribution notices in the source files *(Section 3.4)*.
+>
+> **Make the sourc3 code of modified files available**
+>
+> * Any files you modify that are covered by the MPL must be abailable in source form when you distribute them *(Section 3.2)*.
+>
+> **Keep modified MPL files under the MPL**
+>
+> * These files must remain licensed under the MPL, even when the rest of your project uses a different license *(Section 3.3)*.
 
-For file-specifc licensing information, including documentation and images, you may refer to [REUSE.toml](./REUSE.toml). You may also consult [NOTICE.txt](NOTICE.txt) for information regarding other softwares included in this project.
+
+**Note that some individual files may be under differing licenses; as a whole, the project is under the [Mozilla Public License 2.0](https://mozilla.org/MPL/2.0/).**
+
+**For file-specific licensing information, including documentation and images, you may refer to [REUSE.toml](./REUSE.toml). You may also consult [NOTICE.txt](NOTICE.txt) for information regarding other softwares included in this project.**
 
 ## Attribution
 ### Vendored/Internal Packages
 * *[ObjectPool](https://github.com/ntqltx/ObjectPool.git) v0.1 — by qaltx*
-* *[Debugger](https://github.com/axiom-co/debugger.git) v1.0.3 — by Axiom (formally Lumen) and contributors*
+* *[Debugger](https://github.com/axiom-co/debugger.git) v1.0.3 — by Axiom (formally Lumin Labs) and contributors*
 * *[Jecs](https://github.com/Ukendio/jecs.git) v0.11.0 — by Ukendio and jecs authors*
