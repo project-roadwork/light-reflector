@@ -90,7 +90,9 @@ Should you need additional support, *you may join my [Discord server](https://di
 
 </details>
 
-> [!NOTE]
+<details>
+  <summary>I want to distribute MPL-licensed sorce code that I have modified. What do I have to do?</summary>
+
 > ### I want to distribute MPL-licensed sorce code that I have modified. What do I have to do?
 >
 > **To see the full legal requirements, refer to the license text. In general, you must do the following:**
@@ -104,12 +106,13 @@ Should you need additional support, *you may join my [Discord server](https://di
 > **Keep existing notices intact**
 > * Do not remove or alter copyright, license, or attribution notices in the source files *(Section 3.4)*.
 >
-> **Make the sourc3 code of modified files available**
+> **Make the source code of modified files available**
 > * Any files you modify that are covered by the MPL must be abailable in source form when you distribute them *(Section 3.2)*.
 >
 > **Keep modified MPL files under the MPL**
 > * These files must remain licensed under the MPL, even when the rest of your project uses a different license *(Section 3.3)*.
 
+</details>
 
 **Note that some individual files may be under differing licenses; as a whole, the project is under the [Mozilla Public License 2.0](https://mozilla.org/MPL/2.0/).**
 
