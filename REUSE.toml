@@ -1,5 +1,68 @@
+# REUSE.toml
+#
+# This file keeps track of licensing within all files in the repository except src/**.
+# For licensing information in the source code, refer to the headers and comments in each file.
+# Each file in the source code includes copyright authors and SPDX license identifiers.
+
 version = 1
 
+# README, documentaiton, and branding
+[[annotations]]
+path = [
+
+    "README.md",
+    "docs/standalone/**",
+    "assets/images/internal/branding/**",
+]
+SPDX-FileCopyrightText = [
+"2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>",
+"2025-2026 Project Roadwork and Contributors"]
+
+SPDX-License-Identifier = "CC-BY-SA-4.0"
+
+# Other MPL-licensed files
+[[annotations]]
+path = [
+    "NOTICE",
+    "roblox-test.project.json",
+    "standalone.project.json"
+]
+SPDX-FileCopyrightText = [
+"2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>",
+"2025-2026 Project Roadwork and Contributors"]
+
+SPDX-License-Identifier = "MPL-2.0"
+
+# Illinois_Roadbuff's images and work under CC BY-SA 4.0
+[[annotations]]
+path = [
+
+    "assets/images/external/crossroads/**",
+    "assets/images/external/noncommons/**",
+    "assets/images/internal/figures/**",
+
+]
+SPDX-FileCopyrightText = [
+"2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>",
+]
+
+SPDX-License-Identifier = "CC-BY-SA-4.0"
+
+# Illinois_Roadbuff's images and work under CC BY 4.0
+[[annotations]]
+path = [
+
+    "assets/images/external/commons/New_Traffic_Signals_in_Lockport,_Illinois_(November_2025)_02.jpg",
+    "assets/images/external/commons/i55_i355_interchange.jpg"
+
+]
+SPDX-FileCopyrightText = [
+"2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>",
+]
+
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# Common Property
 [[annotations]]
 path = [
     ".gitignore",
@@ -21,56 +84,3 @@ path = [
 ]
 SPDX-FileCopyrightText = "NONE"
 SPDX-License-Identifier = "CC0-1.0 OR Unlicense"
-
-[[annotations]]
-path = [
-
-    "README.md",
-    "docs/standalone/**",
-    "assets/images/internal/branding/**",
-]
-SPDX-FileCopyrightText = [
-"2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>",
-"2025-2026 Project Roadwork and Contributors"]
-
-SPDX-License-Identifier = "CC-BY-SA-4.0"
-
-[[annotations]]
-path = [
-    "NOTICE",
-    "roblox-test.project.json",
-    "standalone.project.json"
-]
-SPDX-FileCopyrightText = [
-"2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>",
-"2025-2026 Project Roadwork and Contributors"]
-
-SPDX-License-Identifier = "MPL-2.0"
-
-[[annotations]]
-path = [
-
-    "assets/images/external/crossroads/**",
-    "assets/images/external/noncommons/**",
-    "assets/images/internal/figures/**",
-
-]
-SPDX-FileCopyrightText = [
-"2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>",
-]
-
-SPDX-License-Identifier = "CC-BY-SA-4.0"
-
-[[annotations]]
-path = [
-
-    "assets/images/external/commons/New_Traffic_Signals_in_Lockport,_Illinois_(November_2025)_02.jpg",
-    "assets/images/external/commons/i55_i355_interchange.jpg"
-
-]
-SPDX-FileCopyrightText = [
-"2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>",
-]
-
-SPDX-License-Identifier = "CC-BY-4.0"
-# Specifically CC-BY-4.0 for some commons images since I licensed them that way in Wikimedia Commons
