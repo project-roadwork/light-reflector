@@ -298,7 +298,7 @@ const BASE_CONFIG = {
 			local name = decal.Name
 			local isExcludedBottom = (name == "Decal" and decal.Face == Enum.NormalId.Bottom)
 
-			return name == "F" or (name ~= "Back" and name ~= "B" and name ~= "Images/Metal Lined" and not isExcludedBottom)
+			return (name == "Front" or name == "F") or (name ~= "Back" and name ~= "B" and name ~= "Images/Metal Lined" and not isExcludedBottom)
 		end,
 		-- ^ Conditions that make an instance a main front decal or sign, and not the back of it
 
