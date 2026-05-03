@@ -1,6 +1,6 @@
 # Light Reflector 
 
- **A light reflector system that reflects `Decals` and `BaseParts` at long distances.**
+ **A light reflector system that stimulates long-rage reflections of `Decals` and `BaseParts`.**
 
 [![License: MPL 2.0](https://img.shields.io/badge/MPL_2.0-License-gray.svg?logo=mozilla&labelColor=28733f)](https://opensource.org/licenses/MPL-2.0) [![Codeberg](https://img.shields.io/badge/Codeberg-Main%20Repository-white?logo=codeberg)](https://codeberg.org/project-roadwork/light-reflector.git) [![GitHub](https://img.shields.io/badge/GitHub-Mirror/Backup%20Repository-darkgrey?logo=github)](https://github.com/project-roadwork/light-reflector.git) [![Documentation](https://img.shields.io/static/v1?label=&message=Documentation&color=informational)](./docs/standalone)
 
@@ -9,13 +9,13 @@
 > **The [GitHub repository](https://github.com/project-roadwork/light-reflector) is a *read-only* mirror, and pull requests are not supported.**
 
 > [!NOTE]
-> ***You must have the new Luau type solver enabled in `Workspace` in order to recieve proper types.***
+> ***You must have the new Luau type solver enabled in `Workspace` in order to receive proper types.***
 
 ## Features
 * Supports `Decal` and `BasePart` reflectors
-* Distance-based falloff
-* Angle-based brightness
+* Distance and angle-based falloff
 * Multi-source support
+* [Type-safe](https://en.wikipedia.org/wiki/Type_safety) [Luau](https://luau.org/) API
 * `CollectionService` tag integration
 * Reflection beyond the 120 stud limit
 * Designed for vehicles, but accepts any `BasePart` as a light source
@@ -24,7 +24,7 @@
 ***[Showcase (View on YouTube) (Outdated) ➚](https://www.youtube.com/watch?v=YK-_NzeLqjI)***
 
 ## Installation
-You may get the `.rbxm` file directly from [Codeberg Releases]((https://codeberg.org/project-roadwork/light-reflector/releases)), or [install via Wally or Pesde]((./docs/standalone/002_installation.md)).
+You may get the `.rbxm` file directly from [Codeberg Releases](https://codeberg.org/project-roadwork/light-reflector/releases), or [install via Wally or Pesde](./docs/standalone/002_installation.md).
 
 For more information, *read the [installation guide](./docs/standalone/002_installation.md).*
 
@@ -36,7 +36,7 @@ After installation, follow the usage guide in the [documentation](./docs/standal
 Should you need additional support, *you may join my [Discord server](https://discord.gg/sd4XfAqNF9) and create a support post in the forum channel `#oss-support`.*
 
 ## Contributing
-*By contributing to this project, you agree that your contributions may be redistributed and relicensed under other open-source and/or open-content licenses.*
+*By contributing to this project, you agree that your contributions may be used under the project's current or future open-source/open-content licenses such as Apache-2.0.*
 
 **View the reason why this clause exists in [./CONTRIBUTING.md](CONTRIBUTING.md)**
 
@@ -69,7 +69,7 @@ Should you need additional support, *you may join my [Discord server](https://di
 
 ### License Comparison (not legal advice)
 
-| Feature / License        | Expact (aka "MIT")    | Apache 2.0 | MPL 2.0       | GPL / AGPL v3               |
+| Feature / License        | Expat (aka "MIT")    | Apache 2.0 | MPL 2.0       | GPL / AGPL v3               |
 | ------------------------ | ------ | ---------- | ------------- | ------------------------ |
 | **Permissive**           | ✅      | ✅          | ℹ️ Partial    | ❌                        |
 | **Patent Clause**         | ❌      | ✅          | ✅             | ✅                        |
@@ -79,3 +79,9 @@ Should you need additional support, *you may join my [Discord server](https://di
 * ¹ Proprietary use in MPL is permitted (allowed) as long as the MPL-covered files remain open souce.
 
 </details>
+
+## Attribution
+### Vendored Packages
+* [ObjectPool](https://github.com/ntqltx/ObjectPool) 0.1
+* [Debugger](https://github.com/axiom-co/debugger) 1.0.3
+* [Jecs](https://github.com/Ukendio/jecs) 0.11.0

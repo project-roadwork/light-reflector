@@ -32,7 +32,7 @@ SPDX-FileCopyrightText = [
 "2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>",
 "2025-2026 Project Roadwork and Contributors"]
 
-SPDX-License-Identifier = "MPL-2.0 OR CC-BY-SA-4.0"
+SPDX-License-Identifier = "CC-BY-SA-4.0"
 
 [[annotations]]
 path = [
@@ -53,8 +53,6 @@ path = [
     "assets/images/external/noncommons/**",
     "assets/images/internal/figures/**",
 
-    "assets/images/external/commons/i55_i355_interchange.jpg",
-
 ]
 SPDX-FileCopyrightText = [
 "2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>",
@@ -66,6 +64,7 @@ SPDX-License-Identifier = "CC-BY-SA-4.0"
 path = [
 
     "assets/images/external/commons/New_Traffic_Signals_in_Lockport,_Illinois_(November_2025)_02.jpg",
+    "assets/images/external/commons/i55_i355_interchange.jpg"
 
 ]
 SPDX-FileCopyrightText = [
@@ -73,3 +72,4 @@ SPDX-FileCopyrightText = [
 ]
 
 SPDX-License-Identifier = "CC-BY-4.0"
+# Specifically CC-BY-4.0 for some commons images since I licensed them that way in Wikimedia Commons
