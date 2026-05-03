@@ -38,6 +38,8 @@ For more information, *read the [installation guide](./docs/standalone/002_insta
 
 After installation, follow the usage guide in the [documentation](./docs/standalone/001_index.md) or check the accompanying examples in [./examples](./examples).
 
+The accompanying examples and usage guide will provide you with practical setups for tags, configuration, initialization, and registering sources.
+
 ### Additional Support
 Should you need additional support, *you may join my [Discord server](https://discord.gg/sd4XfAqNF9) and create a support post in the forum channel `#oss-support`.*
 
@@ -86,12 +88,12 @@ Should you need additional support, *you may join my [Discord server](https://di
 
 </details>
 
-Note that some individual files may be under differing licenses; regardless, the overall project is under the [MPL-2.0](https://mozilla.org/MPL/2.0/) license.
+Note that some individual files may be under differing licenses; as a whole, the project is under the [Mozille Public License 2.0](https://mozilla.org/MPL/2.0/).
 
-Regarding file-specifc licensing information, you may refer to [REUSE.toml](./REUSE.toml). You may also consult [NOTICE.txt](NOTICE.txt) for information regarding other softwares included in this project.
+For file-specifc licensing information, including documentation and images, you may refer to [REUSE.toml](./REUSE.toml). You may also consult [NOTICE.txt](NOTICE.txt) for information regarding other softwares included in this project.
 
 ## Attribution
-### Vendored Packages
-* *[ObjectPool](https://github.com/ntqltx/ObjectPool.git) 0.1*
-* *[Debugger](https://github.com/axiom-co/debugger.git) 1.0.3*
-* *[Jecs](https://github.com/Ukendio/jecs.git) 0.11.0*
+### Vendored/Internal Packages
+* *[ObjectPool](https://github.com/ntqltx/ObjectPool.git) v0.1 — by qaltx*
+* *[Debugger](https://github.com/axiom-co/debugger.git) v1.0.3 — by Axiom and contributors*
+* *[Jecs](https://github.com/Ukendio/jecs.git) v0.11.0 — by Ukendio and jecs authors*
