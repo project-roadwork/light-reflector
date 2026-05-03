@@ -84,9 +84,11 @@ Should you need additional support, *you may join my [Discord server](https://di
 
 * ¹ Proprietary use in MPL is permitted (allowed) as long as the MPL-covered files remain open souce.
 
-Note that some individual files may be under a different license; however, the overall project is under the MPL-2.0 license.
-
 </details>
+
+Note that some individual files may be under differing licenses; regardless, the overall project is under the [MPL-2.0](https://mozilla.org/MPL/2.0/) license.
+
+Regarding file-specifc licensing information, you may refer to [REUSE.toml](./REUSE.toml). You may also consult [NOTICE.txt](NOTICE.txt) for information regarding other softwares included in this project.
 
 ## Attribution
 ### Vendored Packages
