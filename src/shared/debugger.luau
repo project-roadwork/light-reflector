@@ -57,9 +57,17 @@ end
 const function print(id: string, ...: any)
 	const General = config.getConfig().General
 
-	if not General.showWarnings then return end
+	if not General.showPrints then return end
 
 	luauprint(format(id, debug.traceback(nil, 2), ...))
+end
+
+const function shortPrint(...: any)
+	const General = config.getConfig().General
+
+	if not General.showPrints then return end
+
+	luauprint(...)
 end
 
 const function assert<T>(assertion: T, id: string, ...: any): T
@@ -113,5 +121,6 @@ return table.freeze({
 	assert = assert,
 	fatal = fatal,
 	parse = parse,
-	print = print
+	print = print,
+	shortPrint = shortPrint,
 })

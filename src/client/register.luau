@@ -116,7 +116,7 @@ const function removeSource(source: BasePart): ()
 
 	for i = #sourcesList, 1, -1 do
 		if sourcesList[i].Owner == sourceEntity then
-			debugger.print("Info", `[REGISTER] Unregistering {sourceEntity.Name}`)
+			debugger.shortPrint(`[REGISTER] Unregistering {sourceEntity.Name}`)
 			table.remove(sourcesList, i)
 			break
 		end
@@ -209,7 +209,7 @@ const function addSource(source: BasePart?, model: Model?, isEnabled: (BasePart)
 	    end
 	end
 
-	debugger.print("Info", `[REGISTER] Registered {source.Name}`)
+	debugger.shortPrint("Info", `[REGISTER] Registered {source.Name}`)
 end
 
 --[=[
@@ -636,7 +636,7 @@ const function init(): ()
 	end
 
 	if not world then
-		debugger.fatal("FatalInit","[Register Module] 🔴 JECS (an Entity Component System) failed to load the world.")
+		debugger.fatal("MassFatalInit","[REGISTER] 🔴 JECS (an Entity Component System) failed to load the world.")
 	end
 
 	config.onChange(function(NEW_CONFIG: types.BASE_CONFIG)

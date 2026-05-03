@@ -210,7 +210,7 @@ const function _processSign(entity: jecs.Entity, source: types.LightSource)
 		signState = states.acquireSignState(part, baseConfig)
 
 		if signState.partRenderMode == "Decal" and part.Material == Enum.Material.Metal then
-            debugger.warn("Warning", `[Detect] ⚠️ Sign "{part.Name}" at {part:GetFullName()} has the decal renderer enabled, but the sign's material is METAL. The decal renderer will NOT work properly with the METAL material. Unless this is intentional, please change the sign's material to a different material like Plastic. Please note that you only need to change the material of the part that the decal is parented to.`)
+            debugger.warn("Distortion", `[Detect] ⚠️ Sign "{part.Name}" at {part:GetFullName()} has the decal renderer enabled, but the sign's material is METAL. The decal renderer will NOT work properly with the METAL material. Unless this is intentional, please change the sign's material to a different material like Plastic. Please note that you only need to change the material of the part that the decal is parented to.`)
 		end
 
 		world:set(entity, components.SignState, signState)

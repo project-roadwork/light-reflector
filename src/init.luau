@@ -79,7 +79,7 @@ const function start() : ()
 
 	isRunning = true
 
-	debugger.print("Info","[INIT] 🟡 Starting...")
+	debugger.shortPrint("[INIT] 🟡 Starting...")
 
 	init() -- Backwards compatibility
 
@@ -89,7 +89,7 @@ const function start() : ()
 	detect.start()
 	render.start()
 	-- ^ two separate loops since both are in different frequencies
-	debugger.print("Info","[INIT] 🟢 Successfully started!")
+	debugger.shortPrint("[INIT] 🟢 Successfully started!")
 
 	debug.profileend()
 end
@@ -104,9 +104,9 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function reset(): ()
-	debugger.assert(isRunning, "Warning", "[INIT] Cleanup called before Start().")
+	debugger.assert(isRunning, "Fatal", "[INIT] 🔴 Cleanup called before Start().")
 
-	debugger.print("Info","[INIT] Cleaning up!")
+	debugger.shortPrint("[INIT] 🟡 Resetting...")
 
 	register.clearConnections()
 
@@ -120,6 +120,8 @@ const function reset(): ()
 	config.unlock()
 
 	isRunning = false
+
+	debugger.shortPrint("[INIT] 🟢 Successfully reset!")
 end
 
 -- Return public variables and API

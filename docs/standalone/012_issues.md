@@ -1,6 +1,9 @@
 ## Issues
 Common issues you may encounter while using Light Reflector.
 
+> [!NOTE]
+> This document is in the works and not every issue will be documented!
+
 ## Global Issues
 ### Neither reflectors nor signs work at all!
 
@@ -10,8 +13,38 @@ Common issues you may encounter while using Light Reflector.
 3. Try passing `true` on the `CheckForRegLightValue` function and seeing if it works without checking for the regular light value
 4. Ensure that Light Reflector loaded properly (no `Requested module failed to load` errors)
 
+### RunContext
+**The module is not loading at all when I require it in the server!**
+
+> [Light Reflector x.y.z] Invalid RunContext: Init module can only be run from the client.
+
+You are supposed to require the module in the client, not in the server. 
+
+If you are trying to access the `version` module, require it directly:
+
+```luau
+-- handler.server.luau
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LightReflectorModule = ReplicatedStorage.Packages.lightreflector 
+local LightReflectorVersion = require(LightReflectorModule.version)
+
+LightReflectorVersion.checkVersion()
+```
+
+### MassFatalInit
+**The module cannot initialize at all; however, requiring works!**
+
+> [Light Reflector x.y.z] Mass fatal init errored: [Register Module] 🔴 JECS (an Entity Component System) failed to load the world.
+
+These errors should not appear whatsoever. If you see this in the output, *open an issue in this repositiory (in Codeberg) or create a post in `#oss-support` located in my [Discord server](https://discord.gg/sd4XfAqNF9).*
+
 ## Sign Issues
-### My sign appears distorted and/or does not light up properly using the decal renderer!
+
+### Distortion 
+
+***My sign appears distorted and/or does not light up properly using the decal renderer!***
+
+> [Light Reflector x.y.z] Warning: [Detect] ⚠️ Sign "XXX" at Workspace.XXX has the decal renderer enabled, but the sign's material is METAL. The decal renderer will NOT work properly with the METAL material. Unless this is intentional, please change the sign's material to a different material like Plastic. Please note that you only need to change the material of the part that the decal is parented to.
 
 ![Diagram](../../assets/images/internal/figures/012_issues_sign_issue_1.png)
 
@@ -20,9 +53,11 @@ Common issues you may encounter while using Light Reflector.
 1. Checked off all possible global issues
 2. Ensure that the material is NOT `Metal`, AND have used another material such as `SmoothPlastic`
 
-### My sign is orientated incorrectly while using the SurfaceGui renderer!
+### Orientation
 
-**Unfortunately, this may happen if the Decal's face is `Top` or `Bottom`.** 
+***My sign is orientated incorrectly while using the SurfaceGui renderer!***
+
+Unfortunately, this may happen if the Decal's face is `Top` or `Bottom`. 
 
 **You could try the following:**
 1. Using the decal renderer instead of the SurfaceGui renderer
@@ -43,8 +78,6 @@ Common issues you may encounter while using Light Reflector.
 2. Ensure that you have the required attributes `LRHybrid` (boolean) and `LRFace` (string)?
 3. Ensure that `LRFace` is a valid `Enum.NormalId` value? (`Front`, `Back`, `Right`, `Top`, etc.)
 
-## Next, learn about errors!
-
 ---
 
-[Previous Page](./011_api.md) | [Next Page](./013_errors.md)
+[Previous Page](./011_api.md) | [Next Page](./997_benchmarks.md)

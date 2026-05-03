@@ -19,14 +19,16 @@
 return {
 	Ids = {
 		FatalInit = "Init errored: %s",
+		MassFatalInit = "Mass fatal init errored: %s",
 		Fatal = "Fatal error: %s",
-		AlreadyStarting = "[INIT] Light Reflector is already starting",
+		AlreadyStarting = "[INIT] 🔴 Light Reflector is already starting",
 		InvalidType = "Expected type %s; got '%s'",
 		InvalidInstance = "Expected type %s; got '%s'",
 		Info = "Info: %s",
 		Warning = "Warning: %s",
+		Distortion = "Warning: %s",
 		InitWarning = "Init warning: %s",
-		RunContext = "Invalid RunContext: %s",
+		RunContext = "[INIT] 🔴 Invalid RunContext: %s",
 	},
-	URL = "https://codeberg.org/project-roadwork/light-reflector.git"
+	URL = "https://codeberg.org/project-roadwork/light-reflector/src/branch/main/docs/standalone/012_issues.md"
 }
