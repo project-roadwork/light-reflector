@@ -12,7 +12,7 @@
 
 > [!IMPORTANT]
 > **Use the [main repository in Codeberg](https://codeberg.org/project-roadwork/light-reflector.git) for issues, pull requests, and contributions.**
-> **The [GitHub repository](https://github.com/project-roadwork/light-reflector) is a *read-only* mirror, and pull requests are not supported.**
+> **The [GitHub repository](https://github.com/project-roadwork/light-reflector.git) is a *read-only* mirror, and pull requests are not supported.**
 
 > [!NOTE]
 > ***You must have the new Luau type solver enabled in `Workspace` in order to receive proper types.***
@@ -90,6 +90,6 @@ Note that some individual files may be under a different license; however, the o
 
 ## Attribution
 ### Vendored Packages
-* *[ObjectPool](https://github.com/ntqltx/ObjectPool) 0.1*
-* *[Debugger](https://github.com/axiom-co/debugger) 1.0.3*
-* *[Jecs](https://github.com/Ukendio/jecs) 0.11.0*
+* *[ObjectPool](https://github.com/ntqltx/ObjectPool.git) 0.1*
+* *[Debugger](https://github.com/axiom-co/debugger.git) 1.0.3*
+* *[Jecs](https://github.com/Ukendio/jecs.git) 0.11.0*
