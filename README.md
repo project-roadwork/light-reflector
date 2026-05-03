@@ -96,23 +96,18 @@ Should you need additional support, *you may join my [Discord server](https://di
 > **To see the full legal requirements, refer to the license text. In general, you must do the following:**
 >
 > **Inform recipients that the code is licensed under the MPL**
->
 > * Include a copy of the license or a link to it, and clearly state that the source code is provided under MPL terms *(Section 3.1)*.
 >
 > **Grant the same rights that you have received to the recipients** 
->
 > * This includes the rights to use, modify, and distribute the code, along with any applicable patent grants *(Section 2.1)*.
 >
 > **Keep existing notices intact**
->
 > * Do not remove or alter copyright, license, or attribution notices in the source files *(Section 3.4)*.
 >
 > **Make the sourc3 code of modified files available**
->
 > * Any files you modify that are covered by the MPL must be abailable in source form when you distribute them *(Section 3.2)*.
 >
 > **Keep modified MPL files under the MPL**
->
 > * These files must remain licensed under the MPL, even when the rest of your project uses a different license *(Section 3.3)*.
 
 
