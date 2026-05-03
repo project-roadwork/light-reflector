@@ -6,7 +6,7 @@
 
 <br>
 
- **A light reflector system that stimulates long-rage reflections of `Decals` and `BaseParts`.**
+ **A light reflector system that simulates long-rage reflections of `Decals` and `BaseParts`.**
 
 [![License: MPL 2.0](https://img.shields.io/badge/MPL_2.0-License-gray.svg?logo=mozilla&labelColor=28733f)](https://opensource.org/licenses/MPL-2.0) [![Codeberg](https://img.shields.io/badge/Codeberg-Main%20Repository-white?logo=codeberg)](https://codeberg.org/project-roadwork/light-reflector.git) [![GitHub](https://img.shields.io/badge/GitHub-Mirror/Backup%20Repository-darkgrey?logo=github)](https://github.com/project-roadwork/light-reflector.git) [![Documentation](https://img.shields.io/static/v1?label=&message=Documentation&color=informational)](./docs/standalone)
 
@@ -25,7 +25,7 @@
 * `CollectionService` tag integration
 * Reflection beyond the 120 stud limit
 * Designed for vehicles, but accepts any `BasePart` as a light source
-* ECS architecture via [JECS](https://github.com/Ukendio/jecs.git)
+* [ECS](https://en.wikipedia.org/wiki/Entity_component_system) architecture via [Jecs](https://github.com/Ukendio/jecs.git)
 
 ***[Showcase (View on YouTube) (Outdated) ➚](https://www.youtube.com/watch?v=YK-_NzeLqjI)***
 
@@ -88,6 +88,6 @@ Should you need additional support, *you may join my [Discord server](https://di
 
 ## Attribution
 ### Vendored Packages
-* [ObjectPool](https://github.com/ntqltx/ObjectPool) 0.1
-* [Debugger](https://github.com/axiom-co/debugger) 1.0.3
-* [Jecs](https://github.com/Ukendio/jecs) 0.11.0
+* *[ObjectPool](https://github.com/ntqltx/ObjectPool) 0.1*
+* *[Debugger](https://github.com/axiom-co/debugger) 1.0.3*
+* *[Jecs](https://github.com/Ukendio/jecs) 0.11.0*
