@@ -378,6 +378,26 @@ const function areColorsEqual(colorA: Color3, colorB: Color3, epsilon: number?):
 end
 
 --[=[
+	Public: Determines if the provided raw Color3's are equal
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function areColorsEqualRaw(aR: number, aG: number, aB: number, bR: number, bG: number, bB: number, epsilon: number?): boolean
+	epsilon = epsilon or 0.005
+
+	local d: number = aR - bR
+	if d > epsilon or d < -epsilon then return false end
+
+	d = aG - bG
+	if d > epsilon or d < -epsilon then return false end
+
+	d = aB - bB
+	if d > epsilon or d < -epsilon then return false end
+
+	return true
+end
+
+--[=[
 	Public: Resets and returns SurfaceGui with pool check
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
@@ -564,6 +584,7 @@ return table.freeze({
 	normalizeBaseColor = normalizeBaseColor,
 	pcallRetry = pcallRetry,
 	areColorsEqual = areColorsEqual,
+	areColorsEqualRaw = areColorsEqualRaw,
 	validFaces = validFaces,
 	renderWait = renderWait,
 	spawnDebugField = spawnDebugField,

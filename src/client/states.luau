@@ -51,7 +51,7 @@ const SIGN_STATE_TEMPLATE: types.SignEntity = {
 	partVeryReflective = false,
 	baseIntensity = 1,
 	doesSignMove = false,
-	cellKey = {0, 0},
+	cellKey = vector.zero,
 	partRenderMode = "SurfaceGui",
 	surfaceGuiState = nil,
 	decalState = nil,
@@ -91,15 +91,17 @@ const SURFACE_GUI_STATE_TEMPLATE: types.SurfaceGuiState = {
 const REFLECTOR_STATE_TEMPLATE: types.ReflectorState = {
 	_inPool = false,
 	isActive = false,
+	lastIsActive = false,
 
 	currentIntensity = 0,
 	lastIntensity = 0.1,
 	targetIntensity = 0,
 	targetTransparency = 1,
+	lastTargetIntensity = 1,
 	currentTransparency = 1,
 	lastTransparency = 0,
 
-	cellKey = {0, 0},
+	cellKey = vector.zero,
 
 	baseColor = Color3.new(0, 0, 0),
 	lastColor = Color3.new(0, 0, 0),
@@ -151,11 +153,7 @@ type AnyTable = {[string]: any}
 ]=]
 const function _resetToTemplate<T>(state: T, template: T): ()
 	for k: string, v: any in (template :: AnyTable) do
-		if k == "cellKey" then
-			(state :: AnyTable)[k] = {0, 0} -- new table
-		else
-			(state :: AnyTable)[k] = v
-		end
+		(state :: AnyTable)[k] = v
 	end
 end
 
@@ -164,12 +162,14 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function acquireSignState(part: BasePart, baseConfig: types.BASE_CONFIG): types.SignEntity
+const function acquireSignState(part: BasePart, baseConfig: types.BASE_CONFIG, signGrid: types.Grid): types.SignEntity
 	const attributes: {[string]: any} = part:GetAttributes()
 
 	const constraints: types.Constraints = baseConfig.Constraints
 	const generalConfig: types.GeneralConfig = baseConfig.General
 	const signConfig: types.SignConfig = baseConfig.SignConfig
+
+	const cellX: number?, cellZ: number? = grid.getCellKey(signGrid, part.CFrame.Position)
 
 	local partRenderMode: "Decal" | "SurfaceGui" = attributes[signConfig.partRenderModeAttributeName]
 	partRenderMode = partRenderMode or constraints.SIGNS_PRIMARY_RENDER_MODE :: "Decal" | "SurfaceGui"
@@ -178,6 +178,7 @@ const function acquireSignState(part: BasePart, baseConfig: types.BASE_CONFIG): 
 
 	const state: types.SignEntity = table.remove(pools.SignState) or table.clone(SIGN_STATE_TEMPLATE)
 
+	state.cellKey = vector.create(cellX or 0, 0, cellZ or 0)
 	state.CFrame = part.CFrame
 	state.Size = part.Size
 	state.partVeryReflective = attributes["VeryReflective"] or false
@@ -250,7 +251,7 @@ const function acquireReflectorState(part: BasePart, baseConfig: types.BASE_CONF
 
 	state._inPool = false
 
-	state.cellKey = {cellX or 0, cellZ or 0}
+	state.cellKey = vector.create(cellX or 0, 0, cellZ or 0)
 	state.baseColor = attributes["BaseColor"] or state.baseColor
 	state.origColor = attributes["OrigColor"] or state.origColor
 	state.isWedge = isWedge

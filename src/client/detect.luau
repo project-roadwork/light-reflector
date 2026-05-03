@@ -134,14 +134,14 @@ const function _processReflector(entity: jecs.Entity, source: types.LightSource,
 	if state.doesReflectorMove then
 		const newCFrame: CFrame = part.CFrame
 
-		const oldX: number, oldZ: number = state.cellKey[1], state.cellKey[2]
+		const oldX: number, oldZ: number = state.cellKey.x, state.cellKey.z
 		const newX: number?, newZ: number? = grid.getCellKey(reflectorGrid, newCFrame.Position)
 
 		if newX and newZ then
 			if oldX ~= newX or oldZ ~= newZ then
 				grid.remove(reflectorGrid, entity) -- old cell
 				grid.spawn(reflectorGrid, entity, newCFrame.Position) -- new cell
-				state.cellKey = {newX, newZ}
+				state.cellKey = vector.create(newX, 0, newZ)
 			end
 		end
 
@@ -172,6 +172,7 @@ const function _processReflector(entity: jecs.Entity, source: types.LightSource,
 	state.targetIntensity += intensity
 	if state.isHybrid then
 		state.targetTransparency = min(state.targetTransparency, transparency)
+		state.lastTargetIntensity = state.targetIntensity
 	end
 
     if state.intensityAccum > 0 then
@@ -207,7 +208,7 @@ const function _processSign(entity: jecs.Entity, source: types.LightSource)
 	local signState: types.SignEntity? = world:get(entity, components.SignState)
 
 	if not signState then
-		signState = states.acquireSignState(part, baseConfig)
+		signState = states.acquireSignState(part, baseConfig, signGrid)
 
 		if signState.partRenderMode == "Decal" and part.Material == Enum.Material.Metal then
             debugger.warn("Distortion", `[Detect] ⚠️ Sign "{part.Name}" at {part:GetFullName()} has the decal renderer enabled, but the sign's material is METAL. The decal renderer will NOT work properly with the METAL material. Unless this is intentional, please change the sign's material to a different material like Plastic. Please note that you only need to change the material of the part that the decal is parented to.`)
@@ -223,14 +224,14 @@ const function _processSign(entity: jecs.Entity, source: types.LightSource)
 	if signState.doesSignMove then
 		const newCFrame: CFrame = part.CFrame
 
-		const oldX: number, oldZ: number = signState.cellKey[1], signState.cellKey[2]
+		const oldX: number, oldZ: number = signState.cellKey.x, signState.cellKey.z
 		const newX: number?, newZ: number? = grid.getCellKey(signGrid, newCFrame.Position)
 
 		if newX and newZ then
 			if oldX ~= newX or oldZ ~= newZ then
 				grid.remove(signGrid, entity) -- old cell
 				grid.spawn(signGrid, entity, newCFrame.Position) -- new cell
-				signState.cellKey = {newX, newZ}
+				signState.cellKey = vector.create(newX, 0, newZ)
 			end
 		end
 

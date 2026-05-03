@@ -1,5 +1,6 @@
 --!strict
 --!native
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- USAGE: lightreflector/shared/types.luau
 -- Types for Light Reflector.
 
@@ -16,6 +17,7 @@
 ]]
 
 -- Modules
+local grid = require(ReplicatedStorage.Packages.lightreflector.client.grid)
 const config = require("../shared/config")
 const baseConfig = config.getConfig()
 const debugger = require("../shared/debugger")
@@ -147,6 +149,7 @@ export type Utils = {
 
 	read pcallRetry: ((...any) -> (...any), maxRetries: number, ...any) -> (boolean, string?),
 	read areColorsEqual: (colorA: Color3, colorB: Color3, epsilon: number?) -> boolean,
+	read areColorsEqualRaw: (aR: number, aG: number, aB: number, bR: number, bG: number, bB: number, epsilon: number?) -> boolean,
 	read renderWait: (waitTime: number?) -> number,
 
 	read spawnDebugField: (origin: Vector3, forward: Vector3, maxDot: number, radius: number, count: number, debugFolder: Instance) -> (),
@@ -318,6 +321,7 @@ export type ReflectorState = {
 	baseColor: Color3,
 	origColor: Color3,
 	isActive: boolean?,
+	lastIsActive: boolean?,
 
 	lastMaterial: Enum.Material,
 	lastColor: Color3,
@@ -328,11 +332,12 @@ export type ReflectorState = {
 	hybridTransparencyMultiplier: number,
 	canHybridKeepColors: boolean,
 	targetTransparency: number,
+	lastTargetIntensity: number,
 	currentTransparency: number,
 	lastTransparency: number,
 
 	doesReflectorMove: boolean,
-	cellKey: { [number]: number },
+	cellKey: vector,
 	CFrame: CFrame,
 	isWedge: boolean,
 	faceAttributeName: string?,
@@ -357,7 +362,7 @@ export type SignEntity = {
 	surfaceGuiState: SurfaceGuiState?,
 	decalState: DecalState?,
 	mainDecal: Decal?,
-	cellKey: { [number]: number },
+	cellKey: vector,
 
 	neutralizedColor: Color3,
 	colorAccum: vector,
@@ -380,7 +385,7 @@ export type StatesModule = {
 	read name: string,
 
 	read acquireDecalState: () -> DecalState,
-	read acquireSignState: (part: BasePart, baseConfig: BASE_CONFIG) -> SignEntity,
+	read acquireSignState: (part: BasePart, baseConfig: BASE_CONFIG, signGrid: grid) -> SignEntity,
 	read acquireReflectorState: (part: BasePart, baseConfig: BASE_CONFIG, reflectorGrid: Grid) -> ReflectorState,
 	read acquireSurfaceGuiState: () -> SurfaceGuiState,
 

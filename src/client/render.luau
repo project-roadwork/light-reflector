@@ -42,11 +42,13 @@ const activeReflectorEntities: {[jecs.Entity]: boolean} = detect.activeReflector
 local currentDetectedEntities: { [jecs.Entity]: boolean } = {}
 local _runnerThread : thread?
 local hasInit: boolean = false
+const smoothstepLUT: {[number]: number} = {}
 
 -- Equations
 const clamp: (number, number, number) -> number = math.clamp
 const abs: (number) -> number = math.abs
 const exp: (number) -> number = math.exp
+const floor: (number) -> number = math.floor
 
 -- Micro Optimizations (Variables)
 local signLerpSpeed: number = 0
@@ -62,9 +64,16 @@ local minColorScale: number = reflectorConfig.minBrightness / 255
 local maxColorScale: number = reflectorConfig.maxBrightness / 255
 
 local inactiveMaterial: Enum.Material = reflectorConfig.inactiveMaterial
+local activeMaterial: Enum.Material = reflectorConfig.activeMaterial
+local inactiveSignThreshold: number = signConfig.inactiveTransparencyThreshold
 
 local riseMultiplier: number = 0
 local fallMultiplier: number = 0
+
+local neonWidth: number = reflectorConfig.neonWidth
+local neonCenter: number = reflectorConfig.neonActivationIntensity
+local neonStart: number = neonCenter - neonWidth
+local neonEnd: number = neonCenter + neonWidth
 
 const renderWait: (number?) -> number = utils.renderWait
 const sourceInstances: jecs.Cached_Query<BasePart> = cachedQueries.SourceInstances
@@ -97,7 +106,19 @@ const function init(): ()
 		maxColorScale = reflectorConfig.maxBrightness / 255
 
 		inactiveMaterial = reflectorConfig.inactiveMaterial
+		activeMaterial = reflectorConfig.activeMaterial
+		inactiveSignThreshold = signConfig.inactiveTransparencyThreshold
+
+		neonWidth = reflectorConfig.neonWidth
+		neonCenter = reflectorConfig.neonActivationIntensity
+		neonStart = neonCenter - neonWidth
+		neonEnd = neonCenter + neonWidth
 	end)
+
+	for i: number = 0, 100 do
+        const x: number = i / 100
+        smoothstepLUT[i] = x * x * (3 - 2 * x)
+    end
 
 	hasInit = true
 end
@@ -153,7 +174,7 @@ const function start(): ()
 
 						if state.isHybrid then
 						    if state.lastTransparency ~= 1 then
-								--state.currentTransparency = 1
+								state.currentTransparency = 1
 								state.lastTransparency = 1
 								part.Transparency = 1
 							end
@@ -167,6 +188,19 @@ const function start(): ()
 
 					state.currentIntensity =
 						targetIntensity + (state.currentIntensity - targetIntensity) * riseMultiplier
+
+					local intensityStable =
+						abs(state.currentIntensity - state.lastIntensity) < 0.001
+						and state.targetIntensity == state.lastTargetIntensity
+						and state.isActive == state.lastIsActive
+
+					local transparencyStable =
+						not state.isHybrid
+						or abs(state.currentTransparency - state.lastTransparency) < 0.01
+
+					if intensityStable and transparencyStable then
+						continue
+					end
 
 					if targetIntensity <= 0 then
 						state.currentIntensity *= fallMultiplier
@@ -196,22 +230,24 @@ const function start(): ()
 						end
 					end
 
+					state.lastIsActive = state.isActive
+
 					const intensity: number = state.currentIntensity
-
-					const neonCenter: number = reflectorConfig.neonActivationIntensity
-					const neonWidth: number = 0.55
-
-					const neonStart: number = neonCenter - neonWidth
-					const neonEnd: number = neonCenter + neonWidth
 
 					local t: number = clamp((intensity - neonStart) / (neonEnd - neonStart), 0, 1)
 
-					t = t * t * (3 - 2 * t)
+					local idx: number = floor(t * 100 + 0.5)
+					if idx > 100 then idx = 100 end
+
+					t = smoothstepLUT[idx]
+					--t = t * t * (3 - 2 * t)
 
 					const baseColor: Color3 = state.baseColor
 					const lightColor: Color3 = state.neutralizedColor
 
 					const scale: number = minColorScale + (maxColorScale - minColorScale) * intensity
+
+					-- 2.4.0 patch: clamp color values at 1
 
 					local nr: number = baseColor.R * lightColor.R * scale
 					local ng: number = baseColor.G * lightColor.G * scale
@@ -241,13 +277,20 @@ const function start(): ()
 						tPlastic
 					)
 
+					local base = state.baseColor
+					local orig = state.origColor
+
+					local pr = base.R + (orig.R - base.R) * tPlastic
+					local pg = base.G + (orig.G - base.G) * tPlastic
+					local pb = base.B + (orig.B - base.B) * tPlastic
+
 					local newColor: Color3 = plasticColor:Lerp(neonColor, t)
 					local newMaterial: Enum.Material
 
 					if t > 0.5 or state.isHybrid then
-						newMaterial = reflectorConfig.activeMaterial -- Neon
+						newMaterial = activeMaterial -- Neon
 					else
-						newMaterial = reflectorConfig.inactiveMaterial
+						newMaterial = inactiveMaterial
 						newColor = state.origColor
 					end
 
@@ -294,11 +337,16 @@ const function start(): ()
 							continue
 						end
 
+						const inPart: boolean = currentDetectedEntities[entity] ~= nil
+
+						if not inPart
+                           and state.currentTransparency >= 0.999 then
+                            continue
+						end
+
 						const gui: (SurfaceGui & { ImageLabel: ImageLabel })? = state.gui
 
 						if gui and gui.Parent then
-							const inPart: boolean = currentDetectedEntities[entity] ~= nil
-
 							if inPart then
 								state.currentTransparency += (state.targetTransparency - state.currentTransparency) * signLerpSpeedClamped
 								state.currentBrightness += (state.targetBrightness - state.currentBrightness) * signLerpSpeedClamped
@@ -308,7 +356,7 @@ const function start(): ()
 								state.currentBrightness += (0 - state.currentBrightness) * signLerpSpeedClamped
 								state.currentLightInfluence += (1 - state.currentLightInfluence) * signLerpSpeedClamped
 
-								if state.currentTransparency >= signConfig.inactiveTransparencyThreshold then
+								if state.currentTransparency >= inactiveSignThreshold then
 									state.isPendingRemoval = true
 								end
 							end
@@ -328,7 +376,7 @@ const function start(): ()
 								state.lastLightInfluence = state.currentLightInfluence
 							end
 
-							if state.currentTransparency >= signConfig.inactiveTransparencyThreshold then
+							if state.currentTransparency >= inactiveSignThreshold then
 								state.isActive = false
 								state.isPendingRemoval = true
 							end

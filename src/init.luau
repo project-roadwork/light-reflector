@@ -53,7 +53,7 @@ const function init(): ()
 		return
 	end
 
-	debugger.print("Info", "[INIT] 🟡 Initializing Light Reflector...")
+	debugger.shortPrint("Info", "[INIT] 🟡 Initializing Light Reflector...")
 
 	register.init()
 	detect.init()
@@ -61,7 +61,7 @@ const function init(): ()
 
 	hasInit = true
 
-	debugger.print("Info", "[INIT] 🟢 Light Reflector Initialized!")
+	debugger.shortPrint("Info", "[INIT] 🟢 Light Reflector Initialized!")
 end
 --[=[
 	Public: Starts the module

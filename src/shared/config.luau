@@ -371,6 +371,7 @@ const BASE_CONFIG = {
 		activateIntensityThreshold = 0.06, -- (recommended -> 0.06)
 		inactivateIntensityThreshold = 0.02, -- (recommended -> 0.02)
 		neonActivationIntensity = 0.12, -- (recommended -> 0.12)
+		neonWidth = 0.55, -- (recommended -> 0.55)
 		-- ^ Reflector light logic
 
 		lerpSpeed = 12, -- (recommended -> 10)
