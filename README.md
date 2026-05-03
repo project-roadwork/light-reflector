@@ -1,4 +1,10 @@
-# Light Reflector 
+<br>
+
+<div align="center">
+    <img src=".\assets\images\internal\branding\large-logo-svg.svg" alt="light reflector logo" width="200" />
+</div>
+
+<br>
 
  **A light reflector system that stimulates long-rage reflections of `Decals` and `BaseParts`.**
 
