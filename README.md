@@ -1,7 +1,7 @@
 <br>
 
 <div align="center">
-    <img src="./assets\images\internal\branding\large-logo-svg.svg" alt="light reflector logo" width="400" />
+    <img src="https://codeberg.org/project-roadwork/light-reflector/raw/branch/main/assets/images/internal/branding/large-logo-svg.svg" alt="light reflector logo" width="500" />
 </div>
 
 <br>
