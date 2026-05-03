@@ -25,6 +25,7 @@
 * `CollectionService` tag integration
 * Reflection beyond the 120 stud limit
 * Designed for vehicles, but accepts any `BasePart` as a light source
+* States and caching; [view benchmarks ➚](./docs/standalone/997_benchmarks.md)
 * [ECS](https://en.wikipedia.org/wiki/Entity_component_system) architecture via [Jecs](https://github.com/Ukendio/jecs.git)
 
 ***[Showcase (View on YouTube) (Outdated) ➚](https://www.youtube.com/watch?v=YK-_NzeLqjI)***
@@ -95,5 +96,5 @@ For file-specifc licensing information, including documentation and images, you 
 ## Attribution
 ### Vendored/Internal Packages
 * *[ObjectPool](https://github.com/ntqltx/ObjectPool.git) v0.1 — by qaltx*
-* *[Debugger](https://github.com/axiom-co/debugger.git) v1.0.3 — by Axiom and contributors*
+* *[Debugger](https://github.com/axiom-co/debugger.git) v1.0.3 — by Axiom (formally Lumen) and contributors*
 * *[Jecs](https://github.com/Ukendio/jecs.git) v0.11.0 — by Ukendio and jecs authors*
