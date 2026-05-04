@@ -28,6 +28,20 @@
 * States and caching; [view benchmarks (WIP) ➚](./docs/standalone/997_benchmarks.md)
 * [ECS](https://en.wikipedia.org/wiki/Entity_component_system) architecture via [Jecs](https://github.com/Ukendio/jecs.git)
 
+<details>Performance Strategies</summary>
+
+## Performance
+* State caching
+* `SurfaceGui` and table pooling
+* Avoids property writes unless needed
+* Uses `vector`s in color processing rather than `Color3`s
+  * `Color3`s are only used when writing to `Instances`
+* Lookup table for smoothstep
+* Adaptive frame timing based on the fastest `source`
+* ECS for data-oriented iteration
+
+</details>
+
 ***[Showcase (View on YouTube) (Outdated) ➚](https://www.youtube.com/watch?v=YK-_NzeLqjI)***
 
 ## Installation
