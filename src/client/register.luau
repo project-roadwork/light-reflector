@@ -706,14 +706,15 @@ const function reset(): ()
 		end
 
 		if decalState and mainDecal then
-			mainDecal.Color3 = decalState.baseColor
+		    const baseColor: vector = decalState.baseColor
+			mainDecal.Color3 = Color3.new(baseColor.x, baseColor.y, baseColor.z)
 		end
 	end
 
 	for entity: jecs.Entity<nil>, part: BasePart, state: types.ReflectorState in cachedQueries.Reflectors do
 		const Color: Color3 = part.Color
 
-		const newColor: Color3 = state.baseColor
+		const newColor: vector = state.baseColor
 		const newMaterial: Enum.Material = reflectorConfig.inactiveMaterial
 
 		if state.lastMaterial ~= newMaterial then
@@ -721,8 +722,8 @@ const function reset(): ()
 			state.lastMaterial = newMaterial
 		end
 
-		if Color and not utils.areColorsEqual(state.lastColor, newColor, 0.01) then
-			part.Color = newColor
+		if Color and not utils.areVectorsEqual(state.lastColor, newColor, 0.01) then
+			part.Color = Color3.new(newColor.x, newColor.y, newColor.z)
 			state.lastColor = newColor
 		end
 

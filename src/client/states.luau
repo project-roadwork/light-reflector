@@ -47,7 +47,7 @@ const grid: types.GridModule = require("./grid")
 const SIGN_STATE_TEMPLATE: types.SignEntity = {
 	_inPool = false,
 	CFrame = CFrame.new(0, 0, 0),
-	Size = Vector3.new(0, 0, 0),
+	Size = Vector3.zero,
 	partVeryReflective = false,
 	baseIntensity = 1,
 	doesSignMove = false,
@@ -56,7 +56,7 @@ const SIGN_STATE_TEMPLATE: types.SignEntity = {
 	surfaceGuiState = nil,
 	decalState = nil,
 	mainDecal = nil,
-	neutralizedColor = Color3.new(1, 1, 1),
+	neutralizedColor = vector.one,
 	colorAccum = vector.zero,
 	intensityAccum = 0,
 	lastFrame = 0
@@ -66,8 +66,8 @@ const DECAL_STATE_TEMPLATE: types.DecalState = {
 	_inPool = false,
 	currentBrightness = 0,
 	targetBrightness = 0,
-	baseColor = Color3.new(0, 0, 0),
-	lastColor3 = Color3.new(0, 0, 0)
+	baseColor = vector.one,
+	lastColor = vector.one
 }
 
 const SURFACE_GUI_STATE_TEMPLATE: types.SurfaceGuiState = {
@@ -81,7 +81,7 @@ const SURFACE_GUI_STATE_TEMPLATE: types.SurfaceGuiState = {
 	lastTransparency = 1,
 	lastBrightness = 0,
 	lastLightInfluence = 1,
-	lastColor3 = Color3.new(0, 0, 0),
+	lastColor = vector.one,
 
 	targetTransparency = 1,
 	targetBrightness = 0,
@@ -103,9 +103,9 @@ const REFLECTOR_STATE_TEMPLATE: types.ReflectorState = {
 
 	cellKey = vector.zero,
 
-	baseColor = Color3.new(0, 0, 0),
-	lastColor = Color3.new(0, 0, 0),
-	origColor = Color3.new(0, 0, 0),
+	baseColor = vector.create(1, 1, 1),
+	lastColor = vector.create(1, 1, 1),
+	origColor = vector.create(1, 1, 1),
 	lastMaterial = Enum.Material.SmoothPlastic,
 
 	isWedge = false,
@@ -127,7 +127,7 @@ const REFLECTOR_STATE_TEMPLATE: types.ReflectorState = {
 
 	doesReflectorMove = false,
 
-	neutralizedColor = Color3.new(1, 1, 1),
+	neutralizedColor = vector.one,
 	colorAccum = vector.zero,
 	intensityAccum = 0,
 
@@ -242,6 +242,9 @@ const function acquireReflectorState(part: BasePart, baseConfig: types.BASE_CONF
 
 	const faceAttributeName: string = attributes[reflectorConfig.faceAttributeName]
 
+	const attributeBaseColor: Color3 = attributes["BaseColor"]
+	const attributeOrigColor: Color3 = attributes["BaseColor"]
+
 	local faceNormalWorld: Vector3?
 	if faceAttributeName and utils.validFaces[faceAttributeName] then
 		faceNormalWorld = partCFrame:VectorToWorldSpace(Vector3.FromNormalId(Enum.NormalId[faceAttributeName]))
@@ -252,8 +255,8 @@ const function acquireReflectorState(part: BasePart, baseConfig: types.BASE_CONF
 	state._inPool = false
 
 	state.cellKey = vector.create(cellX or 0, 0, cellZ or 0)
-	state.baseColor = attributes["BaseColor"] or state.baseColor
-	state.origColor = attributes["OrigColor"] or state.origColor
+	state.baseColor = vector.create(attributeBaseColor.R, attributeBaseColor.G, attributeBaseColor.B) or state.baseColor
+	state.origColor = vector.create(attributeOrigColor.R, attributeOrigColor.G, attributeOrigColor.B) or state.origColor
 	state.isWedge = isWedge
 	state.isHybrid = isHybrid
 	state.CFrame = partCFrame

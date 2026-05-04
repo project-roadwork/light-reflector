@@ -76,6 +76,7 @@ local neonStart: number = neonCenter - neonWidth
 local neonEnd: number = neonCenter + neonWidth
 
 const renderWait: (number?) -> number = utils.renderWait
+const newColor3: (number, number, number) -> Color3 = Color3.new
 const sourceInstances: jecs.Cached_Query<BasePart> = cachedQueries.SourceInstances
 const reflectors: jecs.Cached_Query<BasePart, types.ReflectorState> = cachedQueries.Reflectors
 const signsPartsStates: jecs.Cached_Query<BasePart, types.SignEntity> = cachedQueries.SignsPartsStates
@@ -154,8 +155,8 @@ const function start(): ()
 
 				for entity: jecs.Entity<nil>, part:BasePart, state: types.ReflectorState in reflectors do
 					if not activeReflectorEntities[entity] then
-						const baseColor: Color3 = state.origColor
-						const lastColor: Color3 = state.lastColor
+						const baseColor: vector = state.origColor
+						const lastColor: vector = state.lastColor
 
 						if baseColor then
 							if state.lastMaterial ~= inactiveMaterial then -- reducing writes
@@ -164,8 +165,8 @@ const function start(): ()
 							end
 
 							if lastColor ~= baseColor then
-								if not utils.areColorsEqual(lastColor, baseColor, 0.01) then
-									part.Color = baseColor
+								if not utils.areVectorsEqual(lastColor, baseColor, 0.01) then
+									part.Color = newColor3(baseColor.x, baseColor.y, baseColor.z)
 									state.lastColor = baseColor
 								end
 							end
@@ -188,18 +189,17 @@ const function start(): ()
 					state.currentIntensity =
 						targetIntensity + (state.currentIntensity - targetIntensity) * riseMultiplier
 
-					local intensityStable =
+					const intensityStable: boolean =
 						abs(state.currentIntensity - state.lastIntensity) < 0.001
 						and state.targetIntensity == state.lastTargetIntensity
 						and state.isActive == state.lastIsActive
 
-					local transparencyStable =
-						not state.isHybrid
-						or abs(state.currentTransparency - state.lastTransparency) < 0.01
+					const transparencyStable: boolean = abs(state.currentTransparency - state.lastTransparency) < 0.01
 
-					if intensityStable and transparencyStable then
+					if (intensityStable and transparencyStable) and state.isHybrid == false then
 						continue
 					end
+					-- ^ Breaks hybrid reflectors.... skip hybrids for now
 
 					if targetIntensity <= 0 then
 						state.currentIntensity *= fallMultiplier
@@ -241,16 +241,16 @@ const function start(): ()
 					t = smoothstepLUT[idx]
 					--t = t * t * (3 - 2 * t)
 
-					const baseColor: Color3 = state.baseColor
-					const lightColor: Color3 = state.neutralizedColor
+					const baseColor: vector = state.baseColor
+					const lightColor: vector = state.neutralizedColor
 
 					const scale: number = minColorScale + (maxColorScale - minColorScale) * intensity
 
 					-- 2.4.0 patch: clamp color values at 1
 
-					local nr: number = baseColor.R * lightColor.R * scale
-					local ng: number = baseColor.G * lightColor.G * scale
-					local nb: number = baseColor.B * lightColor.B * scale
+					local nr: number = baseColor.x * lightColor.x * scale
+					local ng: number = baseColor.y * lightColor.y * scale
+					local nb: number = baseColor.z * lightColor.z * scale
 
 					local maxChannel: number = nr
 
@@ -264,26 +264,21 @@ const function start(): ()
 						nb *= inv
 					end
 
-					const neonColor: Color3 = Color3.new(nr, ng, nb)
+					const neonColor: vector = vector.create(nr, ng, nb)
 
 					const fadeStart: number = 0.15
 					const fadeEnd: number = 0.6
 
 					const tPlastic: number = clamp((intensity - fadeStart) / (fadeEnd - fadeStart), 0, 1)
 
-					const plasticColor: Color3 = state.baseColor:Lerp(
-						state.origColor,
-						tPlastic
-					)
+				--	const plasticColor: Color3 = state.baseColor:Lerp(
+				--		state.origColor,
+				--		tPlastic
+				--	)
 
-					local base = state.baseColor
-					local orig = state.origColor
+					const plasticColor: vector = vector.lerp(state.baseColor, state.origColor, tPlastic)
 
-					local pr = base.R + (orig.R - base.R) * tPlastic
-					local pg = base.G + (orig.G - base.G) * tPlastic
-					local pb = base.B + (orig.B - base.B) * tPlastic
-
-					local newColor: Color3 = plasticColor:Lerp(neonColor, t)
+					local newColor: vector = vector.lerp(plasticColor, neonColor, t)
 					local newMaterial: Enum.Material
 
 					if t > 0.5 or state.isHybrid then
@@ -293,7 +288,7 @@ const function start(): ()
 						newColor = state.origColor
 					end
 
-					const r: number, g: number, b: number = newColor.R, newColor.G, newColor.B
+					const r: number, g: number, b: number = newColor.x, newColor.y, newColor.z
 
 					maxChannel = r
 
@@ -302,7 +297,7 @@ const function start(): ()
 
 					if maxChannel > 1 then
 						const inv: number = 1 / maxChannel
-						newColor = Color3.new(r * inv, g * inv, b * inv)
+						newColor = vector.create(r * inv, g * inv, b * inv)
 					end
 
 					if state.lastMaterial ~= newMaterial then
@@ -311,8 +306,8 @@ const function start(): ()
 					end
 
 					if state.lastColor ~= newColor then -- reduce areColorsEqual calls
-						if not utils.areColorsEqual(state.lastColor, newColor, 0.01) then
-							part.Color = newColor
+						if not utils.areVectorsEqual(state.lastColor, newColor, 0.01) then
+							part.Color = newColor3(newColor.x, newColor.y, newColor.z)
 							state.lastColor = newColor
 						end
 					end
@@ -384,10 +379,12 @@ const function start(): ()
 								allInactive = false
 							end
 
-							if state.lastColor3 ~= signState.neutralizedColor then
-							    if not utils.areColorsEqual(state.lastColor3, signState.neutralizedColor, 0.01) then
-									gui.ImageLabel.ImageColor3 = signState.neutralizedColor
-									state.lastColor3 = signState.neutralizedColor
+							const natColor: vector = signState.neutralizedColor
+
+							if state.lastColor ~= signState.neutralizedColor then
+							    if not utils.areVectorsEqual(state.lastColor, signState.neutralizedColor, 0.01) then
+									gui.ImageLabel.ImageColor3 = newColor3(natColor.x, natColor.y, natColor.z)
+									state.lastColor = signState.neutralizedColor
 								end
 							end
 						end
@@ -409,24 +406,25 @@ const function start(): ()
 							state.currentBrightness += (0 - state.currentBrightness) * signLerpSpeedClamped
 						end
 
-						const base: Color3 = state.baseColor
-						local light: Color3 = signState.neutralizedColor
+						const base: vector = state.baseColor
+						local light: vector = signState.neutralizedColor
 						const scale: number = 1 + ((clamp(state.currentBrightness, 0, 4)) * signConfig.decalIntensityMultiplier) -- multiply to better match up the brightness with the SurfaceGui rendering mode
 
 						const fadeStart: number = 0.05
 						const brightness: number = state.currentBrightness
 
-						const r: number = base.R * light.R * scale
-						const g: number = base.G * light.G * scale
-						const b: number = base.B * light.B * scale
+						const r: number = base.x * light.x * scale
+						const g: number = base.y * light.y * scale
+						const b: number = base.z * light.z * scale
 
-						local newColor: Color3? = nil
-						const litColor: Color3 = Color3.new(r, g, b)
+						local newColor: vector? = nil
+						const litColor: vector = vector.create(r, g, b)
 
 						if not inPart then
 						    if brightness < fadeStart then
                                 const t: number = clamp(brightness / fadeStart, 0, 1)
-                                newColor = litColor:Lerp(state.baseColor, 1 - t)
+                               -- newColor = litColor:Lerp(state.baseColor, 1 - t)
+                                newColor = vector.lerp(litColor, state.baseColor, 1-t)
                             else
                                 newColor = litColor
 							end
@@ -434,10 +432,10 @@ const function start(): ()
 						    newColor = litColor
 						end
 
-						if state.lastColor3 ~= newColor then
-						    if not utils.areColorsEqual(state.lastColor3, newColor, 0.01) then
-								decal.Color3 = newColor
-								state.lastColor3 = newColor
+						if state.lastColor ~= newColor then
+						    if not utils.areVectorsEqual(state.lastColor, newColor, 0.01) then
+								decal.Color3 = newColor3(newColor.x, newColor.y, newColor.z)
+								state.lastColor = newColor
 							end
 						end
 

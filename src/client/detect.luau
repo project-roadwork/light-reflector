@@ -84,8 +84,10 @@ const function _deactivateAllStates(): ()
 		state.targetIntensity = 0
 		state.isActive = false
 
-		if state.origColor then
-			part.Color = state.origColor
+		const origColor: vector = state.origColor
+
+		if origColor then
+			part.Color = Color3.new(origColor.x, origColor.y, origColor.z)
 			part.Material = reflectorConfig.inactiveMaterial
 		end
 
@@ -176,8 +178,7 @@ const function _processReflector(entity: jecs.Entity, source: types.LightSource,
 	end
 
     if state.intensityAccum > 0 then
-        const avg: vector = state.colorAccum / state.intensityAccum
-        state.neutralizedColor = Color3.new(avg.x, avg.y, avg.z)
+        state.neutralizedColor = state.colorAccum / state.intensityAccum
     else
         state.neutralizedColor = state.origColor
     end
@@ -354,13 +355,14 @@ const function _processSign(entity: jecs.Entity, source: types.LightSource)
 		local state: types.DecalState? = signState.decalState
 
 		if not state then
-			local baseColor: Color3 = Color3.fromRGB(255, 255, 255)
-			const attribute: Color3? = mainDecal:GetAttribute("BaseColor")
+			local baseColor: vector = vector.one
+			const attribute: vector? = mainDecal:GetAttribute("BaseColor")
 
 			if attribute then
 				baseColor = attribute
 			else
-				baseColor = mainDecal.Color3
+			    const mDColor: Color3 = mainDecal.Color3
+				baseColor = vector.create(mDColor.R, mDColor.G, mDColor.B)
 				mainDecal:SetAttribute("BaseColor", baseColor)
 			end
 
@@ -377,8 +379,7 @@ const function _processSign(entity: jecs.Entity, source: types.LightSource)
 	end
 
 	if signState.intensityAccum > 0 then
-        const avg: vector = signState.colorAccum / signState.intensityAccum
-        signState.neutralizedColor = Color3.new(avg.x, avg.y, avg.z)
+        signState.neutralizedColor = signState.colorAccum / signState.intensityAccum
     end
 end
 
@@ -517,7 +518,7 @@ const function start() : ()
 	                if not _detectedEntitiesThisFrame[entity] then
                         signState.colorAccum = vector.zero
                         signState.intensityAccum = 0
-                        signState.neutralizedColor = Color3.fromRGB(255,255,255)
+                        signState.neutralizedColor = vector.one
                     end
 
 					const surfaceGuiState: types.SurfaceGuiState? = signState.surfaceGuiState

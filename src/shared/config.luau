@@ -27,7 +27,7 @@ local LOCKED: boolean = false
 
 -- Flags
 const FLAGS = {
-	["PCALL"] = true, -- Enable protected calls or not. Useful for debugging.
+	["PCALL"] = false, -- Enable protected calls or not. Useful for debugging.
 	["TRACK_ANCESTRY_CONNECTIONS"] = false, -- Enable to track ancestry connections
 	["NO_STATE_POOLING"] = false, -- Disables pooling/recycling of states (tables)
 }

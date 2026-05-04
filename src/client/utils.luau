@@ -355,7 +355,30 @@ const function pcallRetry(func: (...any) -> (...any), maxRetries: number, ...): 
 end
 
 --[=[
-	Public: Determines if the provided Color3's are equal
+	Public: Determines if the provided vectors are equal
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function areVectorsEqual(vectorA: vector, vectorB: vector, epsilon: number?): boolean
+	epsilon = epsilon or 0.005
+
+	const aX: number, aY: number, aZ: number = vectorA.x, vectorA.y, vectorA.z
+	const bX: number, bY: number, bZ: number = vectorB.x, vectorB.y, vectorB.z
+
+	local d: number = aY - bY
+	if d > epsilon or d < -epsilon then return false end
+
+	d = aY - bY
+	if d > epsilon or d < -epsilon then return false end
+
+	d = aZ - bZ
+	if d > epsilon or d < -epsilon then return false end
+
+	return true
+end
+
+--[=[
+	Public: Determines if the provided Color3s are equal
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
@@ -378,7 +401,7 @@ const function areColorsEqual(colorA: Color3, colorB: Color3, epsilon: number?):
 end
 
 --[=[
-	Public: Determines if the provided raw Color3's are equal
+	Public: Determines if the provided raw Color3s are equal
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
@@ -584,6 +607,7 @@ return table.freeze({
 	normalizeBaseColor = normalizeBaseColor,
 	pcallRetry = pcallRetry,
 	areColorsEqual = areColorsEqual,
+	areVectorsEqual = areVectorsEqual,
 	areColorsEqualRaw = areColorsEqualRaw,
 	validFaces = validFaces,
 	renderWait = renderWait,

@@ -149,6 +149,7 @@ export type Utils = {
 
 	read pcallRetry: ((...any) -> (...any), maxRetries: number, ...any) -> (boolean, string?),
 	read areColorsEqual: (colorA: Color3, colorB: Color3, epsilon: number?) -> boolean,
+	read areVectorsEqual: (vectorA: vector, vectorB: vector, epsilon: number?) -> boolean,
 	read areColorsEqualRaw: (aR: number, aG: number, aB: number, bR: number, bG: number, bB: number, epsilon: number?) -> boolean,
 	read renderWait: (waitTime: number?) -> number,
 
@@ -292,15 +293,15 @@ export type SurfaceGuiState = {
 	lastTransparency: number,
 	lastBrightness: number,
 	lastLightInfluence: number,
-	lastColor3: Color3
+	lastColor: vector
 }
 
 export type DecalState = {
 	_inPool: boolean,
-	baseColor: Color3,
+	baseColor: vector,
 	currentBrightness: number,
 	targetBrightness: number,
-	lastColor3: Color3
+	lastColor: vector
 }
 
 export type SurfaceGuiTemplate = SurfaceGui & {
@@ -318,13 +319,13 @@ export type ReflectorState = {
 	lastIntensity: number,
 	baseIntensity: number,
 
-	baseColor: Color3,
-	origColor: Color3,
+	baseColor: vector,
+	origColor: vector,
 	isActive: boolean?,
 	lastIsActive: boolean?,
 
 	lastMaterial: Enum.Material,
-	lastColor: Color3,
+	lastColor: vector,
 
 	isHybrid: boolean?,
 	hybridFadeRange: number?,
@@ -344,7 +345,7 @@ export type ReflectorState = {
 	slopeNormalWorld: Vector3?,
 	faceNormalWorld: Vector3?,
 
-	neutralizedColor: Color3,
+	neutralizedColor: vector,
 	colorAccum: vector,
 	intensityAccum: number,
 
@@ -364,7 +365,7 @@ export type SignEntity = {
 	mainDecal: Decal?,
 	cellKey: vector,
 
-	neutralizedColor: Color3,
+	neutralizedColor: vector,
 	colorAccum: vector,
 	intensityAccum: number,
 
