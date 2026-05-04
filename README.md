@@ -28,7 +28,8 @@
 * States and caching; [view benchmarks (WIP) ➚](./docs/standalone/997_benchmarks.md)
 * [ECS](https://en.wikipedia.org/wiki/Entity_component_system) architecture via [Jecs](https://github.com/Ukendio/jecs.git)
 
-<details>Performance Strategies</summary>
+<details>
+    <summary>Performance Strategies</summary>
 
 ## Performance
 * State caching
