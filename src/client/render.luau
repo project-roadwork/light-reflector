@@ -169,7 +169,6 @@ const function start(): ()
 									state.lastColor = baseColor
 								end
 							end
-
 						end
 
 						if state.isHybrid then

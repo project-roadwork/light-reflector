@@ -21,4 +21,14 @@
       },
     },
   },
+  "languages": {
+    "Luau": {
+      "formatter": {
+        "external": {
+          "command": "stylua",
+          "arguments": ["-"],
+        },
+      },
+    },
+  },
 }

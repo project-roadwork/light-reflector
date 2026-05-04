@@ -1,5 +1,18 @@
 --!strict
 --!native
+--
+--[[
+    SPDX-FileCopyrightText: 2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>
+    SPDX-FileCopyrightText: 2026 Project Roadwork and Contributors
+
+    SPDX-License-Identifier: MPL-2.0
+]]
+--
+-- Experiment 1 compares the following:
+-- number
+-- Color3
+--
+-- This module is also fully typed
 
 type Profiler = any
 
@@ -64,7 +77,6 @@ local module: BenchmarkModule = {
 				local _: Color3 = Color3.new(r, g, b)
 			end
 		end,
-
 	},
 }
 

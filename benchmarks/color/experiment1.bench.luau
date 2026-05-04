@@ -1,4 +1,17 @@
 --!native
+--
+--[[
+    SPDX-FileCopyrightText: 2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>
+    SPDX-FileCopyrightText: 2026 Project Roadwork and Contributors
+
+    SPDX-License-Identifier: MPL-2.0
+]]
+--
+-- Experiment 1 compares the following:
+-- number
+-- Color3
+--
+-- This module is not typed
 
 return {
 	ParameterGenerator = function()
@@ -54,6 +67,5 @@ return {
 				local _ = Color3.new(r, g, b)
 			end
 		end,
-
 	},
 }
