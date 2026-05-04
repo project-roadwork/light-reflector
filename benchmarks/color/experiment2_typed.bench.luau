@@ -28,7 +28,7 @@ type BenchmarkModule = {
 
 local module: BenchmarkModule = {
 	ParameterGenerator = function(): number
-		return 20000
+		return 1000
 	end,
 
 	Functions = {
