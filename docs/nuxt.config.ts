@@ -45,7 +45,8 @@ export default defineNuxtConfig({
   },
 
   ogImage: {
-    enabled: false,
+    enabled: true,
+    zeroRuntime: true,
   },
 
   app: {
