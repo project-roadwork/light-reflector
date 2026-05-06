@@ -1,0 +1,37 @@
+name: Publish
+
+on:
+push:
+branches:
+- main
+
+jobs:
+publish:
+runs-on: codeberg-tiny
+
+```
+steps:
+  - uses: actions/checkout@v5
+
+  - name: Setup pnpm
+    uses: pnpm/action-setup@v4
+    with:
+      version: 9
+
+  - name: Setup Node
+    uses: actions/setup-node@v4
+    with:
+      node-version: 20
+
+  - name: Build site
+    run: |
+      cd docs
+      pnpm install --frozen-lockfile
+      pnpm build
+
+  - uses: actions/git-pages@v2
+    with:
+      site: https://codeberg.org/project-roadwork/light-reflector
+      token: ${{ forge.token }}
+      source: docs/.output/public/
+```
