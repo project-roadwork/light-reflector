@@ -39,5 +39,9 @@ export default defineNuxtConfig({
     enabled: false,
   },
 
+  app: {
+    baseURL: "/light-reflector/",
+  },
+
   compatibilityDate: "2024-07-06",
 });
