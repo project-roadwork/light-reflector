@@ -1,9 +1,12 @@
+const logo: string =
+  "https://codeberg.org/project-roadwork/light-reflector/raw/branch/main/assets/images/internal/branding/icon-logo-compact-svg.svg";
+
 export default defineAppConfig({
   shadcnDocs: {
     site: {
-      name: "shadcn-docs-nuxt",
+      name: "Light Reflector",
       description:
-        "Beautifully designed Nuxt Content template built with shadcn-vue. Customizable. Compatible. Open Source.",
+        "A light reflector system that simulates long-rage reflections of Decals and BaseParts.",
     },
     theme: {
       customizable: false,
@@ -11,7 +14,7 @@ export default defineAppConfig({
       radius: 0.5,
     },
     header: {
-      title: "shadcn-docs-starter",
+      title: "Light Reflector",
       showTitle: true,
       darkModeToggle: true,
       languageSwitcher: {
@@ -20,14 +23,20 @@ export default defineAppConfig({
         dropdownType: "select",
       },
       logo: {
-        light: "/logo.svg",
-        dark: "/logo-dark.svg",
+        light: logo,
+        dark: logo,
       },
       nav: [],
       links: [
         {
-          icon: "lucide:github",
-          to: "https://github.com/ZTL-UwU/shadcn-docs-nuxt",
+          icon: "lucide:codeberg",
+          to: "https://codeberg.org/project-roadwork/light-reflector.git",
+          target: "_blank",
+        },
+
+        {
+          icon: "lucide:discord",
+          to: "https://discord.gg/sd4XfAqNF9",
           target: "_blank",
         },
       ],
@@ -41,11 +50,18 @@ export default defineAppConfig({
       showTitle: true,
     },
     footer: {
-      credits: "Copyright © 2024",
+      credits:
+        "Light Reflector © 2026 Project Roadwork, Illinois_Roadbuff. Source code is licensed under the Mozilla Public License 2.0. Documentation content is licensed under CC BY-SA 4.0.",
       links: [
         {
-          icon: "lucide:github",
-          to: "https://github.com/ZTL-UwU/shadcn-docs-nuxt",
+          icon: "lucide:codeberg",
+          to: "https://codeberg.org/project-roadwork/light-reflector.git",
+          target: "_blank",
+        },
+
+        {
+          icon: "lucide:discord",
+          to: "https://discord.gg/sd4XfAqNF9",
           target: "_blank",
         },
       ],
@@ -54,15 +70,15 @@ export default defineAppConfig({
       enable: true,
       links: [
         {
-          title: "Star on GitHub",
+          title: "Star on Codeberg",
           icon: "lucide:star",
-          to: "https://github.com/ZTL-UwU/shadcn-docs-nuxt",
+          to: "https://codeberg.org/project-roadwork/light-reflector.git",
           target: "_blank",
         },
         {
           title: "Create Issues",
           icon: "lucide:circle-dot",
-          to: "https://github.com/ZTL-UwU/shadcn-docs-nuxt/issues",
+          to: "https://codeberg.org/project-roadwork/light-reflector/issues",
           target: "_blank",
         },
       ],
