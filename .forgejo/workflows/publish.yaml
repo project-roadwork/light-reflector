@@ -7,7 +7,7 @@ on:
 
 jobs:
   publish:
-    runs-on: codeberg-tiny
+    runs-on: codeberg-medium
 
     steps:
       - uses: actions/checkout@v5
@@ -21,6 +21,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: "pnpm"
+          cache-dependency-path: docs/pnpm-lock.yaml
 
       - name: Build site
         run: |
