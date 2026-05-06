@@ -24,11 +24,11 @@ jobs:
           cache: "pnpm"
           cache-dependency-path: docs/pnpm-lock.yaml
 
-      - name: Build site
+      - name: Generate site
         run: |
           cd docs
           pnpm install --frozen-lockfile --prefer-offline
-          pnpm build
+          pnpm generate
 
       - uses: actions/git-pages@v2
         with:
