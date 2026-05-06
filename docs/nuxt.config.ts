@@ -43,5 +43,9 @@ export default defineNuxtConfig({
     baseURL: "/light-reflector/",
   },
 
+  image: {
+    provider: "ipxStatic",
+  },
+
   compatibilityDate: "2024-07-06",
 });
