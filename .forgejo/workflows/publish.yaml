@@ -32,6 +32,6 @@ jobs:
 
       - uses: actions/git-pages@v2
         with:
-          site: https://${{ forge.repository_owner }}.codeberg.page/${{ forge.repository_name }}/
+          site: https://project-roadwork.codeberg.page/light-reflector/
           token: ${{ forge.token }}
           source: docs/.output/public/
