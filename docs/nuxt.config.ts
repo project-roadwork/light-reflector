@@ -27,6 +27,15 @@ export default defineNuxtConfig({
 
   nitro: {
     preset: "static",
+    prerender: {
+      failOnError: false,
+    },
+  },
+
+  content: {
+    experimental: {
+      clientDB: false,
+    },
   },
 
   mdc: {
