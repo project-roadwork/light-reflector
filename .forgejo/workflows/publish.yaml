@@ -19,7 +19,7 @@ jobs:
 
           echo "$MESSAGE" | grep -q "^docs:" || {
             echo "Skipping publish: no docs: prefix"
-            exit 0
+            exit 1
           }
 
       - name: Setup pnpm
