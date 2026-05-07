@@ -12,6 +12,16 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Check commit message
+        run: |
+          MESSAGE=$(git log -1 --pretty=%B)
+          echo "Commit message: $MESSAGE"
+
+          echo "$MESSAGE" | grep -q "^docs:" || {
+            echo "Skipping publish: no docs: prefix"
+            exit 0
+          }
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
