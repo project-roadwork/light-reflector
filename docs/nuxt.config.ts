@@ -13,6 +13,8 @@ export default defineNuxtConfig({
     ],
   },
 
+  css: ["~/assets/css/tailwind.css"],
+
   vite: {
     optimizeDeps: {
       include: [
@@ -40,7 +42,7 @@ export default defineNuxtConfig({
 
   mdc: {
     highlight: {
-      langs: ["ts", "js", "json", "bash", "html", "css", "luau"],
+      langs: ["ts", "js", "json", "bash", "html", "css", "luau", "toml"],
     },
   },
 

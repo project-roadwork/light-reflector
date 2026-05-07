@@ -92,6 +92,17 @@
         @apply border-border outline-ring/50;
     }
 
+    body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: url("https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/View_of_Weber_Road_and_Division_Street_in_Crest_Hill%2C_Illinois_%28January_2026%29_11.tif/lossy-page1-3840px-View_of_Weber_Road_and_Division_Street_in_Crest_Hill%2C_Illinois_%28January_2026%29_11.tif.jpg")
+            center / cover no-repeat;
+        opacity: 0.04;
+        pointer-events: none;
+        z-index: -1;
+    }
+
     body {
         @apply bg-background text-foreground;
     }

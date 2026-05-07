@@ -15,7 +15,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Geist"],
+        sans: ["Overpass"],
         mono: ["Geist Mono"],
       },
       colors: {

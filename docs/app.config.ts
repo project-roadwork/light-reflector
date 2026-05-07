@@ -9,7 +9,7 @@ export default defineAppConfig({
         "A light reflector system that simulates long-rage reflections of Decals and BaseParts.",
     },
     theme: {
-      customizable: false,
+      customizable: true,
       color: "stone",
       radius: 0.5,
     },
@@ -29,13 +29,13 @@ export default defineAppConfig({
       nav: [],
       links: [
         {
-          icon: "lucide:codeberg",
+          icon: "simple-icons:codeberg",
           to: "https://codeberg.org/project-roadwork/light-reflector.git",
           target: "_blank",
         },
 
         {
-          icon: "lucide:discord",
+          icon: "simple-icons:discord",
           to: "https://discord.gg/sd4XfAqNF9",
           target: "_blank",
         },
@@ -51,16 +51,16 @@ export default defineAppConfig({
     },
     footer: {
       credits:
-        "Light Reflector © 2026 Project Roadwork, Illinois_Roadbuff. Source code is licensed under the Mozilla Public License 2.0. Documentation content is licensed under CC BY-SA 4.0.",
+        "Light Reflector © 2025-2026 Project Roadwork, Illinois_Roadbuff. Source code is licensed under MPL-2.0; documentation content is licensed under CC BY-SA 4.0.",
       links: [
         {
-          icon: "lucide:codeberg",
+          icon: "simple-icons:codeberg",
           to: "https://codeberg.org/project-roadwork/light-reflector.git",
           target: "_blank",
         },
 
         {
-          icon: "lucide:discord",
+          icon: "simple-icons:discord",
           to: "https://discord.gg/sd4XfAqNF9",
           target: "_blank",
         },
