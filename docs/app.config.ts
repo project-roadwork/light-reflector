@@ -7,6 +7,8 @@ export default defineAppConfig({
       name: "Light Reflector",
       description:
         "A light reflector system that simulates long-rage reflections of Decals and BaseParts.",
+      ogImageComponent: "ShadcnDocs",
+      ogImageColor: "light", // or 'dark'
     },
     theme: {
       customizable: true,
@@ -48,10 +50,19 @@ export default defineAppConfig({
     main: {
       breadCrumb: true,
       showTitle: true,
+
+      editLink: {
+        enable: true,
+        pattern:
+          "https://codeberg.org/project-roadwork/light-reflector/_edit/main/docs/content/:path",
+        text: "Edit this page",
+        icon: "lucide:square-pen",
+        placement: ["docsFooter", "toc"],
+      },
     },
     footer: {
       credits:
-        "Light Reflector © 2025-2026 Project Roadwork, Illinois_Roadbuff. Source code is licensed under MPL-2.0; documentation content is licensed under CC BY-SA 4.0.",
+        "Light Reflector © 2025-2026 Project Roadwork, Illinois_Roadbuff. Source code is licensed under MPL-2.0; documentation content is licensed under CC BY-SA 4.0 unless otherwise noted.",
       links: [
         {
           icon: "simple-icons:codeberg",
