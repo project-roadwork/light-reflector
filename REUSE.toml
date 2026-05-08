@@ -6,12 +6,13 @@
 
 version = 1
 
-# README, documentaiton, and branding
+# README, documentaiton content, and branding
 [[annotations]]
 path = [
 
     "README.md",
-    "docs/standalone/**",
+    "docs/content/**",
+    "misc/old-docs/**",
     "assets/images/internal/branding/**",
 ]
 SPDX-FileCopyrightText = [
@@ -19,6 +20,27 @@ SPDX-FileCopyrightText = [
 "2025-2026 Project Roadwork and Contributors"]
 
 SPDX-License-Identifier = "CC-BY-SA-4.0"
+
+# Documentation website
+[[annotations]]
+path = [
+  "docs/app.config.ts",
+  "docs/nuxt.config.ts",
+  "docs/.npmrc",
+  "docs/package.json",
+  "docs/pnpm-lock.yaml",
+  "docs/README.md",
+  "docs/tailwind.config.js",
+  "docs/tsconfig.json",
+  "docs/assets/css/**"
+]
+SPDX-FileCopyrightText = [
+  "2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>",
+  "2025-2026 Project Roadwork and Contributors",
+  "2024 Tony Zhang"
+]
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Uses the shadcn-docs-nuxt template"
 
 # Benchmark Graphs
 [[annotations]]
@@ -39,7 +61,8 @@ path = [
     "roblox-test.project.json",
     "standalone.project.json",
     "misc/ts-scrap/package.json",
-    "misc/ts-scrap/typescript.project.json"
+    "misc/ts-scrap/typescript.project.json",
+    ".forgejo/workflows/**"
 ]
 SPDX-FileCopyrightText = [
 "2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>",
@@ -59,14 +82,23 @@ path = [
 SPDX-FileCopyrightText = [
 "2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>",
 ]
-
 SPDX-License-Identifier = "CC-BY-SA-4.0"
+
+[[annotations]]
+path = [
+    "assets/images/external/commons/View_of_Weber_Road_and_Division_Street_in_Crest_Hill,_Illinois_January_2026_11.jpg"
+]
+SPDX-FileCopyrightText = [
+"2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>",
+]
+SPDX-License-Identifier = "CC-BY-SA-4.0"
+SPDX-FileComment = "Source: https://commons.wikimedia.org/wiki/File:View_of_Weber_Road_and_Division_Street_in_Crest_Hill,_Illinois_(January_2026)_11.tif"
 
 # Illinois_Roadbuff's images and work under CC BY 4.0
 [[annotations]]
 path = [
 
-    "assets/images/external/commons/New_Traffic_Signals_in_Lockport,_Illinois_(November_2025)_02.jpg",
+    "assets/images/external/commons/New_Traffic_Signals_in_Lockport,_Illinois_November_2025_02.jpg",
     "assets/images/external/commons/i55_i355_interchange.jpg"
 
 ]
@@ -97,6 +129,9 @@ path = [
     ".zed/settings.json",
     "misc/ts-scrap/tsconfig.json",
     "misc/ts-scrap/pnpm-lock.yaml",
+    "docs/.vscode/**",
+    "docs/.gitignore"
+
 ]
 SPDX-FileCopyrightText = "NONE"
 SPDX-License-Identifier = "CC0-1.0 OR Unlicense"

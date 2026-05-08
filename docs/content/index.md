@@ -8,7 +8,7 @@ description: A light reflector system that simulates long-range reflections of D
 ---
 actions:
   - name: Get started
-    to: /getting-started/introduction
+    to: /guide/introduction
   - name: Codeberg
     variant: outline
     to: https://codeberg.org/project-roadwork/light-reflector.git
