@@ -34,7 +34,7 @@ export type Object = Instance
 
 export type Pool<T> = {
 	Objects: {T},
-	ActiveObjects: {T},
+	ActiveObjects: {[T]: boolean},
 	HierarchicalPools: { [T]: Pool<T> },
 
 	ObjectTemplate: T,
@@ -73,7 +73,7 @@ export type ConfigKeys = typeof(baseConfig.Constraints.KEYS)
 export type BASE_CONFIG = typeof(baseConfig)
 
 -- Grid Types
-export type GridModule = typeof(require("../client/grid"))
+export type GridModule = typeof(grid)
 
 export type EntityId = jecs.Entity<nil>
 type Key = string | number

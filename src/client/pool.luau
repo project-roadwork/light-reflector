@@ -83,7 +83,7 @@ local leakLogged: boolean = false
 export type Object = Instance
 export type Pool<T> = {
 	Objects: {T},
-	ActiveObjects: {T},
+	ActiveObjects: {[T]: boolean},
 	HierarchicalPools: { [T]: Pool<T> },
 
 	ObjectTemplate: T,
@@ -144,7 +144,7 @@ const mutex = require("./mutex")
 function ObjectPool.new(objectTemplate: Object, createObject: (Object) -> Object, resetObject: (Object) -> (), minSize: number, maxSize: number): Pool<any>
 	local self = setmetatable({
 		Objects = {} :: {Object},
-		ActiveObjects = {} :: {Object},
+		ActiveObjects = {} :: {[Object]: boolean},
 		HierarchicalPools = {} :: {[Object]: Pool<any>},
 
 		ObjectTemplate = objectTemplate,
@@ -196,7 +196,7 @@ end
 ---@param count number  Number of objects to prewarm the pool with.
 function ObjectPool:Prewarm(count: number): ()
 	--	debugger.print("Info", "Prewarming the pool with " .. count .. " objects.")
-	for i = 1, count do
+	for i: number = 1, count do
 		const obj: Object = self.CreateObject(self.ObjectTemplate)
 		table.insert(self.Objects, obj)
 	end
@@ -243,16 +243,17 @@ function ObjectPool:GetObject(): Object
 			);
 		end
 	end
-	table.insert(self.ActiveObjects, obj)
+	self.ActiveObjects[obj] = true
 	self.UsageMetrics.ActiveCount += 1
 
 	self.UsageMetrics.PeakActive = math.max(self.UsageMetrics.PeakActive, self.UsageMetrics.ActiveCount)
 	--debugger.print("Info",
 	--	"Object retrieved from pool. Active count: " .. self.UsageMetrics.ActiveCount
 	--);
-	if self.ObjectTaken then
+--	if self.ObjectTaken then
 		--	self.ObjectTaken:Fire(obj)
-	end
+		--	end
+		--
 	self.Mutex:unlock()
 
 	return obj :: Object
@@ -267,22 +268,19 @@ function ObjectPool:ReturnObject(obj: Object): (boolean, string?)
 	end
 
 	self.Mutex:lock()
-	const index: number? = table.find(self.ActiveObjects :: {Instance}, obj)
+	const index: boolean? = self.ActiveObjects[obj]
 	if index then
-		table.remove(self.ActiveObjects, index)
+		self.ActiveObjects[obj] = nil
 
 		const UsageMetrics: UsageMetrics = self.UsageMetrics
 
-
-		self.UsageMetrics.ActiveCount -= 1
+		UsageMetrics.ActiveCount -= 1
 		self.ResetObject(obj)
 		Returned += 1
 
-		const MaxSize: number = self.MaxSize
-
 		if #self.Objects < self.MaxSize then
 			table.insert(self.Objects, obj)
-			self.UsageMetrics.AvailableCount += 1
+			UsageMetrics.AvailableCount += 1
 		else
 			obj:Destroy()
 			debugger.warn("Warning",
@@ -292,12 +290,13 @@ function ObjectPool:ReturnObject(obj: Object): (boolean, string?)
 		--		debugger.print("Info",
 		--			"Object returned to pool. Active count: " .. self.UsageMetrics.ActiveCount
 		--		);
-		if self.ObjectReturned then
+	--	if self.ObjectReturned then
 			--	self.ObjectReturned:Fire(obj)
-		end
+			--	end
+			--
 		if self.HierarchicalPools[obj] then
 			local childPool: Pool<any> = self.HierarchicalPools[obj]
-			for _, child in ipairs(childPool.ActiveObjects) do
+			for child: Object, boolean: boolean in childPool.ActiveObjects do
 				childPool:ReturnObject(child)
 			end
 		end
