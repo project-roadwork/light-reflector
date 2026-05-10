@@ -134,7 +134,7 @@ I kind of scraped the idea, but if anyone is willing to implement support for it
 > * Do not remove or alter copyright, license, or attribution notices in the source files *(Section 3.4)*.
 >
 > **Make the source code of modified files available**
-> * Any files you modify that are covered by the MPL must be abailable in source form when you distribute them *(Section 3.2)*.
+> * Any files you modify that are covered by the MPL must be available in source form when you distribute them *(Section 3.2)*.
 >
 > **Keep modified MPL files under the MPL**
 > * These files must remain licensed under the MPL, even when the rest of your project uses a different license *(Section 3.3)*.
