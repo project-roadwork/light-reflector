@@ -1,1 +1,2 @@
 * text=auto
+*.d.ts linguist-vendored=false linguist-generated=false indexable=true

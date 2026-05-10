@@ -68,11 +68,7 @@ Should you need additional support, *you may join my [Discord server](https://di
     <summary>Miscellaneous</summary>
 
 ## TypeScript support?
-I was initially considering this; however, I do not think that it is worth it since all I would be doing is creating `d.ts` files. Additionally, TypeScript is compiled into Luau code anyway.... I could not get any dependencies to work either like `Rojo project contained no data for include folder!`, etc.
-
-In my opinion, Luau's strict typing already seems sufficient to me and I do not really see a point of moving into TypeScript.
-
-I kind of scraped the idea, but if anyone is willing to implement support for it for this repository, I started some `d.ts` files in `misc/ts-scrap`.
+I tried to add `TypeScript` support; however, I am unsure whether it works correctly or not... I did not cover all luau files with `d.ts` files.
 
 </details>
 
