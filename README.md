@@ -8,7 +8,7 @@
 
  **A light reflector system that simulates long-range reflections of `Decals` and `BaseParts`.**
 
-[![License: MPL 2.0](https://img.shields.io/badge/MPL_2.0-License-gray.svg?logo=mozilla&labelColor=28733f)](https://opensource.org/licenses/MPL-2.0) [![Codeberg](https://img.shields.io/badge/Codeberg-Main%20Repository-white?logo=codeberg)](https://codeberg.org/project-roadwork/light-reflector.git) [![GitHub](https://img.shields.io/badge/GitHub-Mirror/Backup%20Repository-darkgrey?logo=github)](https://github.com/project-roadwork/light-reflector.git) [![Documentation](https://img.shields.io/static/v1?label=&message=Documentation&color=informational)](./docs/standalone)
+[![License: MPL 2.0](https://img.shields.io/badge/MPL_2.0-License-gray.svg?logo=mozilla&labelColor=28733f)](https://opensource.org/licenses/MPL-2.0) [![Codeberg](https://img.shields.io/badge/Codeberg-Main%20Repository-white?logo=codeberg)](https://codeberg.org/project-roadwork/light-reflector.git) [![GitHub](https://img.shields.io/badge/GitHub-Mirror/Backup%20Repository-darkgrey?logo=github)](https://github.com/project-roadwork/light-reflector.git) [![Documentation](https://img.shields.io/static/v1?label=&message=Documentation&color=informational)](https://project-roadwork.codeberg.page/light-reflector/)
 
 > [!IMPORTANT]
 > **Use the [main repository in Codeberg](https://codeberg.org/project-roadwork/light-reflector.git) for issues, pull requests, and contributions.**
@@ -52,7 +52,7 @@ For more information, *read the [installation guide](./docs/standalone/002_insta
 
 ## Getting Started
 
-After installation, follow the usage guide in the [documentation](./docs/standalone/001_index.md) or check the accompanying examples in [./examples](./examples).
+After installation, follow the usage guide in the [documentation](https://project-roadwork.codeberg.page/light-reflector/) or check the accompanying examples in [./examples](./examples).
 
 The accompanying examples and usage guide will provide you with practical setups for tags, configuration, initialization, and registering sources.
 
