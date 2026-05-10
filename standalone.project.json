@@ -2,7 +2,7 @@
   "name": "lightreflector",
   "tree": {
     "$className": "Folder",
-    "lightreflector": {
+    "src": {
       "$path": "src"
     }
   }

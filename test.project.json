@@ -1,15 +1,12 @@
 {
   "name": "lightreflector-dev",
-
   "emitLegacyScripts": false,
 
   "tree": {
     "$className": "DataModel",
-
     "ReplicatedStorage": {
       "Packages": {
         "$className": "Folder",
-
         "lightreflector": {
           "$path": "src"
         }

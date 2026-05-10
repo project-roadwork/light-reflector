@@ -1,0 +1,32 @@
+{
+  "name": "@rbxts/light-reflector",
+  "description": "A light reflector system that simulates long-range reflections of Decals and BaseParts.",
+  "version": "2.4.0",
+  "main": "out/init.luau",
+  "typings": "out/index.d.ts",
+  "license": "MPL-2.0",
+  "type": "commonjs",
+  "homepage": "https://project-roadwork.codeberg.page/light-reflector/",
+  "repository": {
+    "type": "git",
+    "url": "https://codeberg.org/project-roadwork/light-reflector.git"
+  },
+  "author": {
+    "name": "Illinois_Roadbuff (Rogue Jr)"
+  },
+  "files": [
+    "**/out/**",
+    "!**/*.tsbuildinfo"
+  ],
+  "dependencies": {
+    "@rbxts/compiler-types": "^3.0.0-types.0",
+    "@rbxts/types": "=1.0.918",
+    "roblox-ts": "^3.0.0",
+    "typescript": "=5.5.3"
+  },
+  "scripts": {
+    "serve": "rojo serve test.project.json",
+    "build": "pnpm rbxtsc build --verbose --rojo typescript.project.json",
+    "prepublishOnly": "pnpm run build"
+  }
+}

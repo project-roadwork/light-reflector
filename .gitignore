@@ -6,6 +6,8 @@ luau_packages
 node_modules
 
 lib
+/include
+out
 
 # Rojo
 sourcemap.json

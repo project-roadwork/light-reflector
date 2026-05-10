@@ -14,7 +14,7 @@
 */
 
 // Jecs Types
-export type JecsModule = any;
+export type JecsModule = typeof import("./jecs");
 
 // Pool Types
 export type PoolModule = any;
