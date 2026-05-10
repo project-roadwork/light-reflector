@@ -70,6 +70,9 @@ Should you need additional support, *you may join my [Discord server](https://di
 ## TypeScript support?
 I tried to add `TypeScript` support; however, I am unsure whether it works correctly or not... I did not cover all luau files with `d.ts` files.
 
+## Polytoria support?
+I really don't know how to think about this..... the APIs (especially with services) differ significantly. As much as I would want to add partial support for Polytoria, it would pretty much require a full module rewrite for Polytoria itself (mainly since there is no alternatives to `CollectionService` or `SurfaceGui`s), and I would have to maintain both versions.
+
 </details>
 
 ## License
