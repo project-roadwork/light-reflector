@@ -266,7 +266,7 @@ const function addReflector(part: Instance)
 				then canKeepTexturesAttribute
 				else reflectorConfig.defaultHybridCanKeepTextures
 
-			if not canKeepTexturesAttribute then
+			if not canKeepTextureProperty then
 				if clone.TextureID then
 					clone.TextureID = ""
 				end

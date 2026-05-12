@@ -19,7 +19,6 @@
 const types = require("../shared/types")
 const debugger: types.Debugger = require("../shared/debugger")
 const utils: types.Utils = require("./utils")
-const grid: types.GridModule = require("./grid")
 
 -- Variables
 const rangeTypes: { [types.RangeType]: boolean } = { near = true, far = true }
@@ -130,8 +129,6 @@ const function computeReflectorIntensity(part: BasePart, state: types.ReflectorS
 
 	local hybridFadeRange:number = 0
 	local hybridMinDistance:number = 0
-	local hybridCanKeepColorsAttribute:boolean? = nil
-	local hybridTransparencyAttribute:number? = nil
 
 	local canHybridKeepColors: boolean = false
 
@@ -303,8 +300,6 @@ const function computeSignIntensity(part : BasePart, state: types.SignEntity,  l
 		or (isReflective and FadeDistance * 2 or FadeDistance)
 
 	const distFade: number = clamp(dist / fadeRange, 0, 1)
-
-	const distanceFactor : number= clamp(1 - (dist / fadeRange), 0, 1)
 
 	const toDecal: Vector3 = (partPosition - seatPos).Unit
 
