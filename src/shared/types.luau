@@ -145,7 +145,8 @@ export type Utils = {
 	read fixPartOrientation: (part: BasePart, decal: Decal) -> (),
 	read normalizeBaseColor: (part: BasePart, isNormalizeEnabled: boolean) -> Color3,
 	read resetSurfaceGui: (SurfaceGuiPool: Pool<SurfaceGuiTemplate>, gui: SurfaceGuiTemplate) -> (),
-	read initPool: () -> Pool<SurfaceGuiTemplate>,
+	read initSurfaceGuiPool: () -> Pool<SurfaceGuiTemplate>,
+	read initPartPool: () -> Pool<Part>,
 
 	read pcallRetry: ((...any) -> (...any), maxRetries: number, ...any) -> (boolean, string?),
 	read areColorsEqual: (colorA: Color3, colorB: Color3, epsilon: number?) -> boolean,
@@ -156,6 +157,8 @@ export type Utils = {
 	read spawnDebugField: (origin: Vector3, forward: Vector3, maxDot: number, radius: number, count: number, debugFolder: Instance) -> (),
 
 	read validFaces: { [string]: boolean },
+
+	read copyPartProps: (part: Part, clone: Part) -> (),
 }
 
 
@@ -328,6 +331,7 @@ export type ReflectorState = {
 	lastColor: vector,
 
 	isHybrid: boolean?,
+	isMarking: boolean?,
 	hybridFadeRange: number?,
 	hybridMinDistance: number?,
 	hybridTransparencyMultiplier: number,

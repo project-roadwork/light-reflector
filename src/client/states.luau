@@ -110,6 +110,7 @@ const REFLECTOR_STATE_TEMPLATE: types.ReflectorState = {
 
 	isWedge = false,
 	isHybrid = false,
+	isMarking = false,
 	CFrame = CFrame.new(0, 0, 0),
 	baseIntensity = 1,
 
@@ -252,6 +253,8 @@ const function acquireReflectorState(part: BasePart, baseConfig: types.BASE_CONF
 
 	const state: types.ReflectorState = table.remove(pools.ReflectorState) or table.clone(REFLECTOR_STATE_TEMPLATE)
 
+	const isMarking: boolean = reflectorConfig.isMarkingEnabled
+	and attributes[reflectorConfig.markingAttributeName]
 	state._inPool = false
 
 	state.cellKey = vector.create(cellX or 0, 0, cellZ or 0)
@@ -259,11 +262,12 @@ const function acquireReflectorState(part: BasePart, baseConfig: types.BASE_CONF
 	state.origColor = vector.create(attributeOrigColor.R, attributeOrigColor.G, attributeOrigColor.B) or state.origColor
 	state.isWedge = isWedge
 	state.isHybrid = isHybrid
+	state.isMarking = isMarking
 	state.CFrame = partCFrame
 	state.baseIntensity = attributes[constraints.BASE_INTENSITY_ATTRIBUTE] or 1
 
 	state.hybridFadeRange = if isHybrid then
-		(attributes[reflectorConfig.hybridMaxDistanceAttribute] or reflectorConfig.defaultHybridMaxDistance) else nil
+		(attributes[reflectorConfig.hybridMaxDistanceAttribute] or (if isMarking then reflectorConfig.defaultMarkingMaxDistance else reflectorConfig.defaultHybridMaxDistance)) else nil
 
 	state.hybridMinDistance = if isHybrid then
 		(attributes[reflectorConfig.hybridMinDistanceAttribute] or reflectorConfig.defaultHybridMinDistance) else nil
@@ -278,6 +282,8 @@ const function acquireReflectorState(part: BasePart, baseConfig: types.BASE_CONF
 	state.slopeNormalWorld = slopeNormalWorld or state.slopeNormalWorld
 	state.faceNormalWorld = faceNormalWorld or state.faceNormalWorld
 	state.doesReflectorMove = attributes[generalConfig.movingPartAttribute]
+
+
 
 	return state
 end

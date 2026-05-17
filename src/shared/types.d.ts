@@ -157,7 +157,8 @@ export type Utils = {
     pool: Pool<SurfaceGuiTemplate>,
     gui: SurfaceGuiTemplate,
   ) => void;
-  readonly initPool: () => Pool<SurfaceGuiTemplate>;
+  readonly initSurfaceGuiPool: () => Pool<SurfaceGuiTemplate>;
+  readonly initPartPool: () => Pool<Part>;
 
   readonly pcallRetry: (
     fn: (...args: any[]) => any,
@@ -166,6 +167,7 @@ export type Utils = {
   ) => [boolean, string?];
   readonly areColorsEqual: (a: Color3, b: Color3, epsilon?: number) => boolean;
   readonly areVectorsEqual: (a: vector, b: vector, epsilon?: number) => boolean;
+  readonly copyPartProps: (part: Part, clone: Part) => void;
   readonly areColorsEqualRaw: (
     aR: number,
     aG: number,

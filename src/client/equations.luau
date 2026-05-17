@@ -206,7 +206,7 @@ const function computeReflectorIntensity(part: BasePart, state: types.ReflectorS
 	intensity += (dot * (coneFactor)) * distFactor * wedgeFactor * proximityFactor * (lightIntensity or 1)
 
 	if state.isHybrid then
-		if canHybridKeepColors == false then intensity = .5 end
+		if canHybridKeepColors == false then intensity *= .5 end
 
 		const distFade: number = clamp(dist / hybridFadeRange, 0, 1)
 
@@ -232,7 +232,9 @@ const function computeReflectorIntensity(part: BasePart, state: types.ReflectorS
 		intensity *= _computeOcclusion(part, state.CFrame, part.Size, seatPos, SAMPLE_POINTS, rayParams, config, lightSource)
 	end
 
-	return clamp(intensity * baseIntensity, 0, 1), if intensity > 0 then clamp(finalTransparency*hybridTransparencyMultiplier, 0.5, 1) else 1
+	local markingTransparencyMultiplier = if state.isMarking then config.ReflectorConfig.markingTransparencyMultiplier else 1
+
+	return clamp(intensity * baseIntensity, 0, 1), if intensity > 0 then clamp(finalTransparency*hybridTransparencyMultiplier*markingTransparencyMultiplier, 0.5, 1) else 1
 end
 
 --[=[

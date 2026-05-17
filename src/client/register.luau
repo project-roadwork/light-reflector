@@ -42,8 +42,9 @@ local signConfig: types.SignConfig = baseConfig.SignConfig
 const reflectorGrid: types.Grid = grid.newGrid(300)
 const signGrid: types.Grid = grid.newGrid(600)
 
--- SurfaceGui Object Pool
-const surfaceGuiPool: types.Pool<types.SurfaceGuiTemplate> = utils.initPool()
+-- Object Pools
+const surfaceGuiPool: types.Pool<types.SurfaceGuiTemplate> = utils.initSurfaceGuiPool()
+const partPool: types.Pool<Part> = utils.initPartPool()
 
 -- Variables
 const scriptConnections: { [RBXScriptConnection]: boolean } = {}
@@ -213,6 +214,145 @@ const function addSource(source: BasePart?, model: Model?, isEnabled: (BasePart)
 end
 
 --[=[
+	Private: Clones a hybrid part
+	@private
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function _cloneHybrid(part: BasePart): BasePart?
+    local clone:BasePart? = nil
+
+    if part:IsA("Part") then
+        clone = partPool:GetObject()
+        utils.copyPartProps(part, clone)
+    else
+        clone = part:Clone()
+    end
+
+    if not clone then return end
+
+    clone:SetAttribute(reflectorConfig.hybridCloneAttributeName, true)
+
+    CollectionService:RemoveTag(clone, reflectorConfig.tagName)
+
+    if part:IsA("MeshPart") then
+        const canKeepTexturesAttribute:boolean? = clone:GetAttribute(reflectorConfig.canHybridKeepTexturesAttribute)
+
+        const canKeepTextureProperty: boolean =
+            if typeof(canKeepTexturesAttribute) == "boolean"
+                then canKeepTexturesAttribute
+                else reflectorConfig.defaultHybridCanKeepTextures
+
+        if not canKeepTextureProperty then
+            if clone.TextureID then
+                clone.TextureID = ""
+            end
+        end
+    end
+
+    const hybridCanKeepColorsAttribute: boolean? = part:GetAttribute(reflectorConfig.hybridKeepColorsAttribute)
+
+    const canHybridKeepColors: boolean =
+        if typeof(hybridCanKeepColorsAttribute) == "boolean"
+            then hybridCanKeepColorsAttribute
+            else reflectorConfig.defaultCanHybridKeepColors
+
+    if clone:IsA("UnionOperation") and canHybridKeepColors == false then
+       clone.UsePartColor = true
+    end
+
+    if reflectorConfig.isHybridFaceOffsetEnabled then
+        const offset: number = reflectorConfig.hybridOffset
+        const face: string? = part:GetAttribute("LRFace")
+
+        if face and utils.validFaces[face] then
+            const faceNormalconst: Vector3 = Vector3.FromNormalId(Enum.NormalId[face])
+            const faceNormalWorld: Vector3 = part.CFrame:VectorToWorldSpace(faceNormalconst)
+
+            const offsetDistance: number = abs(faceNormalWorld.X) > 0 and offset
+                or abs(faceNormalWorld.Y) > 0 and offset
+                or offset
+
+            clone.CFrame = part.CFrame + faceNormalWorld * (offsetDistance)
+        end
+    end -- an offset may be needed or else the neon clone and non-neon clone may overlap and flicker
+
+	utils.normalizeBaseColor(clone, false)
+	return clone
+end
+
+--[=[
+	Private: Handles a marking
+	@private
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function _handleMarking(part: BasePart, noSplit: boolean?): ()
+    local maxSize: number = reflectorConfig.maxMarkingPartSize
+    const partSize: Vector3 = part.Size
+
+    if reflectorConfig.splitMarkings == false or (noSplit ~= nil and noSplit == true) then
+        const clone:BasePart? = _cloneHybrid(part)
+
+        if not clone then return end
+
+        clone.Name = reflectorConfig.hybridCloneName
+        clone.Size = part.Size
+        clone.CFrame = part.CFrame
+        clone.Parent = part.Parent
+
+        const entity: jecs.Entity<nil> = world:entity()
+
+        world:set(entity, components.Reflector, clone)
+
+        instanceToEntityId[clone] = entity
+
+        grid.spawn(reflectorGrid, entity, clone.Position)
+        return
+    end
+
+    const splitX: number, splitY: number, splitZ: number =
+        math.max(1, math.ceil(partSize.X / maxSize)),
+        math.max(1, math.ceil(partSize.Y / maxSize)),
+        math.max(1, math.ceil(partSize.Z / maxSize))
+
+	const segmentSize: Vector3 = Vector3.new(
+		partSize.X / splitX,
+		partSize.Y / splitY,
+		partSize.Z / splitZ
+	)
+
+    for x: number = 1, splitX do
+        for y: number = 1, splitY do
+            for z: number = 1, splitZ do
+                const clone:BasePart? = _cloneHybrid(part)
+
+                if not clone then return end
+
+                clone.Size = segmentSize * Vector3.new(1.1,1.1,1.1)
+
+				const offsetX: number, offsetY: number, offsetZ: number =
+			        (-partSize.X / 2) + (segmentSize.X / 2) + ((x - 1) * segmentSize.X),
+					(-partSize.Y / 2) + (segmentSize.Y / 2) + ((y - 1) * segmentSize.Y),
+					(-partSize.Z / 2) + (segmentSize.Z / 2) + ((z - 1) * segmentSize.Z)
+
+				clone.Name = reflectorConfig.hybridCloneName
+				clone.CFrame = part.CFrame * CFrame.new(offsetX, offsetY, offsetZ)
+				clone.Parent = part.Parent
+
+				const entity: jecs.Entity<nil> = world:entity()
+
+				world:set(entity, components.Reflector, clone)
+
+				instanceToEntityId[clone] = entity
+
+				grid.spawn(reflectorGrid, entity, clone.Position)
+            end
+        end
+    end
+end
+
+--[=[
 	Public: Processes reflectors and normalizes base color
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
@@ -231,7 +371,7 @@ const function addReflector(part: Instance)
 	const hasTag: boolean = reflectorConfig.isTagsEnabled and part:HasTag(reflectorConfig.tagName)
 	const isReflector_nontag: boolean? = reflectorConfig.isTagsEnabled == false and reflectorConfig.isReflector(part)
 
-	if not hasTag or isReflector_nontag  then
+	if not hasTag or isReflector_nontag then
 		return
 	end
 
@@ -253,87 +393,50 @@ const function addReflector(part: Instance)
 	const isHybrid: boolean = reflectorConfig.isHybridEnabled and attributes[reflectorConfig.hybridAttributeName]
 
 	if isHybrid then
-		const clone: BasePart = part:Clone()
+	    const isMarking: boolean = reflectorConfig.isMarkingEnabled
+			and attributes[reflectorConfig.markingAttributeName]
 
-		clone:SetAttribute(reflectorConfig.hybridCloneAttributeName, true)
-		CollectionService:RemoveTag(clone, reflectorConfig.tagName)
+		if isMarking then
+            _handleMarking(part, attributes[reflectorConfig.markingNoSplitAttribute])
+		else
+		    const clone:BasePart? = _cloneHybrid(part)
 
-		if clone:IsA("MeshPart") then
-			const canKeepTexturesAttribute:boolean? = clone:GetAttribute(reflectorConfig.canHybridKeepTexturesAttribute)
+			if not clone then return end
 
-			const canKeepTextureProperty: boolean =
-				if typeof(canKeepTexturesAttribute) == "boolean"
-				then canKeepTexturesAttribute
-				else reflectorConfig.defaultHybridCanKeepTextures
+			clone.Name = reflectorConfig.hybridCloneName
+			clone.Transparency = 1
+			clone.CanCollide = false
+			clone.CanTouch = false
+			clone.CanQuery = false
+			clone.Parent = part.Parent
 
-			if not canKeepTextureProperty then
-				if clone.TextureID then
-					clone.TextureID = ""
-				end
+			const entity: jecs.Entity<nil> = world:entity()
+
+			world:set(entity, components.Reflector, clone)
+			instanceToEntityId[clone] = entity
+
+			if not trackedAncestryInstances[clone] then
+			    const connection: RBXScriptConnection = utils.trackAncestryRemoval(clone, function()
+					const state: types.ReflectorState? = world:get(entity, components.ReflectorState)
+
+					if state then
+					    grid.remove(reflectorGrid, entity)
+						states.returnReflectorState(state)
+					else
+					    grid.remove(reflectorGrid, entity)
+					end
+
+					instanceToEntityId[part] = nil
+					trackedAncestryInstances[part] = nil
+					world:delete(entity)
+				end)
+
+				scriptConnections[connection] = true
+				trackedAncestryInstances[clone] = true
 			end
+
+			grid.spawn(reflectorGrid, entity, clone.Position)
 		end
-
-		const hybridCanKeepColorsAttribute: boolean? = part:GetAttribute(reflectorConfig.hybridKeepColorsAttribute)
-
-		const canHybridKeepColors: boolean =
-			if typeof(hybridCanKeepColorsAttribute) == "boolean"
-			then hybridCanKeepColorsAttribute
-			else reflectorConfig.defaultCanHybridKeepColors
-
-
-		if part:IsA("UnionOperation") and canHybridKeepColors == false then part.UsePartColor = true end
-
-		if reflectorConfig.isHybridFaceOffsetEnabled then
-			const offset: number = reflectorConfig.hybridOffset
-
-			const face: string? = part:GetAttribute("LRFace")
-			if face and utils.validFaces[face] then
-				const faceNormalconst: Vector3 = Vector3.FromNormalId(Enum.NormalId[face])
-				const faceNormalWorld: Vector3 = part.CFrame:VectorToWorldSpace(faceNormalconst)
-
-				const offsetDistance: number = abs(faceNormalWorld.X) > 0 and offset
-					or abs(faceNormalWorld.Y) > 0 and offset
-					or offset
-
-				clone.CFrame = part.CFrame + faceNormalWorld * (offsetDistance)
-			end
-		end -- an offset may be needed or else the neon clone and non-neon clone may overlap and flicker
-
-		clone.Name = reflectorConfig.hybridCloneName
-		clone.Transparency = 1
-		clone.CanCollide = false
-		clone.CanTouch = false
-		clone.CanQuery = false
-		clone.Parent = part.Parent
-
-		const entity: jecs.Entity<nil> = world:entity()
-
-		world:set(entity, components.Reflector, clone)
-		instanceToEntityId[clone] = entity
-
-		utils.normalizeBaseColor(clone, false) -- setting the second argument to false just sets the baseColor attribute
-
-		if not trackedAncestryInstances[clone] then
-			const connection: RBXScriptConnection = utils.trackAncestryRemoval(clone, function()
-				const state: types.ReflectorState? = world:get(entity, components.ReflectorState)
-
-				if state then
-					grid.remove(reflectorGrid, entity)
-					states.returnReflectorState(state)
-				else
-					grid.remove(reflectorGrid, entity)
-				end
-
-				instanceToEntityId[part] = nil
-				trackedAncestryInstances[part] = nil
-				world:delete(entity)
-			end)
-
-			scriptConnections[connection] = true
-			trackedAncestryInstances[clone] = true
-		end
-
-		grid.spawn(reflectorGrid, entity, clone.Position)
 	else
 		const entity: jecs.Entity<nil> = world:entity()
 
@@ -362,7 +465,6 @@ const function addReflector(part: Instance)
 			scriptConnections[connection] = true
 			trackedAncestryInstances[part] = true
 		end
-
 
 		grid.spawn(reflectorGrid, entity, part.Position)
 	end
@@ -399,7 +501,11 @@ const function removeReflector(part: BasePart): ()
 		end
 
 		if part:GetAttribute(reflectorConfig.hybridCloneAttributeName) then
-			part:Destroy()
+			if part:IsA("Part") then
+                partPool:ReturnObject(part)
+            else
+                part:Destroy()
+			end
 		end
 	end
 end
@@ -456,9 +562,6 @@ const function removeSign(part: Instance): ()
 			const signState: types.SignEntity? = world:get(entity, components.SignState)
 
 			if signState then
-				const surfaceGuiState: types.SurfaceGuiState? = signState.surfaceGuiState
-				const decalState: types.DecalState? = signState.decalState
-
 				states.returnSignState(signState, surfaceGuiPool)
 			end
 
@@ -728,7 +831,11 @@ const function reset(): ()
 		end
 
 		if part:GetAttribute(reflectorConfig.hybridCloneAttributeName) then
-			part:Destroy()
+			if part:IsA("Part") then
+                partPool:ReturnObject(part)
+            else
+                part:Destroy()
+			end
 		end
 	end
 

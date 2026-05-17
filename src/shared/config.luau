@@ -119,7 +119,7 @@ const BASE_CONFIG = {
 
 		-- [PERFORMANCE]
 		BOUNDARY_MIN_FPS = 1, -- (recommended -> 1)
-		BOUNDARY_MAX_FPS = 3, -- (recommended -> 3)
+		BOUNDARY_MAX_FPS = 4, -- (recommended -> 3)
 		-- ^ FPS of the Boundary function
 
 		RENDER_MIN_FPS = 45, -- (recommended -> 45)
@@ -453,6 +453,27 @@ const BASE_CONFIG = {
 
 		canHybridKeepTexturesAttribute = "HybridCanKeepTexturs",
 		-- ^ Attrubute name to override whether to keep textures or not on the HYBRID clone, not the main reflector
+
+		isMarkingEnabled = true,
+		-- ^ Enable hybrid marking parts
+
+		markingAttributeName = "LRMarking",
+		-- ^ Attribute to identify hybrid marking parts
+
+		splitMarkings = true,
+		-- ^ Split markings based on maximum part size or not
+
+		maxMarkingPartSize = 4,
+		-- ^ Maximum part size. Anything that goes beyond will be split
+
+		markingNoSplitAttribute = "LRNoSplit",
+		-- ^ Attribute to determine if the marking gets split or not
+
+		markingTransparencyMultiplier = 1.9, -- (recommended -> 1.9)
+		-- ^ Transparency multiplier for markings. Higher = darker, lower = brighter
+
+		defaultMarkingMaxDistance = 3600, -- (recommended -> 3600)
+		-- ^ Default marking max fade distance
 
 	}
 }

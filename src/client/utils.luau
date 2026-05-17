@@ -18,6 +18,7 @@
 -- IMPORTANT: Services
 const RunService:RunService = game:GetService("RunService")
 const ReplicatedStorage: ReplicatedStorage = game:GetService("ReplicatedStorage")
+const CollectionService: CollectionService = game:GetService("CollectionService")
 const Debris: Debris = game:GetService("Debris")
 
 -- IMPORTANT: Modules
@@ -544,7 +545,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function initPool(): types.Pool<types.SurfaceGuiTemplate>
+const function initSurfaceGuiPool(): types.Pool<types.SurfaceGuiTemplate>
 	local surfaceGuiTemplate:Instance? = ReplicatedStorage:FindFirstChild("ReflectorTemplate")
 
 	if not surfaceGuiTemplate then
@@ -583,6 +584,50 @@ const function initPool(): types.Pool<types.SurfaceGuiTemplate>
 		end, constraints.SURFACE_GUI_MIN_POOL_SIZE, constraints.SURFACE_GUI_MAX_POOL_SIZE) -- pool will warn ONCE if active parts exceed 350
 end
 
+--[=[
+	Public: Creates a [part] pool
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function initPartPool(): types.Pool<Part>
+	return pool.new(Instance.new("Part"),
+		function(template: Instance): Instance
+			const clone = template:Clone()
+			return clone
+		end,
+
+		function(template: Instance)
+            template:ClearAllChildren()
+		end, 8, math.huge)
+end
+
+const function copyPartProps(part: Part, clone: Part)
+	--clone.Size = part.Size
+	--clone.CFrame = part.CFrame
+	clone.Color = part.Color
+	clone.Material = part.Material
+	clone.Transparency = part.Transparency
+	clone.Reflectance = part.Reflectance
+
+	clone.Anchored = part.Anchored
+	clone.CanCollide = part.CanCollide
+	clone.CanTouch = part.CanTouch
+	clone.CanQuery = part.CanQuery
+	clone.CollisionGroup = part.CollisionGroup
+	clone.Massless = part.Massless
+
+	clone.TopSurface = part.TopSurface
+	clone.BottomSurface = part.BottomSurface
+
+	for attributeName, value in part:GetAttributes() do
+		clone:SetAttribute(attributeName, value)
+	end
+
+	for _, tag in CollectionService:GetTags(part) do
+		CollectionService:AddTag(clone, tag)
+	end
+end
+
 -- Start config tracking
 config.waitForLock(function(): ()
 	if isConfigTracked == false then
@@ -613,5 +658,7 @@ return table.freeze({
 	renderWait = renderWait,
 	spawnDebugField = spawnDebugField,
 	resetSurfaceGui = resetSurfaceGui,
-	initPool = initPool,
+	initSurfaceGuiPool = initSurfaceGuiPool,
+	initPartPool = initPartPool,
+	copyPartProps = copyPartProps,
 })
