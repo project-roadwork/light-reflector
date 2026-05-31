@@ -12,7 +12,6 @@
           "enable_by_default": true,
           "sync": true,
         },
-
         "roblox": {
           "enabled": true,
           "security_level": "plugin",

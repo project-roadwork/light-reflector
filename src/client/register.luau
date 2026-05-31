@@ -236,7 +236,7 @@ const function _cloneHybrid(part: BasePart): BasePart?
     CollectionService:RemoveTag(clone, reflectorConfig.tagName)
 
     if part:IsA("MeshPart") then
-        const canKeepTexturesAttribute:boolean? = clone:GetAttribute(reflectorConfig.canHybridKeepTexturesAttribute)
+        const canKeepTexturesAttribute: boolean? = clone:GetAttribute(reflectorConfig.canHybridKeepTexturesAttribute)
 
         const canKeepTextureProperty: boolean =
             if typeof(canKeepTexturesAttribute) == "boolean"

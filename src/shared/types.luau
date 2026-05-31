@@ -390,7 +390,7 @@ export type StatesModule = {
 	read name: string,
 
 	read acquireDecalState: () -> DecalState,
-	read acquireSignState: (part: BasePart, baseConfig: BASE_CONFIG, signGrid: grid) -> SignEntity,
+	read acquireSignState: (part: BasePart, baseConfig: BASE_CONFIG, signGrid: Grid) -> SignEntity,
 	read acquireReflectorState: (part: BasePart, baseConfig: BASE_CONFIG, reflectorGrid: Grid) -> ReflectorState,
 	read acquireSurfaceGuiState: () -> SurfaceGuiState,
 
