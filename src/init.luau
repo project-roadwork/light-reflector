@@ -23,13 +23,13 @@
 ]]
 
 -- IMPORTANT: Services
-const RunService: RunService = game:GetService("RunService")
+local RunService: RunService = game:GetService("RunService")
 
 -- IMPORTANT: Types, Debugger and Setup
-const types = require("@self/shared/types")
-const debugger: types.Debugger = require("@self/shared/debugger")
-const logs: types.DebuggerLogs  = require("@self/shared/logs")
-const version: string = require("@self/shared/version")._VERSION
+local types = require("@self/shared/types")
+local debugger: types.Debugger = require("@self/shared/debugger")
+local logs: types.DebuggerLogs = require("@self/shared/logs")
+local version: string = require("@self/shared/version")._VERSION
 
 debugger.set(`Light Reflector`, logs.Ids, logs.URL) -- URL will be omitted or left out if not in Studio
 
@@ -37,10 +37,10 @@ debugger.set(`Light Reflector`, logs.Ids, logs.URL) -- URL will be omitted or le
 debugger.assert(RunService:IsClient(), "RunContext", "Init module can only be run from the client.")
 
 -- IMPORTANT: Initialize Modules
-const config: types.Configuration = require("@self/shared/config")
-const register: types.Register = require("@self/client/register")
-const detect: types.Detect = require("@self/client/detect")
-const render: types.Render = require("@self/client/render")
+local config: types.Configuration = require("@self/shared/config")
+local register: types.Register = require("@self/client/register")
+local detect: types.Detect = require("@self/client/detect")
+local render: types.Render = require("@self/client/render")
 
 -- Local Variables
 local isRunning: boolean = false
@@ -56,7 +56,7 @@ local hasInit: boolean = false
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function init(): ()
+local function init(): ()
 	if hasInit then
 		return
 	end
@@ -80,7 +80,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function start() : ()
+local function start(): ()
 	debug.profilebegin(`Start Light Reflector {version}`)
 
 	debugger.assert(not isRunning, "AlreadyStarting")
@@ -111,7 +111,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function reset(): ()
+local function reset(): ()
 	debugger.assert(isRunning, "Fatal", "[INIT] Cleanup called before the module had started.")
 
 	debugger.shortPrint("[INIT] Resetting...")
