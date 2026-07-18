@@ -8,7 +8,7 @@
 
  **A light reflector system that simulates long-range reflections of `Decals` and `BaseParts`.**
 
-[![License: MPL 2.0](https://img.shields.io/badge/MPL_2.0-License-gray.svg?logo=mozilla&labelColor=28733f)](https://opensource.org/licenses/MPL-2.0) [![Codeberg](https://img.shields.io/badge/Codeberg-Main%20Repository-white?logo=codeberg)](https://codeberg.org/project-roadwork/light-reflector.git) [![GitHub](https://img.shields.io/badge/GitHub-Mirror/Backup%20Repository-darkgrey?logo=github)](https://github.com/project-roadwork/light-reflector.git) [![Documentation](https://img.shields.io/static/v1?label=&message=Documentation&color=informational)](https://project-roadwork.codeberg.page/light-reflector/)
+[![License: MPL 2.0](https://img.shields.io/badge/MPL_2.0-License-gray.svg?logo=mozilla&labelColor=28733f)](https://opensource.org/licenses/MPL-2.0) [![Codeberg](https://img.shields.io/badge/Codeberg-Main%20Repo-white?logo=codeberg)](https://codeberg.org/project-roadwork/light-reflector.git) [![GitHub](https://img.shields.io/badge/GitHub-Mirror%20Repo-darkgrey?logo=github)](https://github.com/project-roadwork/light-reflector.git) [![Documentation](https://img.shields.io/static/v1?label=&message=Documentation&color=informational)](https://project-roadwork.codeberg.page/light-reflector/) ![visitors](https://visitor-badge.laobi.icu/badge?page_id=project-roadwork.lr.git&left_text=Git%20visitors&right_color=%2398613d)
 
 > [!IMPORTANT]
 > **Use the [main repository in Codeberg](https://codeberg.org/project-roadwork/light-reflector.git) for issues, pull requests, and contributions.**
