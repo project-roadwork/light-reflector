@@ -67,7 +67,7 @@ const function shortPrint(...: any)
 
 	if not General.showPrints then return end
 
-	luauprint(...)
+	luauprint(`[{Data.Name or "?"}] {...}`)
 end
 
 const function assert<T>(assertion: T, id: string, ...: any): T
