@@ -233,6 +233,7 @@ export type Register = {
     CachedQueries,
   ];
 
+  readonly isSourceRegistered: (source: BasePart) => [boolean, any?];
   readonly addSource: (...args: any[]) => void;
   readonly removeSource: (source: BasePart) => void;
   readonly addReflector: (part: Instance) => void;
