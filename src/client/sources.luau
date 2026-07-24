@@ -15,10 +15,17 @@
 
 ]]
 
--- Types module
+-- IMPORTANT: Modules
 const types = require("../shared/types")
+const config: types.Configuration = require("../shared/config")
 
--- Array of sources
+-- IMPORTANT: Configuration Variables
+local baseConfig: types.BaseConfig = config.getConfig()
+local constraints: types.Constraints = baseConfig.Constraints
+local generalConfig: types.GeneralConfig = baseConfig.General
+
+local PROFILING: boolean = constraints.PROFILING
+local hasInit: boolean = false
 const list : types.SourceList = {}
 
 --[=[
@@ -35,13 +42,18 @@ const function create(source: BasePart,
 	getColor: ((BasePart) -> vector)?
 ): types.LightSource
 
+    const getIntensity: (BasePart) -> number = if intensity then intensity else function(source) return 1 end
+
 	return {
 		Owner = source,
 		Model = model,
 		getPosition = getPosition,
 		getDirection = getDirection,
+		Position = getPosition(),
+        Direction = getDirection(),
+        Intensity = getIntensity(source),
 		isActive = getEnabled,
-		getIntensity = if intensity then intensity else function(source) return 1 end,
+		getIntensity = getIntensity,
 		getColor = if getColor then getColor else function(source) return vector.create(1, 1, 1) end,
 	}
 end
@@ -102,6 +114,50 @@ const function getAllActive(): {types.LightSource}
 	return activeSources
 end
 
+--[=[
+	Public: Updates the CFrame and position of all sources
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function updateSourceCache(): ()
+    if PROFILING then
+        debug.profilebegin("updateSourceTransforms")
+    end
+
+    for _: number, lightSource: types.LightSource in list do
+        const sourceCFrame: CFrame = lightSource.Owner.CFrame
+
+        lightSource.Position = sourceCFrame.Position + generalConfig.vehicleSeatOffset
+        lightSource.Direction = sourceCFrame.LookVector
+        lightSource.Intensity = lightSource.getIntensity(lightSource.Owner)
+    end
+
+    if PROFILING then
+        debug.profileend()
+    end
+end
+
+--[=[
+	Public: Initialize
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function init(): ()
+	if hasInit then
+		return
+	end
+
+	config.onChange(function(NEW_CONFIG: types.BASE_CONFIG)
+		baseConfig = NEW_CONFIG
+		constraints = NEW_CONFIG.Constraints
+		generalConfig = NEW_CONFIG.General
+
+		PROFILING = constraints.PROFILING
+	end)
+
+	hasInit = true
+end
+
 -- Return public API
 return table.freeze({
 	name = "sources",
@@ -111,4 +167,6 @@ return table.freeze({
 	anyActive = anyActive,
 	register = register,
 	getAllActive = getAllActive,
+	updateSourceCache = updateSourceCache,
+	init = init
 })

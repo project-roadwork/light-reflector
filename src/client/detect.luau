@@ -471,6 +471,8 @@ const function start() : ()
 
 			const activeSources: {types.LightSource} = sources.getAllActive()
 
+			sources.updateSourceCache()
+
 			if reflectorConfig.isEnabled then
 				for entity: jecs.Entity<nil>, state: types.ReflectorState in cachedQueries.ReflectorStates do
 

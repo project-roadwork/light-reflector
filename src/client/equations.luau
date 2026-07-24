@@ -24,11 +24,18 @@ const utils: types.Utils = require("./utils")
 -- IMPORTANT: Configuration Variables
 local baseConfig: types.BaseConfig = config.getConfig()
 local constraints: types.Constraints = baseConfig.Constraints
+local reflectorConfig: types.ReflectorConfig = baseConfig.ReflectorConfig
+local generalConfig: types.GeneralConfig = baseConfig.General
+local signConfig: types.SignConfig = baseConfig.SignConfig
 
 -- Variables
 const rangeTypes: { [types.RangeType]: boolean } = { near = true, far = true }
 const raycast: (WorldRoot, Vector3, Vector3, RaycastParams) -> RaycastResult? = workspace.Raycast
 const clamp: (number, number, number) -> number = math.clamp
+const min: (number, number) -> number = math.min
+const max: (number, number) -> number = math.max
+const cos: (number) -> number = math.cos
+
 local lastExclusion: {any?} = {}
 local PROFILING: boolean = constraints.PROFILING
 local hasInit: boolean = false
@@ -144,14 +151,14 @@ const function computeReflectorIntensity(part: BasePart, state: types.ReflectorS
 
 	const face:string? = state.faceAttributeName
 
-	const globalIntensityMultiplier: number = config.ReflectorConfig.reflectorIntensityMultiplier
+	const globalIntensityMultiplier: number = reflectorConfig.reflectorIntensityMultiplier
 
 	local hybridFadeRange: number = 0
 	local hybridMinDistance: number = 0
 
 	local canHybridKeepColors: boolean = false
 
-	const maxDot: number =  math.cos(config.General.lightHalfAngle)
+	const maxDot: number =  cos(generalConfig.lightHalfAngle)
 
 	if state.isHybrid then
 		--maxDot =  math.cos(config.General.lightHalfAngle)
@@ -162,8 +169,8 @@ const function computeReflectorIntensity(part: BasePart, state: types.ReflectorS
 		canHybridKeepColors = state.canHybridKeepColors
 	end -- Added isHybrid if-block since :GetAttribute() calls may be expensive?
 
-	const seatPos: Vector3 = lightSource.getPosition()
-	const dir:Vector3 = lightSource.getDirection()
+	const seatPos: Vector3 = lightSource.Position
+	const dir:Vector3 = lightSource.Direction
 
 	const predictionFactor: number = 0.5
 
@@ -171,21 +178,40 @@ const function computeReflectorIntensity(part: BasePart, state: types.ReflectorS
 
 	const pos: Vector3 = seatPos + dir * offset
 
-	const lightIntensity: number = lightSource.getIntensity(lightSource.Owner) or 1
+	const lightIntensity: number = lightSource.Intensity
 
 	const change: Vector3 = partPosition - pos
 
 	const toPart: Vector3 = change.Unit
 	const dot: number =  clamp(dir:Dot(toPart), 0, 1)
 
-	const coneFactor: number = if config.ReflectorConfig.useMaxDOT then
+	const coneFactor: number = if reflectorConfig.useMaxDOT then
 		(clamp((dot - maxDot) / (1 - maxDot), 0, 1)) ^ .42
 		else 1
 
 	const dist: number = change.Magnitude
-	const distFactor: number = clamp(1 - (dist / config.ReflectorConfig.maxDistance), 0, 1)
+	const distFactor: number = clamp(1 - (dist / reflectorConfig.maxDistance), 0, 1)
+
+	const minDistance: number = reflectorConfig.minDistance
 
 	local wedgeFactor: number = 1
+
+	if face and state.faceNormalWorld then
+		if not utils.validFaces[face] then
+			debugger.warn("Warning", `Invalid Enum.NormalID face; got {face}.`)
+			--	continue
+			return -1, -1
+		end
+
+		const facedot: number = max(0, state.faceNormalWorld:Dot(-toPart)) -- clamping seems to bug
+
+		--	part:SetAttribute("DOT", facedot) -- Kept as reference for debugging
+
+		if facedot <= reflectorConfig.hybridFacingDotThreshold then -- Usually near 0
+			--continue
+			return -1, -1
+		end
+	end
 
 	if state.isWedge and state.slopeNormalWorld then
 		const toLight: Vector3 = -toPart
@@ -196,31 +222,14 @@ const function computeReflectorIntensity(part: BasePart, state: types.ReflectorS
 		else
 			const dotClamped: number = clamp(rawDot, 0, 1)
 			wedgeFactor = clamp(
-				(dotClamped - config.ReflectorConfig.wedgeFacingDotThreshold) /
-					(1 - config.ReflectorConfig.wedgeFacingDotThreshold), -- Usually near 0
+				(dotClamped - reflectorConfig.wedgeFacingDotThreshold) /
+					(1 - reflectorConfig.wedgeFacingDotThreshold), -- Usually near 0
 				0, 1
 			)
 		end
 	end
 
-	if face and state.faceNormalWorld then
-		if not utils.validFaces[face] then
-			debugger.warn("Warning", `Invalid Enum.NormalID face; got {face}.`)
-			--	continue
-			return -1, -1
-		end
-
-		const facedot: number = math.max(0, state.faceNormalWorld:Dot(-toPart)) -- clamping seems to bug
-
-		--	part:SetAttribute("DOT", facedot) -- Kept as reference for debugging
-
-		if facedot <= config.ReflectorConfig.hybridFacingDotThreshold then -- Usually near 0
-			--continue
-			return -1, -1
-		end
-	end
-
-	const proximityFactor: number = (dist < config.ReflectorConfig.minDistance) and (dist / config.ReflectorConfig.minDistance) or 1
+	const proximityFactor: number = (dist < minDistance) and (dist / minDistance) or 1
 
 	intensity += (dot * (coneFactor)) * distFactor * wedgeFactor * proximityFactor * (lightIntensity or 1)
 
@@ -242,16 +251,16 @@ const function computeReflectorIntensity(part: BasePart, state: types.ReflectorS
 
 		weightedTransparency += (1 - weightedTransparency) * distFade
 
-		finalTransparency = math.min(finalTransparency, weightedTransparency)
+		finalTransparency = min(finalTransparency, weightedTransparency)
 	end
 
 	intensity *= globalIntensityMultiplier
 
-	if config.ReflectorConfig.useRaycastForObstacles then
+	if reflectorConfig.useRaycastForObstacles then
 		intensity *= _computeOcclusion(part, state.CFrame, part.Size, seatPos, SAMPLE_POINTS, rayParams, config, lightSource)
 	end
 
-	local markingTransparencyMultiplier = if state.isMarking then config.ReflectorConfig.markingTransparencyMultiplier else 1
+	const markingTransparencyMultiplier: number = if state.isMarking then reflectorConfig.markingTransparencyMultiplier else 1
 
 	if PROFILING then
         debug.profileend()
@@ -314,11 +323,11 @@ const function computeSignIntensity(part : BasePart, state: types.SignEntity,  l
 	const partVeryReflective:boolean? = state.partVeryReflective
 
 	local hasActiveLight: boolean = false
-	const maxDot: number = math.cos(config.General.lightHalfAngle)
+	const maxDot: number = cos(generalConfig.lightHalfAngle)
 
-	const seatPos: Vector3 = lightSource.getPosition()
-	const carLook: Vector3 = lightSource.getDirection()
-	local intensity: number = lightSource.getIntensity(lightSource.Owner) or 1
+	const seatPos: Vector3 = lightSource.Position
+	const carLook: Vector3 = lightSource.Direction
+	local intensity: number = lightSource.Intensity
 
 	const dist: number = (seatPos - partPosition).Magnitude
 
@@ -350,7 +359,7 @@ const function computeSignIntensity(part : BasePart, state: types.SignEntity,  l
 	const facedot: number = clamp(faceNormalWorld:Dot(toLight), 0, 1)
 	--	part:SetAttribute("DOT", facedot) -- Kept as reference for debugging
 
-	if facedot <= config.SignConfig.decalFacingDotThreshold then -- Usually near 0
+	if facedot <= signConfig.decalFacingDotThreshold then -- Usually near 0
 		return {
 			transparency = -1,
 			brightness = -0,
@@ -359,10 +368,10 @@ const function computeSignIntensity(part : BasePart, state: types.SignEntity,  l
 		}
 	end
 
-	if dist < config.SignConfig.maxFadeDistance and dot > 0 then
+	if dist < signConfig.maxFadeDistance and dot > 0 then
 	    intensity *= globalIntensityMultiplier
 
-		if config.SignConfig.useRaycastForObstacles then
+		if signConfig.useRaycastForObstacles then
 			intensity *= _computeOcclusion(part, state.CFrame, state.Size, seatPos, SAMPLE_POINTS, rayParams, config, lightSource)
 		end
 
@@ -373,23 +382,23 @@ const function computeSignIntensity(part : BasePart, state: types.SignEntity,  l
 		hasActiveLight = true
 	end
 
-	if config.SignConfig.isDebugConeAngleEnabled then
+	if signConfig.isDebugConeAngleEnabled then
 		task.defer(utils.spawnDebugField, seatPos, carLook, maxDot,
 			60,
 			50,
-			config.SignConfig.debugBoxFolder or workspace
+			signConfig.debugBoxFolder or workspace
 		)
 
 		task.defer(utils.spawnDebugField, seatPos, carLook, maxDot,
 			120,
 			100,
-			config.SignConfig.debugBoxFolder or workspace
+			signConfig.debugBoxFolder or workspace
 		)
 
 		task.defer(utils.spawnDebugField, seatPos, carLook, maxDot,
 			5,
 			15,
-			config.SignConfig.debugBoxFolder or workspace
+			signConfig.debugBoxFolder or workspace
 		)
 	end
 
@@ -443,8 +452,12 @@ const function init(): ()
 	end
 
 	config.onChange(function(NEW_CONFIG: types.BASE_CONFIG)
-		baseConfig = NEW_CONFIG
+	    baseConfig = NEW_CONFIG
 		constraints = NEW_CONFIG.Constraints
+		reflectorConfig = NEW_CONFIG.ReflectorConfig
+		generalConfig = NEW_CONFIG.General
+		signConfig = NEW_CONFIG.SignConfig
+
 		PROFILING = constraints.PROFILING
 	end)
 
@@ -456,5 +469,6 @@ return table.freeze({
 	name = "equations",
 	computeSignIntensity = computeSignIntensity,
 	computeReflectorIntensity = computeReflectorIntensity,
-	buildSamplePoints = buildSamplePoints
+	buildSamplePoints = buildSamplePoints,
+	init = init
 })

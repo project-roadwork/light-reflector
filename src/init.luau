@@ -26,7 +26,7 @@
 local RunService: RunService = game:GetService("RunService")
 
 -- IMPORTANT: Types, Debugger and Setup
-local types = require("@self/shared/types")
+local types: {} = require("@self/shared/types")
 local debugger: types.Debugger = require("@self/shared/debugger")
 local logs: types.DebuggerLogs = require("@self/shared/logs")
 local version: string = require("@self/shared/version")._VERSION
@@ -41,6 +41,8 @@ local config: types.Configuration = require("@self/shared/config")
 local register: types.Register = require("@self/client/register")
 local detect: types.Detect = require("@self/client/detect")
 local render: types.Render = require("@self/client/render")
+local sources: types.SourcesModule = require("@self/client/sources")
+local equations: types.Equations = require("@self/client/equations")
 
 -- Local Variables
 local isRunning: boolean = false
@@ -66,6 +68,8 @@ local function init(): ()
 	register.init()
 	detect.init()
 	render.init()
+	sources.init()
+	equations.init()
 
 	hasInit = true
 

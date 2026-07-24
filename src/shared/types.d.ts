@@ -99,6 +99,9 @@ export type LightSource = {
   Model?: Model;
   getPosition: () => Vector3;
   getDirection: () => Vector3;
+  Position: Vector3;
+  Direction: Vector3;
+  Intensity: number;
   isActive: (part: BasePart) => boolean;
   getIntensity: (part: BasePart) => number;
   getColor: (part: BasePart) => vector;
@@ -122,6 +125,9 @@ export type SourcesModule = {
 
   readonly anyActive: (...args: any[]) => boolean;
   readonly getAllActive: (...args: any[]) => LightSource[];
+
+  readonly updateSourceCache: () => void;
+  readonly init: () => void;
 };
 
 // Utilities Types
@@ -272,6 +278,8 @@ export type Equations = {
   };
 
   readonly buildSamplePoints: (quality: number) => void;
+
+  readonly init: () => void;
 };
 
 // Detector Types

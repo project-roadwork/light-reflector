@@ -83,7 +83,7 @@ const reflectors: jecs.Cached_Query<BasePart, types.ReflectorState> = cachedQuer
 const signsPartsStates: jecs.Cached_Query<BasePart, types.SignEntity> = cachedQueries.SignsPartsStates
 
 --[=[
-	Public: Initialize
+	Public: Initializes the render module.
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]

@@ -105,6 +105,11 @@ export type Grid = {
 export type LightSource = {
 	Owner: BasePart,
 	Model: Model?,
+
+	Position: Vector3,
+    Direction: Vector3,
+    Intensity: number,
+
 	getPosition: () -> Vector3,
 	getDirection: () -> Vector3,
 	isActive: (BasePart) -> boolean,
@@ -129,6 +134,9 @@ export type SourcesModule = {
 
 	read anyActive: (...any) -> boolean,
 	read getAllActive: (...any) -> {LightSource},
+
+	read updateSourceCache: () -> (),
+	read init: () -> ()
 }
 
 -- Utilities Types
@@ -240,6 +248,7 @@ export type Equations = {
 	},
 
 	read buildSamplePoints: (quality: number) -> (),
+	read init: () -> ()
 }
 
 -- Detector Types
