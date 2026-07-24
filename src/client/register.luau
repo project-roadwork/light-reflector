@@ -117,7 +117,7 @@ const function removeSource(source: BasePart): ()
 
 	for i = #sourcesList, 1, -1 do
 		if sourcesList[i].Owner == sourceEntity then
-			debugger.shortPrint(`[REGISTER] Unregistering {sourceEntity.Name}`)
+			debugger.shortPrint(`[REGISTER] Unregistering {sourceEntity:GetFullName()}`)
 			table.remove(sourcesList, i)
 			break
 		end
@@ -147,7 +147,7 @@ end
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
-const function addSource(source: BasePart?, model: Model?, isEnabled: (BasePart) -> boolean, getIntensity: (BasePart) -> number, getColor: (BasePart) -> vector, trackAncestry: boolean?): ()
+const function addSource(source: BasePart, model: Model?, isEnabled: (BasePart) -> boolean, getIntensity: (BasePart) -> number, getColor: (BasePart) -> vector, trackAncestry: boolean?): ()
 	-- could have asserted but would flood the output with errors
 	if source == nil then
 		debugger.warn("Warning", "Vehicle (1st argument) CANNOT be nil.")
@@ -210,7 +210,7 @@ const function addSource(source: BasePart?, model: Model?, isEnabled: (BasePart)
 	    end
 	end
 
-	debugger.shortPrint("Info", `[REGISTER] Registered {source.Name}`)
+	debugger.shortPrint(`[REGISTER] Registered {source:GetFullName()}`)
 end
 
 --[=[
@@ -223,13 +223,13 @@ const function _cloneHybrid(part: BasePart): BasePart?
     local clone:BasePart? = nil
 
     if part:IsA("Part") then
-        clone = partPool:GetObject()
+        clone = partPool:GetObject() :: BasePart
         utils.copyPartProps(part, clone)
     else
         clone = part:Clone()
     end
 
-    if not clone then return end
+    if not clone then return nil end
 
     clone:SetAttribute(reflectorConfig.hybridCloneAttributeName, true)
 
