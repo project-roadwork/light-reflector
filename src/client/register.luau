@@ -143,6 +143,17 @@ const function removeSource(source: BasePart): ()
 end
 
 --[=[
+    Checks if the source is registered, and then returns its entity ID.
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function isSourceRegistered(source: BasePart): (boolean, jecs.Entity<nil>?)
+    const entity: jecs.Entity<nil>? = instanceToEntityId[source]
+
+    return entity ~= nil, entity
+end
+
+--[=[
 	Public: Adds a vehicle
 
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
@@ -882,6 +893,7 @@ return table.freeze({
 
 	getWorldUtils = getWorldUtils,
 
+	isSourceRegistered = isSourceRegistered,
 	addSource = addSource,
 	removeSource = removeSource,
 	addReflector = addReflector,

@@ -200,7 +200,8 @@ export type Register = {
 
 	read getWorldUtils: () -> (jecs.World, Components, {[Instance]: jecs.Entity}, CachedQueries),
 
-	read addSource: (source: BasePart?, model: Model?, isEnabled: (BasePart) -> boolean, getIntensity: (BasePart) -> number, getColor: (BasePart) -> vector, trackAncestry: boolean?) -> (),
+	read isSourceRegistered: (source: BasePart) -> (boolean, jecs.Entity<nil>?),
+	read addSource: (source: BasePart, model: Model?, isEnabled: (BasePart) -> boolean, getIntensity: (BasePart) -> number, getColor: (BasePart) -> vector, trackAncestry: boolean?) -> (),
 	read removeSource: (source: BasePart) -> (),
 	read addReflector: (part: Instance) -> (),
 	read removeReflector: (part: BasePart) -> (),
