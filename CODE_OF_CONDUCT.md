@@ -28,7 +28,7 @@ includes but is not limited to:**
 
 **Enforcement:** *First Warning -> Second Warning -> Temporary Ban -> Permanent Ban*
 
-***If you see misbehavior, ignore the person(s) and speak with a moderator or administrator in [Illinois_Roadbuff's Discord server](https://discord.gg/sd4XfAqNF9), or contact Illinois_Roadbuff directly via email: [illinois_roadbuff@proton.me](mailto:illinois_roadbuff@proton.me).***
+***If you see misbehavior, ignore the person(s) and speak with a moderator or administrator in [Illinois_Roadbuff's Discord server](https://discord.gg/sd4XfAqNF9), or contact Illinois_Roadbuff directly via email: [illinois_roadbuff..at..proton.me]().***
 
 We are here as human beings to contribute to the free, open source/open content world. Treat others with decency and respect. Beyond that, contribute freely in good faith.
 
