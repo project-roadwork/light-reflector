@@ -430,10 +430,6 @@ const function start() : ()
 	_runnerThread = constraints.SPAWN(utils.pcallRetry, function()
 		-- Start config tracking
 		while true do
-            if PROFILING then
-                debug.profilebegin("detectLoop")
-            end
-
 			const deltaTime: number, MPH: number = utils.adaptiveWaitWithSourcesOverride(task.wait, constraints.BOUNDARY_MIN_FPS,
 				constraints.BOUNDARY_MAX_FPS, utils.getFastestSource(cachedQueries.SourceInstances))
 			-- task.wait uses .Heartbeat if I remember correctly, so I don't need a separate module
@@ -441,6 +437,10 @@ const function start() : ()
 			--    so the FPS numbers should be low
 
 			-- This loop SHOULD run slower than the `runRenderLoop()`
+
+			if PROFILING then
+                debug.profilebegin("detectLoop")
+            end
 
 			table.clear(_detectedEntitiesThisFrame)
 			table.clear(activeReflectorEntities)

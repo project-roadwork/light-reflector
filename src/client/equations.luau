@@ -18,13 +18,20 @@
 -- IMPORTANT: Modules
 const types = require("../shared/types")
 const debugger: types.Debugger = require("../shared/debugger")
+const config: types.Configuration = require("../shared/config")
 const utils: types.Utils = require("./utils")
+
+-- IMPORTANT: Configuration Variables
+local baseConfig: types.BaseConfig = config.getConfig()
+local constraints: types.Constraints = baseConfig.Constraints
 
 -- Variables
 const rangeTypes: { [types.RangeType]: boolean } = { near = true, far = true }
 const raycast: (WorldRoot, Vector3, Vector3, RaycastParams) -> RaycastResult? = workspace.Raycast
 const clamp: (number, number, number) -> number = math.clamp
 local lastExclusion: {any?} = {}
+local PROFILING: boolean = constraints.PROFILING
+local hasInit: boolean = false
 
 const rayParams: RaycastParams = RaycastParams.new()
 rayParams.FilterType = Enum.RaycastFilterType.Exclude
@@ -39,6 +46,10 @@ const SAMPLE_POINTS: {Vector3} = {}
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function _computeOcclusion(part: BasePart, CFrame: CFrame, Size: Vector3, lightPos: Vector3, samplePoints: {Vector3}, rayParams: RaycastParams, config:types.BASE_CONFIG, source: types.LightSource): number
+    if PROFILING then
+        debug.profilebegin("_computeOcclusion")
+    end
+
     const total: number = #samplePoints
 	local hit: number = 0
 
@@ -93,6 +104,10 @@ const function _computeOcclusion(part: BasePart, CFrame: CFrame, Size: Vector3, 
 		end
 	end
 
+    if PROFILING then
+        debug.profileend()
+    end
+
 	return math.sqrt(1 - (hit / total))
 end
 
@@ -112,6 +127,10 @@ const function computeReflectorIntensity(part: BasePart, state: types.ReflectorS
 	]]
 
 	--	debugger.assert(part:IsA("BasePart"), "InvalidInstance", "BasePart", part.ClassName)
+
+	if PROFILING then
+        debug.profilebegin("computeReflectorIntensity")
+    end
 
 	const baseIntensity: number = state.baseIntensity
 
@@ -234,6 +253,10 @@ const function computeReflectorIntensity(part: BasePart, state: types.ReflectorS
 
 	local markingTransparencyMultiplier = if state.isMarking then config.ReflectorConfig.markingTransparencyMultiplier else 1
 
+	if PROFILING then
+        debug.profileend()
+    end
+
 	return clamp(intensity * baseIntensity, 0, 1), if intensity > 0 then clamp(finalTransparency*hybridTransparencyMultiplier*markingTransparencyMultiplier, 0.5, 1) else 1
 end
 
@@ -265,7 +288,11 @@ const function computeSignIntensity(part : BasePart, state: types.SignEntity,  l
 
 	]]
 	--debugger.assert(part:IsA("BasePart"), "InvalidInstance", "BasePart", part.ClassName) Removed since :IsA() calls are expensive
-	debugger.assert(rangeTypes[rangeType], "InvalidType", `either "far" or "near"`, rangeType)
+	--debugger.assert(rangeTypes[rangeType], "InvalidType", `either "far" or "near"`, rangeType)
+
+	if PROFILING then
+        debug.profilebegin("computeSignIntensity")
+    end
 
 	const FadeDistance:number = config.SignConfig.maxFadeDistance
 	const MinFadeDistance:number = config.SignConfig.minFadeDistance
@@ -366,6 +393,10 @@ const function computeSignIntensity(part : BasePart, state: types.SignEntity,  l
 		)
 	end
 
+	if PROFILING then
+        debug.profileend()
+    end
+
 	return {
 		transparency = transparency,
 		brightness = brightness,
@@ -380,6 +411,10 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function buildSamplePoints(quality: number): ()
+   	if PROFILING then
+        debug.profilebegin("buildSamplePoints")
+    end
+
 	for x: number = 0, quality do
 		for y: number = 0, quality do
 			table.insert(SAMPLE_POINTS,
@@ -391,6 +426,29 @@ const function buildSamplePoints(quality: number): ()
 			)
 		end
 	end
+
+	if PROFILING then
+        debug.profileend()
+    end
+end
+
+--[=[
+	Public: Initializes the equations module
+
+	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
+]=]
+const function init(): ()
+    if hasInit then
+		return
+	end
+
+	config.onChange(function(NEW_CONFIG: types.BASE_CONFIG)
+		baseConfig = NEW_CONFIG
+		constraints = NEW_CONFIG.Constraints
+		PROFILING = constraints.PROFILING
+	end)
+
+	hasInit = true
 end
 
 -- Return public variables and API

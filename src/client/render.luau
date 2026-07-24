@@ -135,10 +135,6 @@ end
 const function start(): ()
 	_runnerThread = constraints.SPAWN(utils.pcallRetry, function()
 		while true do
-            if PROFILING then
-                debug.profilebegin("renderLoop")
-            end
-
 			deltaTime, MPH = utils.adaptiveWait(renderWait, RENDER_MIN_FPS, RENDER_MAX_FPS,
 				utils.getFastestSource(sourceInstances)) -- adaptive waiting based on fastest vehicle speed
 
@@ -147,11 +143,16 @@ const function start(): ()
 
 			-- Render stepped / prerender runs on the client framerate, so it would make sense to put the fading under that event.
 
+			if PROFILING then
+                debug.profilebegin("renderLoop")
+            end
+
 			if not dark() and allInactive then
-				task.wait(.5)
-			    if PROFILING then
+		        if PROFILING then
                     debug.profileend()
                 end
+				task.wait(.5)
+
 				continue
 			end
 

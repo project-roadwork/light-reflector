@@ -13,21 +13,20 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LightReflector = require(ReplicatedStorage.Packages.lightreflector)
 local Cars = workspace.Cars
 
-
 -- Functions
-local function determineIntensity(car:Instance)
-  local finalIntensity = 1
--- logic to see if high beams are enabled or not (thus increase the intensity)
-  return finalIntensity
+local function determineIntensity(DriveSeat: Instance)
+	local finalIntensity = 1
+	-- logic to see if high beams are enabled or not (thus increase the intensity)
+	return finalIntensity
 end
 
-local function determineColor(car:Instance)
-  local color = Color3.fromRGB(211, 194, 151)
+local function determineColor(DriveSeat: Instance)
+	local color = Color3.fromRGB(254, 254, 254)
 
-  return vector.create(color.R, color.G, color.B)
+	return vector.create(color.R, color.G, color.B)
 end
 
-local function CheckForRegLightValue(car:Model)
+local function CheckForRegLightValue(car: Model)
 	local Body = car.Body
 	local Headlight = Body:FindFirstChild("Headlight")
 
@@ -38,7 +37,10 @@ local function CheckForRegLightValue(car:Model)
 	-- split since some A-Chassis cars apparently may not have a Vehicle seat once initialized, erroring the entire function
 	local DriveSeat = car:FindFirstChildOfClass("VehicleSeat")
 
-	assert(DriveSeat, `:: LightReflectorHandler :: Failed to find VehicleSeat in {car.Name}; halting execution. Please investigate!`)
+	assert(
+		DriveSeat,
+		`:: LightReflectorHandler :: Failed to find VehicleSeat in {car.Name}; halting execution. Please investigate!`
+	)
 
 	local LightValues = DriveSeat:FindFirstChild("LightValues")
 	local Lights = if DriveSeat:FindFirstChild("Values") then DriveSeat.Values:FindFirstChild("Lights") else nil
@@ -48,15 +50,17 @@ local function CheckForRegLightValue(car:Model)
 	elseif Lights and Lights:FindFirstChild("LightStage") then
 		return Lights.LightStage -- Saragati Lagrande EXC compatibility
 	else
-		warn(`:: LightReflectorHandler :: Failed to find headlight values for car {car.Name}, resorting to boolean "true"`)
+		warn(
+			`:: LightReflectorHandler :: Failed to find headlight values for car {car.Name}, resorting to boolean "true"`
+		)
 		return true
 	end
 end
 
 LightReflector.config.applyOverrides({
 	SignConfig = {
-		SignsFolders = {workspace.Signs}
-	}
+		SignsFolders = { workspace.Signs },
+	},
 })
 
 LightReflector.start()
@@ -64,7 +68,7 @@ LightReflector.start()
 task.wait(2)
 
 for i, car in Cars:GetChildren() do
-    if car:IsA("Model") and (car:FindFirstChildOfClass("VehicleSeat") or car:WaitForChild("DriveSeat",5)) then
+	if car:IsA("Model") and (car:FindFirstChildOfClass("VehicleSeat") or car:WaitForChild("DriveSeat", 5)) then
 		print("Indexed Vehicle")
 		LightReflector.register.addVehicle(car, CheckForRegLightValue(car), determineIntensity, determineColor)
 	end
@@ -72,14 +76,14 @@ end
 
 Cars.ChildAdded:Connect(function(car)
 	task.wait() -- a-chassis init reasons
-	if car:IsA("Model") and (car:FindFirstChildOfClass("VehicleSeat") or car:WaitForChild("DriveSeat",5)) then
+	if car:IsA("Model") and (car:FindFirstChildOfClass("VehicleSeat") or car:WaitForChild("DriveSeat", 5)) then
 		print("Indexed Vehicle")
 		LightReflector.register.addVehicle(car, CheckForRegLightValue(car), determineIntensity, determineColor)
 	end
 end)
 
 workspace.Cars.ChildRemoved:Connect(function(car)
-	if car:IsA("Model") and (car:FindFirstChildOfClass("VehicleSeat") or car:WaitForChild("DriveSeat",5)) then
+	if car:IsA("Model") and (car:FindFirstChildOfClass("VehicleSeat") or car:WaitForChild("DriveSeat", 5)) then
 		LightReflector.register.removeVehicle(car)
 	end
 end)
