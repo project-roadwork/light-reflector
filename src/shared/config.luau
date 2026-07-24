@@ -89,6 +89,9 @@ const BASE_CONFIG = {
 	Constraints = { -- This table will be frozen once the module starts
 		LOCKED = false, -- (recommended -> false) DO NOT CHANGE
 
+		-- [PROFILING]
+		PROFILING = true, -- Whether you want to profile this library via the Microprofiler
+
 		-- [VERSION]
 		VERSION = require("./version")._VERSION,
 

@@ -42,6 +42,7 @@ const activeReflectorEntities: {[jecs.Entity]: boolean} = detect.activeReflector
 local currentDetectedEntities: { [jecs.Entity]: boolean } = {}
 local _runnerThread : thread?
 local hasInit: boolean = false
+local PROFILING: boolean = constraints.PROFILING
 const smoothstepLUT: {[number]: number} = {}
 
 -- Equations
@@ -97,6 +98,8 @@ const function init(): ()
 		reflectorConfig = NEW_CONFIG.ReflectorConfig
 		signConfig = NEW_CONFIG.SignConfig
 
+		PROFILING = constraints.PROFILING
+
 		reflectorLerpSpeed = reflectorConfig.lerpSpeed
 		signLerpSpeed = signConfig.lerpSpeed
 
@@ -132,6 +135,10 @@ end
 const function start(): ()
 	_runnerThread = constraints.SPAWN(utils.pcallRetry, function()
 		while true do
+            if PROFILING then
+                debug.profilebegin("renderLoop")
+            end
+
 			deltaTime, MPH = utils.adaptiveWait(renderWait, RENDER_MIN_FPS, RENDER_MAX_FPS,
 				utils.getFastestSource(sourceInstances)) -- adaptive waiting based on fastest vehicle speed
 
@@ -142,6 +149,9 @@ const function start(): ()
 
 			if not dark() and allInactive then
 				task.wait(.5)
+			    if PROFILING then
+                    debug.profileend()
+                end
 				continue
 			end
 
@@ -445,6 +455,9 @@ const function start(): ()
 					end
 				end
 			end
+			if PROFILING then
+                debug.profileend()
+            end
 		end
 	end, constraints.MAX_PCALL_RETRIES)
 end

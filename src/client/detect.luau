@@ -16,7 +16,7 @@
 ]]
 
 -- IMPORTANT: Modules
-const types = require("../shared/types")
+const types: {} = require("../shared/types")
 const debugger: types.Debugger = require("../shared/debugger")
 const config: types.Configuration = require("../shared/config")
 const utils: types.Utils = require("./utils")
@@ -50,9 +50,8 @@ local areStatesDeactivated: boolean = false
 local _detectedEntitiesThisFrame: { [jecs.Entity]: boolean } = {}
 local _runnerThread: thread?
 local hasInit: boolean = false
+local PROFILING: boolean = constraints.PROFILING
 const min: (number, number) -> number = math.min
-
--- Miscellaneous
 const clamp: (number, number, number) -> number = math.clamp
 
 --[=[
@@ -108,6 +107,10 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function _processReflector(entity: jecs.Entity, source: types.LightSource, MPH: number)
+    if PROFILING then
+        debug.profilebegin("_processReflector")
+    end
+
 	const part: BasePart? = world:get(entity, components.Reflector)
 
 	if not part then
@@ -182,6 +185,10 @@ const function _processReflector(entity: jecs.Entity, source: types.LightSource,
     else
         state.neutralizedColor = state.origColor
     end
+
+    if PROFILING then
+        debug.profileend()
+    end
 end
 
 --[=[
@@ -191,6 +198,10 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function _processSign(entity: jecs.Entity, source: types.LightSource)
+    if PROFILING then
+        debug.profilebegin("_processSign")
+    end
+
 	const part: Instance? = world:get(entity, components.Sign)
 
 	if not part then
@@ -356,7 +367,7 @@ const function _processSign(entity: jecs.Entity, source: types.LightSource)
 
 		if not state then
 			local baseColor: vector = vector.one
-			const attribute: vector? = mainDecal:GetAttribute("BaseColor")
+			const attribute: vector? = mainDecal:GetAttribute("BaseColor") :: vector?
 
 			if attribute then
 				baseColor = attribute
@@ -381,6 +392,10 @@ const function _processSign(entity: jecs.Entity, source: types.LightSource)
 	if signState.intensityAccum > 0 then
         signState.neutralizedColor = signState.colorAccum / signState.intensityAccum
     end
+
+    if PROFILING then
+        debug.profileend()
+    end
 end
 
 --[=[
@@ -398,6 +413,7 @@ const function init(): ()
 		constraints = NEW_CONFIG.Constraints
 		reflectorConfig = NEW_CONFIG.ReflectorConfig
 		signConfig = NEW_CONFIG.SignConfig
+		PROFILING = constraints.PROFILING
 	end)
 
 	equations.buildSamplePoints(constraints.OCCLUSION_RAYCAST_QUALITY)
@@ -414,6 +430,9 @@ const function start() : ()
 	_runnerThread = constraints.SPAWN(utils.pcallRetry, function()
 		-- Start config tracking
 		while true do
+            if PROFILING then
+                debug.profilebegin("detectLoop")
+            end
 
 			const deltaTime: number, MPH: number = utils.adaptiveWaitWithSourcesOverride(task.wait, constraints.BOUNDARY_MIN_FPS,
 				constraints.BOUNDARY_MAX_FPS, utils.getFastestSource(cachedQueries.SourceInstances))
@@ -437,6 +456,10 @@ const function start() : ()
 					_deactivateAllStates()
 					areStatesDeactivated = true
 				end
+
+				if PROFILING then
+                    debug.profileend()
+                end
 				continue
 			end
 
@@ -536,6 +559,10 @@ const function start() : ()
 			local _tempDetectedEntities = currentDetectedEntities
 			currentDetectedEntities = _detectedEntitiesThisFrame
 			_detectedEntitiesThisFrame = _tempDetectedEntities
+
+			if PROFILING then
+                debug.profileend()
+            end
 		end
 	end, constraints.MAX_PCALL_RETRIES)
 end
