@@ -1,316 +1,328 @@
 --!strict
 --!native
 -- USAGE: lightreflector/client/pool.luau
--- ObjectPool module for Light Reflector
+-- FastPool module for Light Reflector
 
 --[[
-	ObjectPool
-	Derived from: https://github.com/notqaltx/ObjectPool.git
-	Original Notice: MIT License (https://opensource.org/licenses/MIT), Copyright (c) 2024 qaltx
 
-	 Used in Project Roadwork - Light Reflector
- 	 Overall project licensed under Mozilla Public License 2.0 (https://mozilla.org/MPL/2.0/)
+	FastPool
+	Codeberg: https://codeberg.org/project-roadwork/FastPool.git
+	GitHub: https://github.com/project-roadwork/FastPool.git
 
-   SPDX-FileCopyrightText: 2025-2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>
-   SPDX-FileCopyrightText: 2025-2026 Project Roadwork and Contributors
-   SPDX-FileCopyrightText: 2024 qaltx
+	Derived from: ObjectPool by qaltx (under the MIT License)
+	ObjectPool: https://github.com/notqaltx/ObjectPool.git
 
-   SPDX-License-Identifier: MIT
+  		SPDX-FileCopyrightText: 2026 Illinois_Roadbuff (Rogue Jr) <illinois_roadbuff@proton.me>
+   		SPDX-FileCopyrightText: 2026 Project Roadwork and Contributors
+   		SPDX-FileCopyrightText: 2024 qaltx
+
+   		SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
+
+   	Modifications:
+   		- Replaced class/metatable-based pools with closure-based pools
+   		- Removed UsageMetrics table storage; metrics are stored as individual numbers
+   		  and are only assembled into a table when requested
+   		- Added lifecycle functions: Destroy(), Reset(), and Clear()
+   		- Added utility functions: TogglePooling() and GetMetrics()
+		- Renamed: ObjectPool.new() -> FastPool()
+		- Renamed: Pool:GetObject() -> Pool.Get()
+		- Renamed: Pool:ReturnObject() -> Pool.Return()
+		- Tracks number of reused objects
+		- Removed ActiveObjects table in order to reduce memory usage with many objects
+		- Removed HierarchicalPools table
+		- No longer traditional object-oriented programming (OOP)
+		- Removed mutex
+		- No longer Instance-centric
+		- New destroy() argument
+		- Removed debugger and signal module
+
 ]]
 
---[[
-	# ObjectPool Module
+const SOURCE: string = "[FastPool]"
+const __VERSION: string = "1.0.0"
+const _DESTROY_ERROR: string  = `{SOURCE} Attempted to use a destroyed pool.`
 
-	Overview:
-	    The `ObjectPool` module provides a great mechanism for managing objects efficiently, without FPS drops.
-	    It allows objects to be reused rather than recreated, optimizing performance and resource usage.
+--[=[
+	Public: Creates a new object pool.
 
-	Usage:
-	    1. Initialization:
-	       - Create an instance of `ObjectPool` using `ObjectPool.new()` with specified object template, creation, and reset functions.
-	       The `create` function should create new objects based on the specified template.
-	       The `reset` function should reset the object's state to be ready for reuse.
+	@param template Object The template object used to create new objects in the pool.
+	@param create function(Object):Object  Function to create a new object based on the template.
+	@param reset function(Object):()  Function to reset an object before returning it to the pool.
+	@param destroy function(Object):()  Function to destroy an object when it is removed from the pool.
+	@param minSize number Minimum initial size of the pool (optional, default 10).
+	@param maxSize number Maximum size limit of the pool (optional, default 50).
+	@return Pool New object pool
+]=]
+@native
+@checked
+const function FastPool<T>(
+	template: T,
+	create: (T) -> T,
+	reset: (T) -> (),
+	destroy: (T) -> (),
+	minSize: number?,
+	maxSize: number?
+): Pool<T>
 
-	    2. Object Retrieval:
-	       - Retrieve objects from the pool using `:GetObject()` method.
-	       New objects are created, if the pool is empty up to the maximum pool size limit.
+	const minimumSize: number = minSize or 10
+	const maximumSize: number = maxSize or 50
 
-	    3. Object Return:
-	       - Return objects to the pool after use with `:ReturnObject(obj)`.
-	       Objects are reset and made available for reuse.
+	local poolingEnabled: boolean = true
+	local destroyed: boolean = false
 
-	Example:
-	```lua
-    local ObjectPool = require(script.ObjectPool)
+	const objects: {T} = table.create(minimumSize)
 
-    -- Define object creation and reset functions
-    local function createObject(template: Model)
-        local newObj = template:Clone()
-        return newObj
-    end
-    local function resetObject(obj)
-        obj.Position = Vector3.new(0, 0, 0)
-        obj.Parent = nil
-    end
+	-- Not using a table for usage metrics for performance reasons
+	-- However, the table will be created in GetMetrics()
+	local activeCount: number = 0
+	local availableCount: number = minimumSize
+	local peakActive: number = 0
+	local returnedCount: number = 0
+	local recycledCount: number = 0
+	local totalCreatedCount: number = minimumSize
+	local getCalls: number = 0
 
-    local objectTemplate = Instance.new("Part")
-    local minSize, maxSize = 10, 50
-    local pool = ObjectPool.new(objectTemplate, createObject, resetObject, minSize, maxSize)
+	for i: number = 1, minimumSize do
+		objects[i] = create(template)
+	end
 
-    -- Get an object from a pool
-    -- And then return it to the pool
-    local obj1 = pool:GetObject()
-    wait(1)
-    pool:ReturnObject(obj1)
+	-- Private: Destroys all available objects in the pool.
+	-- @private
+	@native
+	const function _DestroyAvailableObjects(): ()
+		for i: number = 1, availableCount do
+			destroy(objects[i] :: T)
+			objects[i] = nil
+		end
 
-    local obj2 = pool:GetObject()
-    wait(1)
-    pool:ReturnObject(obj2)
-	```
+		availableCount = 0
+	end
 
-	GitHub: https://github.com/notqaltx/ObjectPool.git
-	Roblox DevForum: https://devforum.roblox.com/t/objectpool-module-for-cloning-objects-without-lags/3059330
-	Creator's YouTube: https://youtube.com/@qaltx
+	-- Public: Toggles pooling functionality
+	@native
+	const function TogglePooling(enabled: boolean): ()
+		if destroyed then
+			error(_DESTROY_ERROR, 2)
+		end
 
-	-- Programmed by notqaltx (@qaltx)
-]]
+		poolingEnabled = enabled
+	end
 
-local ObjectPool = {}
-ObjectPool.__index = ObjectPool
+	-- Public: Returns an object from the pool if one is available, otherwise creates a new object.
+	@native
+	const function Get(): T
+		if destroyed then
+			error(_DESTROY_ERROR, 2)
+		end
 
-local leakLogged: boolean = false
+		getCalls += 1
 
-export type Object = Instance
-export type Pool<T> = {
-	Objects: {T},
-	ActiveObjects: {[T]: boolean},
-	HierarchicalPools: { [T]: Pool<T> },
+		if not poolingEnabled then
+			totalCreatedCount += 1
+			activeCount += 1
 
-	ObjectTemplate: T,
-	CreateObject: (T) -> T,
-	ResetObject: (T) -> (),
+			if activeCount > peakActive then
+				peakActive = activeCount
+			end
 
-	MinSize: number,
-	MaxSize: number,
+			return create(template)
+		end
 
-	UsageMetrics: UsageMetrics,
-	Logger: any,
-	Mutex: any,
+		local object: T
 
-	ObjectTaken: any,
-	ObjectReturned: any,
+		if availableCount > 0 then
+			object = objects[availableCount] :: T
+			objects[availableCount] = nil
+			availableCount -= 1
+			recycledCount += 1
+		else
+			object = create(template)
+			totalCreatedCount += 1
+		end
 
-	GetObject: (Pool<T>) -> T?,
-	ReturnObject: (Pool<T>, T) -> (boolean, string?),
+		activeCount += 1
 
-	Prewarm: (Pool<T>, number) -> (),
-	CreateLog: (Pool<T>, string, string) -> (),
-}
+		if activeCount > peakActive then
+			peakActive = activeCount
+		end
 
+		return object
+	end
 
+	-- Public: Returns an object to the pool.
+	@native
+	const function Return(object: T): ()
+		if destroyed then
+			error(_DESTROY_ERROR, 2)
+		end
 
-export type Mutex = {
-	locked: boolean,
-	lockingThread: thread?,
-	lockCount: number,
-	lock: (self: Mutex, timeout: number?) -> (),
-	unlock: (self: Mutex) -> (),
-	isLocked: (self: Mutex) -> boolean,
-	new: () -> Mutex,
-}
+		if not poolingEnabled then
+			destroy(object)
+			activeCount -= 1
+			return
+		end
 
-type ObjectPoolClass = typeof(ObjectPool)
+		activeCount -= 1
+		returnedCount += 1
 
-type ObjectPoolInstance = Pool<any> & {
-	__index: ObjectPoolClass,
-}
+		reset(object)
 
-type UsageMetrics = {
+		if availableCount < maximumSize then
+			availableCount += 1
+			objects[availableCount] = object
+		else
+			destroy(object)
+		end
+	end
+
+	-- Public: Prewarms the pool with the given number of objects.
+	@native
+	const function Prewarm(count: number): ()
+		if destroyed then
+			error(_DESTROY_ERROR, 2)
+		end
+
+		if not poolingEnabled then
+			return
+		end
+
+		const remaining: number = maximumSize - availableCount
+
+		if remaining <= 0 then
+			return
+		end
+
+		count = math.max(0, math.min(count, remaining))
+
+		for i: number = 1, count do
+			availableCount += 1
+			objects[availableCount] = create(template)
+			totalCreatedCount += 1
+		end
+	end
+
+	-- Public: Removes every pooled object and resets metrics; however, pool remains usable. Note that active count does not change.
+	@native
+	const function Clear(): ()
+		if destroyed then
+			error(_DESTROY_ERROR, 2)
+		end
+
+		if activeCount > 0 then
+			warn(`{SOURCE} Clearing pool with {activeCount} objects still in use. It is the caller's responsibility to clear the rest of the objects.`)
+		end
+
+		_DestroyAvailableObjects()
+
+		peakActive = 0
+		returnedCount = 0
+		recycledCount = 0
+		totalCreatedCount = 0
+		getCalls = 0
+	end
+
+	-- Public: Restores the pool to its initial state and recreates the pool.
+	@native
+	const function Reset(): ()
+		if destroyed then
+			error(_DESTROY_ERROR, 2)
+		end
+
+		if activeCount > 0 then
+			error(`{SOURCE} Attempted to reset pool with {activeCount} objects still in use. Cannot reset pool with active objects.`)
+		end
+
+		Clear()
+
+		for i: number = 1, minimumSize do
+			objects[i] = create(template)
+		end
+
+		availableCount = minimumSize
+		totalCreatedCount = minimumSize
+	end
+
+	-- Public: Permanently destroys the pool; further uses throws an error.
+	@native
+	const function Destroy(): ()
+		if destroyed then
+			return
+		end
+
+		if activeCount > 0 then
+			warn(`{SOURCE} Destroying pool with {activeCount} objects still in use. It is the caller's responsibility to destroy the rest of the objects.`)
+		end
+
+		destroyed = true
+		_DestroyAvailableObjects()
+	end
+
+	-- Public: Gets metrics of the pool.
+	@native
+	const function GetMetrics(): UsageMetrics
+		if destroyed then
+			error(_DESTROY_ERROR, 2)
+		end
+
+		return {
+			ActiveCount = activeCount,
+			AvailableCount = availableCount,
+			PeakActive = peakActive,
+			ReturnedCount = returnedCount,
+			RecycledCount = recycledCount,
+			TotalCreatedCount = totalCreatedCount,
+			GetCalls = getCalls,
+			Destroyed = destroyed
+		}
+	end
+
+	return table.freeze({
+		__VERSION = __VERSION,
+		Get = Get,
+		Return = Return,
+		Prewarm = Prewarm,
+		Clear = Clear,
+		Reset = Reset,
+		Destroy = Destroy,
+		GetMetrics = GetMetrics,
+		TogglePooling = TogglePooling,
+	})
+end
+
+-- Types
+
+export type UsageMetrics = {
 	ActiveCount: number,
 	AvailableCount: number,
 	PeakActive: number,
+	ReturnedCount: number,
+	RecycledCount: number,
+	TotalCreatedCount: number,
+	GetCalls: number,
+	Destroyed: boolean
 }
-const debugger: typeof(require("../shared/debugger")) = require("../shared/debugger")
 
-const mutex = require("./mutex")
+export type Pool<T> = {
+	read __VERSION: string,
+	read Get: () -> T,
+	read Return: (T) -> (),
+	read Prewarm: (number) -> (),
+	read Clear: () -> (),
+	read Reset: () -> (),
+	read Destroy: () -> (),
+	read GetMetrics: () -> UsageMetrics,
+	read TogglePooling: (boolean) -> ()
+}
+export type FastPool = {
+	read __VERSION: string,
+	read new: <T>(
+		template: T,
+		create: (T) -> T,
+		reset: (T) -> (),
+		destroy: (T) -> (),
+		minSize: number?,
+		maxSize: number?
+	) -> Pool<T>
+}
 
---- Creates a new object pool.
----@param objectTemplate Object  The template object used to create new objects in the pool.
----@param createObject function(Object):Object  Function to create a new object based on the template.
----@param resetObject function(Object):()  Function to reset an object before returning it to the pool.
----@param minSize number  Minimum initial size of the pool (optional, default 10).
----@param maxSize number  Maximum size limit of the pool (optional, default 50).
----@return Pool New instance of ObjectPool.
-function ObjectPool.new(objectTemplate: Object, createObject: (Object) -> Object, resetObject: (Object) -> (), minSize: number, maxSize: number): Pool<any>
-	local self = setmetatable({
-		Objects = {} :: {Object},
-		ActiveObjects = {} :: {[Object]: boolean},
-		HierarchicalPools = {} :: {[Object]: Pool<any>},
-
-		ObjectTemplate = objectTemplate,
-		CreateObject = createObject,
-		ResetObject = resetObject,
-
-		Mutex = mutex.new(),
-
-		MinSize = minSize or 10,
-		MaxSize = maxSize or 50,
-		UsageMetrics = {
-			ActiveCount = 0,
-			AvailableCount = 0,
-			PeakActive = 0,
-		} :: UsageMetrics,
-	}, ObjectPool) :: Pool<any> -- these type errors are making me go insane :D
-
-	self.Objects = {}
-	self.ActiveObjects = {}
-	self.HierarchicalPools = {}
-
-	self.ObjectTemplate = objectTemplate
-	self.CreateObject = createObject
-	self.ResetObject = resetObject
-
-	self.Mutex = mutex.new()
-
-	self.MinSize = minSize or 10
-	self.MaxSize = maxSize or 50
-	self.UsageMetrics = {ActiveCount = 0, AvailableCount = 0, PeakActive = 0} :: UsageMetrics
-
-	self:Prewarm(self.MinSize)
-	return setmetatable(self, {
-		__index = ObjectPool,
-		__call = function(tbl)
-			return tbl:GetObject()
-		end,
-	}) :: any
-end
-
---- Creates a log entry with a specified level and message.
----@param level string  Logging level (INFO, WARNING, ERROR).
----@param message string  Message to log.
---function ObjectPool:CreateLog(level: string, message: string)
---	self.Logger:log(level, message)
---end
-
---- Prewarms the object pool with a specified number of objects.
----@param count number  Number of objects to prewarm the pool with.
-function ObjectPool:Prewarm(count: number): ()
-	--	debugger.print("Info", "Prewarming the pool with " .. count .. " objects.")
-	for i: number = 1, count do
-		const obj: Object = self.CreateObject(self.ObjectTemplate)
-		table.insert(self.Objects, obj)
-	end
-	self.UsageMetrics.AvailableCount = #self.Objects
-	--	debugger.print("Info", "Prewarming completed.")
-end
-
-local Returned: number = 0
---- Retrieves an object from the pool, creating a new one if necessary.
----@return Object  Object retrieved from the pool.
-function ObjectPool:GetObject(): Object
-	self.Mutex:lock()
-	local obj: Object?
-	if #self.Objects > 0 then
-		const removed: Object? | any? = table.remove(self.Objects)
-
-		if removed == nil then
-			warn("ObjectPool: Object is nil")
-		else
-			obj = removed :: Object
-
-			const UsageMetrics: UsageMetrics = self.UsageMetrics
-
-			UsageMetrics.AvailableCount -= 1
-		end
-
-
-	else
-		if self.UsageMetrics.ActiveCount < self.MaxSize then
-			obj = self.CreateObject(self.ObjectTemplate)
-			--		debugger.print("Info", "Created new object.")
-		else
-			debugger.fatal("Fatal",
-				"Max pool size reached! Unable to create new object."
-			);
-			self.Mutex:unlock()
-			error("ObjectPool: Max pool size reached!")
-		end
-
-		if self.UsageMetrics.ActiveCount > 350 and leakLogged == false then
-			leakLogged = true
-			--debugger.warn("Warning",
-			--	"[POOL] Object pool exceeded 350 in active count."
-		--	);
-		end
-	end
-	self.ActiveObjects[obj] = true
-	self.UsageMetrics.ActiveCount += 1
-
-	self.UsageMetrics.PeakActive = math.max(self.UsageMetrics.PeakActive, self.UsageMetrics.ActiveCount)
-	--debugger.print("Info",
-	--	"Object retrieved from pool. Active count: " .. self.UsageMetrics.ActiveCount
-	--);
---	if self.ObjectTaken then
-		--	self.ObjectTaken:Fire(obj)
-		--	end
-		--
-	self.Mutex:unlock()
-
-	return obj :: Object
-end
-
--- Returns an object to the pool, resetting it for future use.
---@param obj Object  Object to return to the pool.
-function ObjectPool:ReturnObject(obj: Object): (boolean, string?)
-
-	if obj.Parent ~= nil then
-		obj.Parent = nil
-	end
-
-	self.Mutex:lock()
-	const index: boolean? = self.ActiveObjects[obj]
-	if index then
-		self.ActiveObjects[obj] = nil
-
-		const UsageMetrics: UsageMetrics = self.UsageMetrics
-
-		UsageMetrics.ActiveCount -= 1
-		self.ResetObject(obj)
-		Returned += 1
-
-		if #self.Objects < self.MaxSize then
-			table.insert(self.Objects, obj)
-			UsageMetrics.AvailableCount += 1
-		else
-			obj:Destroy()
-			debugger.warn("Warning",
-				"Object destroyed due to exceeding max pool size."
-			);
-		end
-		--		debugger.print("Info",
-		--			"Object returned to pool. Active count: " .. self.UsageMetrics.ActiveCount
-		--		);
-	--	if self.ObjectReturned then
-			--	self.ObjectReturned:Fire(obj)
-			--	end
-			--
-		if self.HierarchicalPools[obj] then
-			local childPool: Pool<any> = self.HierarchicalPools[obj]
-			for child: Object, boolean: boolean in childPool.ActiveObjects do
-				childPool:ReturnObject(child)
-			end
-		end
-		self.Mutex:unlock()
-		return true, nil
-	else
-		debugger.warn("Warning",
-			"Attempted to return an object that was not in the active list."
-		);
-		return false, "Attempted to return an object that was not in the active list"
-	end
-
-end
-
-export type ObjectPool = typeof(ObjectPool)
-
-return table.freeze(ObjectPool) :: ObjectPool
+return FastPool

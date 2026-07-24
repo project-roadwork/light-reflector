@@ -234,7 +234,7 @@ const function _cloneHybrid(part: BasePart): BasePart?
     local clone:BasePart? = nil
 
     if part:IsA("Part") then
-        clone = partPool:GetObject() :: BasePart
+        clone = partPool.Get() :: Part
         utils.copyPartProps(part, clone)
     else
         clone = part:Clone()
@@ -513,7 +513,7 @@ const function removeReflector(part: BasePart): ()
 
 		if part:GetAttribute(reflectorConfig.hybridCloneAttributeName) then
 			if part:IsA("Part") then
-                partPool:ReturnObject(part)
+                partPool.Return(part)
             else
                 part:Destroy()
 			end
@@ -843,7 +843,7 @@ const function reset(): ()
 
 		if part:GetAttribute(reflectorConfig.hybridCloneAttributeName) then
 			if part:IsA("Part") then
-                partPool:ReturnObject(part)
+                partPool.Return(part)
             else
                 part:Destroy()
 			end

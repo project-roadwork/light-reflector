@@ -32,31 +32,7 @@ export type PoolModule = typeof(pool)
 export type Object = Instance
 
 
-export type Pool<T> = {
-	Objects: {T},
-	ActiveObjects: {[T]: boolean},
-	HierarchicalPools: { [T]: Pool<T> },
-
-	ObjectTemplate: T,
-	CreateObject: (T) -> T,
-	ResetObject: (T) -> (),
-
-	MinSize: number,
-	MaxSize: number,
-
-	UsageMetrics: {ActiveCount: number, AvailableCount: number, PeakActive: number},
-	Logger: any,
-	Mutex: any,
-
-	ObjectTaken: any,
-	ObjectReturned: any,
-
-	GetObject: (Pool<T>) -> T?,
-	ReturnObject: (Pool<T>, T) -> (boolean, string?),
-
-	Prewarm: (Pool<T>, number) -> (),
-	CreateLog: (Pool<T>, string, string) -> (),
-}
+export type Pool<T> = pool.Pool<T>
 
 -- Debugger Types
 export type Debugger = typeof(debugger)

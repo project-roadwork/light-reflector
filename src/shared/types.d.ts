@@ -21,33 +21,14 @@ export type PoolModule = any;
 export type Object = Instance;
 
 export type Pool<T> = {
-  Objects: T[];
-  ActiveObjects: T[];
-  HierarchicalPools: { [key: string]: Pool<T> };
-
-  ObjectTemplate: T;
-  CreateObject: (obj: T) => T;
-  ResetObject: (obj: T) => void;
-
-  MinSize: number;
-  MaxSize: number;
-
-  UsageMetrics: {
-    ActiveCount: number;
-    AvailableCount: number;
-    PeakActive: number;
-  };
-  Logger: any;
-  Mutex: any;
-
-  ObjectTaken: any;
-  ObjectReturned: any;
-
-  GetObject: (pool: Pool<T>) => T | undefined;
-  ReturnObject: (pool: Pool<T>, obj: T) => [boolean, string?];
-
-  Prewarm: (pool: Pool<T>, count: number) => void;
-  CreateLog: (pool: Pool<T>, a: string, b: string) => void;
+  readonly Get: () => T | undefined;
+  readonly Return: (obj: T) => void;
+  readonly Prewarm: (count: number) => void;
+  readonly Clear: () => void;
+  readonly Reset: () => void;
+  readonly Destroy: () => { [key: string]: number };
+  readonly GetMetrics: () => any;
+  readonly TogglePooling: (arg: boolean) => void;
 };
 
 // Debugger Types

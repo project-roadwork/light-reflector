@@ -330,7 +330,7 @@ const function _processSign(entity: jecs.Entity, source: types.LightSource)
 		local gui: types.SurfaceGuiTemplate? = state.gui
 
 		if not gui then
-			gui = surfaceGuiPool:GetObject()
+			gui = surfaceGuiPool.Get()
 
 			if gui == nil then
 			    debugger.warn("Warning", "Pool contains nil instances.")

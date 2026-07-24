@@ -446,12 +446,13 @@ const function resetSurfaceGui(SurfaceGuiPool: types.Pool<types.SurfaceGuiTempla
 
 	--gui:SetAttribute("InPool", true) -- InPool attribute is unreliable
 
-	const success:boolean, response:string? = SurfaceGuiPool:ReturnObject(gui)
-	-- in the pool module, I made it so that :ReturnObject has similar returns as a pcall
+	const success:boolean, response:string? | unknown? = pcall(SurfaceGuiPool.Return, gui)
 
 	if not success then
 		gui:Destroy() -- destroy the gui instead
-		debugger.warn("Warning", response)
+		if typeof(response) == "string" then
+		    debugger.warn("Warning", response)
+		end
 	end
 end
 
@@ -573,15 +574,21 @@ const function initSurfaceGuiPool(): types.Pool<types.SurfaceGuiTemplate>
 		templateGui = surfaceGui
 	end
 
-	return pool.new(templateGui::types.SurfaceGuiTemplate,
-		function(template: Instance): Instance
+	return pool(templateGui::types.SurfaceGuiTemplate,
+		function(template: types.SurfaceGuiTemplate): types.SurfaceGuiTemplate
 			const clone = template:Clone()
 			return clone
 		end,
 
-		function(template: Instance)
+		function(template: types.SurfaceGuiTemplate)
 
-		end, constraints.SURFACE_GUI_MIN_POOL_SIZE, constraints.SURFACE_GUI_MAX_POOL_SIZE) -- pool will warn ONCE if active parts exceed 350
+		end,
+
+		function(template: Instance)
+            template:Destroy()
+		end,
+
+	    constraints.SURFACE_GUI_MIN_POOL_SIZE, constraints.SURFACE_GUI_MAX_POOL_SIZE) -- pool will warn ONCE if active parts exceed 350
 end
 
 --[=[
@@ -590,15 +597,20 @@ end
 	[Git Repository](https://codeberg.org/project-roadwork/light-reflector.git)
 ]=]
 const function initPartPool(): types.Pool<Part>
-	return pool.new(Instance.new("Part"),
-		function(template: Instance): Instance
+	return pool(Instance.new("Part"),
+		function(template: Part): Part
 			const clone = template:Clone()
 			return clone
 		end,
 
-		function(template: Instance)
+		function(template: Part)
             template:ClearAllChildren()
-		end, 8, math.huge)
+		end,
+
+		function(template: Part)
+            template:Destroy()
+		end,
+	 8, math.huge)
 end
 
 const function copyPartProps(part: Part, clone: Part)
