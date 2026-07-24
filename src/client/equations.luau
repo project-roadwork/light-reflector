@@ -22,8 +22,8 @@ const utils: types.Utils = require("./utils")
 
 -- Variables
 const rangeTypes: { [types.RangeType]: boolean } = { near = true, far = true }
-const clamp: (number, number, number) -> number = math.clamp
 const raycast: (WorldRoot, Vector3, Vector3, RaycastParams) -> RaycastResult? = workspace.Raycast
+const clamp: (number, number, number) -> number = math.clamp
 local lastExclusion: {any?} = {}
 
 const rayParams: RaycastParams = RaycastParams.new()
@@ -72,7 +72,7 @@ const function _computeOcclusion(part: BasePart, CFrame: CFrame, Size: Vector3, 
 
 		if instance and instance ~= part then
 			if excludeTransparent then
-				if instance.IsA(instance, "BasePart") and instance.Transparency ~= 1 then
+				if instance:IsA("BasePart") and instance.Transparency ~= 1 then
 					const transmittance: number = instance.Transparency ^ 2.5
 					-- ^ light doesn't work like fractioning, so use an exponent instead of 1 - transparency
 					hit += (1 - transmittance)
@@ -113,22 +113,22 @@ const function computeReflectorIntensity(part: BasePart, state: types.ReflectorS
 
 	--	debugger.assert(part:IsA("BasePart"), "InvalidInstance", "BasePart", part.ClassName)
 
-	const baseIntensity:number = state.baseIntensity
+	const baseIntensity: number = state.baseIntensity
 
-	local intensity:number = 0
-	local finalTransparency:number = 1
+	local intensity: number = 0
+	local finalTransparency: number = 1
 
 	local hybridTransparencyMultiplier:number = 1
 
-	const partCFrame:CFrame = state.CFrame
-	const partPosition:Vector3 = partCFrame.Position
+	const partCFrame: CFrame = state.CFrame
+	const partPosition: Vector3 = partCFrame.Position
 
 	const face:string? = state.faceAttributeName
 
 	const globalIntensityMultiplier: number = config.ReflectorConfig.reflectorIntensityMultiplier
 
-	local hybridFadeRange:number = 0
-	local hybridMinDistance:number = 0
+	local hybridFadeRange: number = 0
+	local hybridMinDistance: number = 0
 
 	local canHybridKeepColors: boolean = false
 
