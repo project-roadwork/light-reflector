@@ -23,7 +23,7 @@ const CollectionService: CollectionService = game:GetService("CollectionService"
 const debugger = require("../shared/debugger")
 
 -- IMPORTANT: Modules
-const types = require("../shared/types")
+const types: {} = require("../shared/types")
 const jecs: types.JecsModule = require("../shared/jecs")
 const config: types.Configuration = require("../shared/config")
 const utils: types.Utils = require("./utils")
@@ -694,7 +694,7 @@ const function _cacheReflectors(): ()
 		scriptConnections[instanceRemovedSignal] = true
 	else
 		for _: number, Folder: any in reflectorConfig.reflectorsFolders do
-			for _: number, part: Instance in Folder:GetDescendants() do
+			for _: number, part: BasePart in Folder:QueryDescendants("BasePart") do
 				addReflector(part)
 			end
 
