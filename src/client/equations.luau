@@ -16,7 +16,7 @@
 ]]
 
 -- IMPORTANT: Modules
-const types = require("../shared/types")
+const types: {} = require("../shared/types")
 const debugger: types.Debugger = require("../shared/debugger")
 const config: types.Configuration = require("../shared/config")
 const utils: types.Utils = require("./utils")
@@ -29,7 +29,7 @@ local generalConfig: types.GeneralConfig = baseConfig.General
 local signConfig: types.SignConfig = baseConfig.SignConfig
 
 -- Variables
-const rangeTypes: { [types.RangeType]: boolean } = { near = true, far = true }
+--const rangeTypes: { [types.RangeType]: boolean } = { near = true, far = true }
 const raycast: (WorldRoot, Vector3, Vector3, RaycastParams) -> RaycastResult? = workspace.Raycast
 const clamp: (number, number, number) -> number = math.clamp
 const min: (number, number) -> number = math.min
