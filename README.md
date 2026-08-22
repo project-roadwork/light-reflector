@@ -60,9 +60,7 @@ The accompanying examples and usage guide will provide you with practical setups
 Should you need additional support, *you may join my [Discord server](https://discord.gg/sd4XfAqNF9) and create a support post in the forum channel `#oss-support`.*
 
 ## Contributing
-*By contributing to this project, you agree that your contributions may be used under the project's current or future open-source/open-content licenses such as Apache-2.0.*
-
-**View the reason why this clause exists in [./CONTRIBUTING.md](CONTRIBUTING.md)**
+*By contributing to this project, you agree that your contributions will be licensed under the applicable licenses as specified in the project's [REUSE metadata](REUSE.toml).*
 
 <details>
     <summary>Miscellaneous</summary>
