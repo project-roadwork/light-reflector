@@ -30,5 +30,5 @@ return {
 		InitWarning = "Init warning: %s",
 		RunContext = "[INIT] Invalid RunContext: %s",
 	},
-	URL = "https://codeberg.org/project-roadwork/light-reflector/src/branch/main/docs/standalone/012_issues.md",
+	URL = "https://project-roadwork.codeberg.page/light-reflector/guide/troubleshooting",
 }
