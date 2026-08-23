@@ -117,8 +117,10 @@ const function removeSource(source: BasePart): ()
 
 	for i = #sourcesList, 1, -1 do
 		if sourcesList[i].Owner == sourceEntity then
-			debugger.shortPrint(`[REGISTER] Unregistering {sourceEntity:GetFullName()}`)
 			table.remove(sourcesList, i)
+			if generalConfig.showRegisteredPrints == true then
+			    debugger.shortPrint(`[REGISTER] Unregistered {sourceEntity:GetFullName()}`)
+			end
 			break
 		end
 	end
@@ -140,6 +142,8 @@ const function removeSource(source: BasePart): ()
 	world:delete(entityId)
 
 	instanceToEntityId[sourceEntity] = nil
+
+	return
 end
 
 --[=[
@@ -221,7 +225,11 @@ const function addSource(source: BasePart, model: Model?, isEnabled: (BasePart) 
 	    end
 	end
 
-	debugger.shortPrint(`[REGISTER] Registered {source:GetFullName()}`)
+	if generalConfig.showRegisteredPrints == true then
+	    debugger.shortPrint(`[REGISTER] Registered {source:GetFullName()}`)
+	end
+
+	return
 end
 
 --[=[

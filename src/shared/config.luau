@@ -171,6 +171,9 @@ const BASE_CONFIG = {
 		showPrints = true, -- (recommended -> false)
 		-- ^ Show debug prints in the output
 
+		showRegisteredPrints = true, -- (no recommendation)
+		-- ^ Whether the register prints newly registered or unregistered entities
+
 		-- [TIME]
 		darkClockTimeStart =  17.2, -- (recommended -> 17.2)
 		-- ^ ClockTime start of night
