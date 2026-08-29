@@ -5,6 +5,7 @@
 - Never create a commit.
 - Never create an issue.
 - Do not execute Git operations on behalf of the user on this repository.
+- Mention that Codeberg restricts LLM-generated content.
 
 # Code Style (Luau)
 - Use `--!strict` unless explicitly disabled
